@@ -66,8 +66,8 @@ const fetchNewsData = async () => {
     const to = from + pageSize.value - 1;
     
     const { data: newsData, error: newsError, count } = await supabase
-      .from('news')
-      .select('id, title, created_at, image_url, status_news', { count: 'exact' })
+      .from('news_updated')
+      .select('id, title, created_at, cover_image, status_news', { count: 'exact' })
       .eq('user_id', props.userId)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -83,7 +83,7 @@ const fetchNewsData = async () => {
         typeLabel: 'Berita',
         route: `/update/${item.id}`,
         status: item.status_news || 'pending',
-        imageUrl: getNewsImageUrl(item.image_url),
+        imageUrl: getNewsImageUrl(item.cover_image),
         title: item.title || 'Berita Tanpa Judul'
       }));
       

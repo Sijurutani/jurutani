@@ -126,8 +126,8 @@ const fetchHistoryData = async () => {
     
     // Fetch news data
     const { data: newsData, error: newsError } = await supabase
-      .from('news')
-      .select('id, title, created_at, image_url, status_news')
+      .from('news_updated')
+      .select('id, title, created_at, cover_image, status_news')
       .eq('user_id', props.userId)
       .order('created_at', { ascending: false });
     
@@ -140,7 +140,7 @@ const fetchHistoryData = async () => {
         typeLabel: 'Berita',
         route: `/update/${item.id}`,
         status: item.status_news || 'pending',
-        imageUrl: getNewsImageUrl(item.image_url),
+        imageUrl: getNewsImageUrl(item.cover_image),
         title: item.title || 'Berita Tanpa Judul'
       }));
       combinedData = [...combinedData, ...formattedNews];
