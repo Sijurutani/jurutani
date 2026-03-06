@@ -170,12 +170,11 @@ export function useNewsUpdatedForm() {
     }
 
     /**
-     * Generate unique slug with timestamp
+     * Generate slug from title without numeric suffix
+     * e.g. "kota yogyakarta" → "kota-yogyakarta"
      */
     function generateUniqueSlug(title: string): string {
-        const baseSlug = generateSlug(title)
-        const timestamp = Date.now()
-        return `${baseSlug}-${timestamp}`
+        return generateSlug(title)
     }
 
     return {

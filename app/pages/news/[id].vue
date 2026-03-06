@@ -103,7 +103,7 @@ const formatCategory = (category?: string): string => {
 }
 
 const handleGoBack = (): void => {
-  goBack('/news')
+  goBack('/update')
 }
 
 const openAttachment = (): void => {
@@ -132,9 +132,9 @@ const seoKeywords = computed(() => news.value ? [
 // Share URL
 const shareUrl = computed(() => {
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/news/${slug.value}`
+    return `${window.location.origin}/update/${slug.value}`
   }
-  return `https://jurutani.com/news/${slug.value}`
+  return `https://jurutani.com/update/${slug.value}`
 })
 
 // Lifecycle
@@ -354,7 +354,7 @@ watch(() => news.value, (newVal) => {
           <!-- Button placed outside the grid so it won't become a grid item -->
           <div class="mt-8 flex justify-center">
             <NuxtLink
-              to="/news"
+              to="/update"
               class="inline-flex items-center space-x-2 px-5 py-2.5 text-sm font-semibold bg-linear-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25 transform hover:-translate-y-0.5"
             >
               <span>Lihat Semua Berita</span>

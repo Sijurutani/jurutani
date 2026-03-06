@@ -13,7 +13,7 @@ export const navs = {
                 { title: 'Harga Pangan', to: '/food-prices', icon: 'i-lucide-bar-chart-2' }
             ]
         },
-        { title: 'Berita', to: '/news', icon: 'i-lucide-newspaper' },
+        { title: 'Berita', to: '/update', icon: 'i-lucide-newspaper' },
         {
             title: 'Edukasi',
             icon: 'i-lucide-graduation-cap',
@@ -38,7 +38,7 @@ export const footerMenuLinks = [
     [
         { label: 'Beranda', path: '/' },
         { label: 'Tentang Kami', path: '/about-us' },
-        { label: 'Berita', path: '/news' }
+        { label: 'Berita', path: '/update' }
     ],
     [
         { label: 'Produk', path: '/markets' },

@@ -111,7 +111,7 @@ const contentClasses = computed(() => {
 
 <template>
   <article :class="cardClasses">
-    <NuxtLink :to="`/news/${news.slug}`" class="block h-full">
+    <NuxtLink :to="`/update/${news.slug}`" class="block h-full">
       <!-- Background Image with Gradient Overlay -->
       <figure class="absolute inset-0">
         <!-- Loading State -->

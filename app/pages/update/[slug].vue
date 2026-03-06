@@ -127,18 +127,22 @@ const { data: similarNews } = await useAsyncData(
 <template>
   <main class="container mx-auto px-4 py-8">
     <!-- Breadcrumb -->
-    <nav class="mb-6 text-sm">
-      <ul class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-        <li><NuxtLink to="/" class="hover:text-primary transition-colors">Home</NuxtLink></li>
-        <li><UIcon name="i-lucide-chevron-right" class="w-4 h-4" /></li>
-        <li><NuxtLink to="/update" class="hover:text-primary transition-colors">Berita</NuxtLink></li>
-        <li><UIcon name="i-lucide-chevron-right" class="w-4 h-4" /></li>
-        <li class="text-gray-900 dark:text-white truncate">{{ news.title }}</li>
-      </ul>
-    </nav>
-
+    
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
+      <nav class="mb-6 text-sm">
+        <ul class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <li><NuxtLink to="/" class="hover:text-primary transition-colors">
+            <UIcon name="i-lucide-home" class="w-4 h-4" />
+          </NuxtLink></li>
+          <li><UIcon name="i-lucide-chevron-right" class="w-4 h-4" /></li>
+          <li><NuxtLink to="/update" class="hover:text-primary transition-colors">
+            <UIcon name="i-heroicons-newspaper" class="w-4 h-4" />
+          </NuxtLink></li>
+          <li><UIcon name="i-lucide-chevron-right" class="w-4 h-4" /></li>
+          <li class="text-gray-900 dark:text-white truncate">{{ news.title }}</li>
+        </ul>
+      </nav>
       <header class="mb-8">
         <!-- Category & Status badges -->
         <div class="mb-4 flex items-center gap-2 flex-wrap">
@@ -284,41 +288,56 @@ const { data: similarNews } = await useAsyncData(
         </UCard>
       </section>
 
-      <!-- Similar News -->
-      <section v-if="similarNews && similarNews.length > 0" class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
-          <UIcon name="i-lucide-newspaper" class="w-6 h-6" />
+    </div>
+
+    <!-- Similar News - full width outside narrow content container -->
+    <section class="mt-16 pt-8 border-t border-gray-200 dark:border-gray-700">
+      <div class="mb-8 text-center">
+        <div class="inline-flex items-center gap-2 mb-4 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
+          <UIcon name="i-lucide-newspaper" class="w-4 h-4 text-green-600 dark:text-green-400" />
+          <span class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Baca Juga</span>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
           Berita Terkait
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <NuxtLink
-            v-for="item in similarNews"
-            :key="item.id"
-            :to="`/update/${item.slug}`"
-            class="group block"
-          >
-            <article class="h-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all bg-white dark:bg-gray-800">
-              <div class="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
-                <img
-                  :src="getImagePathUrl(item.cover_image || (item.images && item.images.length > 0 ? item.images[0] : ''))"
-                  :alt="item.title"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                >
-              </div>
-              <div class="p-4">
-                <h3 class="font-bold mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                  {{ item.title }}
-                </h3>
-                <p class="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                  <UIcon name="i-lucide-calendar" class="w-3 h-3" />
-                  {{ formatDate(item.created_at) }}
-                </p>
-              </div>
-            </article>
-          </NuxtLink>
+      </div>
+
+      <!-- Grid -->
+      <div v-if="similarNews && similarNews.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
+        <NewsUpdatedCard
+          v-for="item in similarNews"
+          :key="item.id"
+          :news="item"
+        />
+      </div>
+
+      <!-- Back button -->
+      <div v-if="similarNews && similarNews.length > 0" class="mt-8 flex justify-center">
+        <NuxtLink
+          to="/update"
+          class="inline-flex items-center space-x-2 px-5 py-2.5 text-sm font-semibold bg-linear-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25 transform hover:-translate-y-0.5"
+        >
+          <span>Lihat Semua Berita</span>
+          <UIcon name="i-lucide-arrow-right" class="w-4 h-4 transition-transform" />
+        </NuxtLink>
+      </div>
+
+      <!-- Empty state -->
+      <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+          <UIcon name="i-heroicons-newspaper" class="w-8 h-8 text-gray-400 dark:text-gray-600" />
         </div>
-      </section>
-    </div>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          Belum ada berita terkait
+        </h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6">
+          Tidak ada berita lain dalam kategori <span class="font-medium text-emerald-600 dark:text-emerald-400">{{ news.category }}</span> saat ini.
+        </p>
+        <UButton to="/update" color="primary" variant="soft" icon="i-lucide-arrow-left">
+          Lihat Semua Berita
+        </UButton>
+      </div>
+    </section>
 
     <!-- Lightbox -->
     <Teleport to="body">

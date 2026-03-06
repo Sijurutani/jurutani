@@ -138,7 +138,7 @@ const fetchHistoryData = async () => {
         ...item,
         type: 'news',
         typeLabel: 'Berita',
-        route: `/news/${item.id}`,
+        route: `/update/${item.id}`,
         status: item.status_news || 'pending',
         imageUrl: getNewsImageUrl(item.image_url),
         title: item.title || 'Berita Tanpa Judul'

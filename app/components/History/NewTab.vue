@@ -81,7 +81,7 @@ const fetchNewsData = async () => {
         ...item,
         type: 'news',
         typeLabel: 'Berita',
-        route: `/news/${item.id}`,
+        route: `/update/${item.id}`,
         status: item.status_news || 'pending',
         imageUrl: getNewsImageUrl(item.image_url),
         title: item.title || 'Berita Tanpa Judul'
@@ -159,7 +159,7 @@ onMounted(() => {
         Belum ada berita yang Anda buat. Mulai buat berita pertama Anda!
       </p>
       <nuxt-link 
-        to="/news" 
+        to="/update" 
         class="inline-flex items-center px-6 py-3 bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 text-white rounded-lg transition-colors"
       >
         <UIcon name="i-heroicons-plus" class="w-5 h-5 mr-2" />
