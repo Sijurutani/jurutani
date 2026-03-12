@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![JuruTani Logo](./jurutani.png)
+![JuruTani Logo](./public/jurutani.png)
 
 **Platform Digital untuk Inovasi Pertanian dan Penyuluhan Petani Indonesia**
 
@@ -25,7 +25,7 @@ Platform ini hadir sebagai solusi digital untuk menyediakan informasi terkini se
 - 🎥 **Video** - Konten video edukatif tentang pertanian
 - 💬 **Konsultasi** - Fitur tanya jawab untuk petani
 
-![Website Screenshot](./website.png)
+![Website Screenshot](./public/website.png)
 
 ---
 
