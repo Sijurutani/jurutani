@@ -1,91 +1,195 @@
 <script setup lang="ts">
+import { watchDebounced } from '@vueuse/core'
 import type { NewsUpdated } from '~/types/news'
-import type { Category } from '~/types'
-
-definePageMeta({
-  layout: 'default'
-})
+import type { SortOption } from '~/types/content'
+import { Enum } from '~/utils/enum'
+const route = useRoute()
+const router = useRouter()
 
 useSeoMeta({
   title: 'Berita Terbaru',
   description: 'Berita dan artikel terbaru tentang pertanian dan agrikultur'
 })
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
+const pageSize = 9
 
-// Use content list composable
-const {
-  items: newsList,
-  loading,
-  error,
-  currentPage,
-  totalPages,
-  totalItems,
-  filters,
-  isLoading,
-  hasError,
-  hasData,
-  showPagination,
-  sortOptions,
-  fetchItems,
-  handleCategoryChange,
-  handleSearchChange,
-  handleSortChange,
-  handlePageChange
-} = useContentList<NewsUpdated>({
-  tableName: 'news_updated',
-  pageSize: 9,
-  statusField: 'status_news',
-  statusValue: 'approved',
-  categoryField: 'category',
-  defaultSort: {
-    column: 'created_at',
-    ascending: false
+// 1. Reactive Route Queries (State URL)
+const category = computed<string>({
+  get() {
+    const raw = route.query.category
+    return typeof raw === 'string' ? raw : 'all'
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === 'all' || value === 'semua') {
+      delete nextQuery.category
+    } else {
+      nextQuery.category = value
+    }
+    router.replace({ query: nextQuery })
   }
 })
 
-// Categories
-const categories = ref<Category[]>([])
-
-// Fetch categories
-const { data: categoriesData } = await useAsyncData('news-updated-categories', async () => {
-  try {
-    const { data, error: catError } = await supabase
-      .from('category_news')
-      .select('name')
-      .order('name', { ascending: true })
-
-    if (catError) throw catError
-    return data as Category[]
-  } catch (err) {
-    console.error('Error fetching categories:', err)
-    return []
+const search = computed<string | undefined>({
+  get() {
+    const raw = route.query.search
+    return typeof raw === 'string' && raw.trim() ? raw : undefined
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || !value.trim()) {
+      delete nextQuery.search
+    } else {
+      nextQuery.search = value
+    }
+    router.replace({ query: nextQuery })
   }
 })
 
-if (categoriesData.value) {
-  categories.value = categoriesData.value.map(cat => ({
-    name: cat.name,
-    value: cat.name
-  }))
-}
+const sort = computed<string>({
+  get() {
+    const raw = route.query.sort
+    return typeof raw === 'string' ? raw : Enum.SortOptions[0].value
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === Enum.SortOptions[0].value) {
+      delete nextQuery.sort
+    } else {
+      nextQuery.sort = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
 
-// Bento grid pattern
-const getBentoVariant = (index: number): 'default' | 'large' | 'wide' => {
-  if (index % 7 === 0) return 'large'
-  if (index % 5 === 0) return 'wide'
+const page = computed<number>({
+  get() {
+    const raw = route.query.page
+    if (typeof raw !== 'string') return 1
+    const parsed = Number.parseInt(raw, 10)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    const normalizedPage = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
+
+    if (normalizedPage <= 1) {
+      delete nextQuery.page
+    } else {
+      nextQuery.page = String(normalizedPage)
+    }
+
+    router.replace({ query: nextQuery })
+  }
+})
+
+// 2. Computed Query
+const query = computed(() => {
+  let q = supabase
+    .from('news_updated')
+    .select('id,slug,title,sub_title,content,category,created_at,cover_image,images,attachments', { count: 'exact' })
+    .is('deleted_at', null)
+    .eq('status_news', 'approved')
+
+  if (category.value && category.value !== 'all' && category.value !== 'semua') {
+    q = q.eq('category', category.value)
+  }
+
+  if (search.value) {
+    const term = search.value.trim()
+    q = q.or(`title.ilike.%${term}%,sub_title.ilike.%${term}%`)
+  }
+
+  const [rawColumn, direction] = sort.value.split('-')
+  const column = rawColumn === 'name' ? 'title' : rawColumn
+
+  return q.order(column, { ascending: direction === 'asc' })
+})
+
+// 3. Fetch Data secara Deklaratif
+const { data, pending, error, refresh } = await useAsyncData('news-list', async () => {
+  const from = (page.value - 1) * pageSize
+  const to = page.value * pageSize - 1
+
+  const { data: newsData, count, error: fetchError } = await query.value.range(from, to)
+
+  if (fetchError) throw fetchError
+
+  return {
+    items: (newsData as NewsUpdated[]) || [],
+    total: count || 0
+  }
+}, {
+  default: () => ({ items: [], total: 0 }),
+  watch: [sort, page, category] // Otomatis refresh jika state ini berubah
+})
+
+// 4. Fetch Categories
+const { data: categories } = await useAsyncData('news-categories', async () => {
+  const { data, error: catError } = await supabase
+    .from('category_news')
+    .select('name')
+    .order('name', { ascending: true })
+
+  if (catError) throw catError
+  return (data ?? []).map(cat => ({ name: cat.name, value: cat.name }))
+}, {
+  default: () => []
+})
+
+// 5. Debounce Search & Reset Page Handler
+watchDebounced([search], async () => {
+  page.value = 1
+  await refresh()
+}, { debounce: 500 })
+
+// Reset page ke 1 setiap kali filter kategori atau sort berubah
+watch([category, sort], () => {
+  page.value = 1
+})
+
+// 6. Helper Computed & Functions
+const sortOptions: SortOption[] = Enum.SortOptions.map((option) => {
+  const [rawColumn, direction] = option.value.split('-')
+  return {
+    label: option.label,
+    value: option.value,
+    column: rawColumn === 'name' ? 'title' : rawColumn,
+    ascending: direction === 'asc'
+  }
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(data.value.total / pageSize)))
+const hasData = computed(() => data.value.items.length > 0)
+const showPagination = computed(() => !pending.value && hasData.value && totalPages.value > 1)
+
+const getBentoVariant = (index: number, total: number): 'default' | 'large' | 'wide' => {
+  const remainder = total % 3
+  if (remainder === 2 && index === total - 2) return 'wide'
+  if (remainder === 2 && index === total - 1) return 'default'
+  if (remainder === 1 && index === total - 1) return 'wide'
+  if (index === 0) return 'large'
+  const pattern = (index - 1) % 5
+  if (pattern === 3 || pattern === 4) return 'wide'
   return 'default'
 }
 
-// Initial fetch
-onMounted(() => {
-  fetchItems()
-})
+const handleCategoryChange = (value: string) => {
+  category.value = value
+}
+
+const handleSortChange = (value: string) => {
+  sort.value = value
+}
+
+const handlePageChange = (value: number) => {
+  page.value = value
+}
 </script>
 
 <template>
   <main class="update-page container mx-auto px-4 py-12">
-    <!-- Page Header -->
     <header class="mx-auto mb-8 max-w-4xl text-center">
       <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
         <UIcon name="i-heroicons-newspaper" class="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -103,11 +207,10 @@ onMounted(() => {
         <span class="font-semibold text-cyan-600 dark:text-cyan-400">prestasi petani</span> yang menginspirasi.
       </p>
 
-      <!-- Category Filter -->
       <nav aria-label="Filter kategori berita terbaru">
         <AppCategoryFilter
           :categories="categories"
-          :current-category="filters.category"
+          :current-category="category"
           :show-all-option="true"
           all-option-text="Semua"
           all-option-value="all"
@@ -116,58 +219,48 @@ onMounted(() => {
       </nav>
     </header>
 
-    <!-- Filter & Sort Bar -->
     <aside class="flex flex-col gap-4 mb-8" aria-label="Filter dan pencarian berita">
-      <!-- Search Bar - Full width on all screens -->
       <AppSearchBar
-        v-model="filters.search"
+        v-model="search"
         placeholder="Cari berita, artikel, atau topik pertanian..."
-        @search="handleSearchChange"
       />
 
-      <!-- Sort and Results Row -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <!-- Sort Dropdown -->
+        <div v-if="!pending && hasData" class="text-sm text-gray-600 dark:text-gray-400">
+          Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ data.items.length }}</span> dari <span class="font-semibold">{{ data.total }}</span> berita
+        </div>
         <AppSortDropdown
           :sort-options="sortOptions"
-          :current-sort="filters.sort"
+          :current-sort="sort"
           @update:sort="handleSortChange"
         />
-
-        <!-- Results Count -->
-        <div v-if="!isLoading && hasData" class="text-sm text-gray-600 dark:text-gray-400">
-          Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ newsList.length }}</span> dari <span class="font-semibold">{{ totalItems }}</span> berita
-        </div>
       </div>
     </aside>
 
-    <!-- News Content -->
     <section aria-labelledby="news-updated-list-heading" class="mt-8">
       <h2 id="news-updated-list-heading" class="sr-only">Daftar Berita Terbaru Pertanian</h2>
 
-      <LoadingData v-if="isLoading" />
-      <ErrorData v-else-if="hasError" :error="error" />
+      <LoadingData v-if="pending" />
+      <ErrorData v-else-if="error" :error="error.message" />
       <NotFoundData v-else-if="!hasData" />
 
-      <!-- Grid Layout -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto grid-flow-row-dense">
         <NewsUpdatedCard
-          v-for="(news, index) in newsList"
+          v-for="(news, index) in data.items"
           :key="news.id"
           :news="news"
-          :variant="getBentoVariant(index)"
+          :variant="getBentoVariant(index, data.items.length)"
         />
       </div>
     </section>
 
-    <!-- Pagination -->
     <nav aria-label="Navigasi halaman berita terbaru">
       <AppPagination
         v-if="showPagination"
-        :current-page="currentPage"
+        :current-page="page"
         :total-pages="totalPages"
-        :total-items="totalItems"
-        :page-size="9"
+        :total-items="data.total"
+        :page-size="pageSize"
         :show-page-info="true"
         :show-first-last="true"
         @update:page="handlePageChange"

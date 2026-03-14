@@ -21,9 +21,6 @@ export * from './navigation'
 // Hero types
 export * from './hero'
 
-// Toast types
-export * from './toast'
-
 // News types
 export * from './news'
 

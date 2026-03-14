@@ -4,7 +4,7 @@
  */
 
 import type { Food, FoodWithPrice, FoodPriceTrend, FoodCategory } from '~/types'
-import { Enum } from '#shared/utils/enum'
+import { Enum } from '~/utils/enum'
 
 export const useFoodPrices = () => {
     const { supabase } = useSupabase()

@@ -7,9 +7,9 @@ definePageMeta({
   middleware: ['guest']
 })
 
-const toastStore = usejuruTaniToast()
-const { login, loginWithSocialProvider, loading } = useAuth()
-
+const toast = usejuruTaniToast()
+const route = useRoute()
+const authStore = useAuthStore()
 
 const form = ref({
   email: '',
@@ -17,54 +17,41 @@ const form = ref({
   remember: false,
 })
 
-const isLoading = ref(false)
 const showPassword = ref(false)
 
-// Function to toggle password visibility
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
 const handleLogin = async () => {
   if (!form.value.email || !form.value.password) {
-    toastStore.warning('Email dan kata sandi harus diisi.', 3000)
+    toast.warning('Email dan kata sandi harus diisi.', 3000)
     return
   }
 
-  try {
-    isLoading.value = true
+  const { success, error, data } = await authStore.signIn(form.value.email, form.value.password)
 
-    const { success, error } = await login(form.value.email, form.value.password)
-
-    if (success) {
-      toastStore.success('Selamat datang di JuruTani!', 3000)
-      navigateTo('/')
-    } else {
-      toastStore.error(error || 'Email atau kata sandi tidak valid.', 3000)
-    }
-  } catch (error: any) {
-    toastStore.error(error.message || 'Terjadi kesalahan saat login.', 3000)
-  } finally {
-    isLoading.value = false
+  if (success) {
+    const fullName = data?.user?.user_metadata?.full_name as string | undefined
+    const fallbackName = data?.user?.email?.split('@')[0]
+    const name = fullName || fallbackName || 'Petani Hebat'
+    toast.success(`Selamat datang, ${name}!`, 3000)
+    const redirect = route.query.redirect as string | undefined
+    await navigateTo(redirect || '/')
+  } else {
+    toast.error(error || 'Email atau kata sandi tidak valid.', 3000)
   }
 }
 
 const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
-  try {
-    const { success, error: loginError } = await loginWithSocialProvider(provider)
-
-    if (!success) {
-      toastStore.error(
-        loginError || `Login dengan ${provider} gagal.`,
-        3000
-      )
-    }
-
-  } catch (err: any) {
-    const message = err?.message || 'Terjadi kesalahan saat login.'
-    toastStore.error(message, 3000)
+  const { success, error } = await authStore.signInWithSocialProvider(provider)
+  if (!success) {
+    toast.error(error || `Login dengan ${provider} gagal.`, 3000)
   }
 }
+
+// Expose loading for template
+const isLoading = computed(() => authStore.loading)
 </script>
 
 <template>

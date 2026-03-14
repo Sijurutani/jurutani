@@ -1,56 +1,11 @@
 /**
  * News-related type definitions
- * Used by news pages and components
+ * Used by news_updated pages and components
  */
 
 import type { JSONContent } from '@tiptap/vue-3'
 
-// Legacy news types (for old news table)
-export interface News {
-    id: string
-    title: string
-    slug: string
-    content: string
-    description: string
-    image_url: string
-    category: string
-    status: string
-    created_at: string
-    updated_at: string
-    deleted_at?: string
-}
-
-export interface NewsItem {
-    id: string
-    title: string
-    slug: string
-    content: string
-    description: string
-    image_url: string
-    category: string
-    status: string
-    sub_title?: string
-    link?: string
-    attachment_url?: string
-    author?: string
-    user_id?: string
-    published_at?: string
-    created_at: string
-    updated_at: string
-    deleted_at?: string
-}
-
-export interface NewsFormState {
-    title: string
-    slug: string
-    content: string
-    description: string
-    image_url: string
-    category: string
-    status: string
-}
-
-// New types for news_updated table with multi-image and rich content
+// Types for news_updated table with multi-image and rich content
 export interface NewsAttachment {
     name: string
     url: string

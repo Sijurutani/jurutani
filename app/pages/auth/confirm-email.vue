@@ -1,87 +1,58 @@
 <!-- pages/auth/confirm-email.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { toastStore } from '~/composables/useJuruTaniToast'
-import { useAuth } from '~/composables/useAuth'
-
-// Definisikan layout
 definePageMeta({
   layout: 'blank',
   middleware: ['guest']
 })
 
-// Get email from query parameter
+const toast = usejuruTaniToast()
+const authStore = useAuthStore()
 const route = useRoute()
+
 const email = ref(route.query.email as string || '')
-
-// Composable Auth untuk resend confirmation
-const { resendConfirmation, loading } = useAuth()
-
-// State untuk countdown timer resend
 const canResend = ref(false)
 const countdown = ref(0)
-let countdownInterval: NodeJS.Timeout | null = null
+let countdownInterval: ReturnType<typeof setInterval> | null = null
 
-// Start countdown timer (60 seconds)
+const isLoading = computed(() => authStore.loading)
+
 const startCountdown = () => {
   canResend.value = false
   countdown.value = 60
-  
-  if (countdownInterval) {
-    clearInterval(countdownInterval)
-  }
-  
+  if (countdownInterval) clearInterval(countdownInterval)
   countdownInterval = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
       canResend.value = true
-      if (countdownInterval) {
-        clearInterval(countdownInterval)
-      }
+      if (countdownInterval) clearInterval(countdownInterval)
     }
   }, 1000)
 }
 
-// Handle resend confirmation email
 const handleResendConfirmation = async () => {
   if (!email.value) {
-    toastStore.error('Email tidak ditemukan. Silakan daftar kembali.', 3000)
+    toast.error('Email tidak ditemukan. Silakan daftar kembali.', 3000)
     return
   }
-
-  try {
-    const result = await resendConfirmation(email.value)
-    
-    if (result.success) {
-      toastStore.success('Email konfirmasi telah dikirim ulang. Silakan cek kotak masuk Anda.', 5000)
-      startCountdown()
-    } else {
-      toastStore.error(result.error || 'Gagal mengirim ulang email konfirmasi.', 3000)
-    }
-  } catch (err: any) {
-    toastStore.error('Terjadi kesalahan. Silakan coba lagi.', 3000)
+  const result = await authStore.resendConfirmation(email.value)
+  if (result.success) {
+    toast.success('Email konfirmasi telah dikirim ulang. Silakan cek kotak masuk Anda.', 5000)
+    startCountdown()
+  } else {
+    toast.error(result.error || 'Gagal mengirim ulang email konfirmasi.', 3000)
   }
 }
 
-// Cleanup interval on unmount
-onBeforeUnmount(() => {
-  if (countdownInterval) {
-    clearInterval(countdownInterval)
-  }
-})
+onBeforeUnmount(() => { if (countdownInterval) clearInterval(countdownInterval) })
 
-// Start countdown when component mounts
 onMounted(() => {
   startCountdown()
-  
-  // Redirect to register if no email provided
   if (!email.value) {
-    toastStore.warning('Silakan daftar terlebih dahulu.', 3000)
+    toast.warning('Silakan daftar terlebih dahulu.', 3000)
     navigateTo('/auth/register')
   }
 })
 </script>
-
 <template>
   <div class="min-h-screen flex items-center justify-center p-6">
     <div class="w-full max-w-md">

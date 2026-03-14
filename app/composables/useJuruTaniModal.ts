@@ -1,11 +1,8 @@
 /**
  * JuruTani Modal Composable using Nuxt UI 4 useOverlay
- * Provides a simple API to open modals programmatically
- * 
- * Note: useOverlay is auto-imported by Nuxt UI 4, no explicit import needed
+ * Provides a simple API to open modals programmatically.
  */
 export const useJuruTaniModal = () => {
-
   const overlay = useOverlay()
 
   /**
@@ -14,7 +11,10 @@ export const useJuruTaniModal = () => {
    * @param props - Props to pass to the component
    * @returns Promise that resolves when modal is closed
    */
-  const open = async <T = any>(component: any, props: Record<string, any> = {}): Promise<T> => {
+  const open = async <T = unknown>(
+    component: any,
+    props: Record<string, any> = {},
+  ): Promise<T | undefined> => {
     const modal = overlay.create(component)
     const instance = modal.open(props)
     return await instance.result
@@ -28,7 +28,7 @@ export const useJuruTaniModal = () => {
 
 /**
  * Global modal store for backward compatibility
- * Uses Nuxt UI 4's useOverlay under the hood
+ * Uses Nuxt UI useOverlay under the hood.
  */
 export const modalStore = {
   /**
@@ -36,9 +36,8 @@ export const modalStore = {
    * @param component - The component to render
    * @param props - Props to pass to the component
    */
-  open(component: any, props: Record<string, any> = {}) {
-    const overlay = useOverlay()
-    const modal = overlay.create(component)
-    modal.open(props)
+  async open<T = unknown>(component: any, props: Record<string, any> = {}) {
+    const { open } = useJuruTaniModal()
+    return await open<T>(component, props)
   }
 }

@@ -1,10 +1,9 @@
 import { ref } from 'vue';
-import { useSupabase } from './useSupabase';
 import { toastStore } from './useJuruTaniToast';
 import { useUserBadge } from './useUserBadge';
 
 export function useProfile() {
-  const { supabase } = useSupabase();
+  const supabase = useSupabaseClient();
   const { getBadgeName } = useUserBadge();
 
   const userData = ref<any>(null);

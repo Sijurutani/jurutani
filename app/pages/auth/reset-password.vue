@@ -2,95 +2,65 @@
 // SEO Optimization
 useSeoAuth('reset-password')
 
-// Definisikan layout
 definePageMeta({
   layout: 'blank',
   middleware: ['guest']
 })
 
-const toastStore = usejuruTaniToast()
-const { updatePassword } = useAuth()
-const { supabase } = useSupabase()
+const toast = usejuruTaniToast()
+const authStore = useAuthStore()
+const client = useSupabaseClient()
 const router = useRouter()
-const route = useRoute()
 
-// State form
 const password = ref('')
 const confirmPassword = ref('')
-const isLoading = ref(false)
 const isValidSession = ref(false)
 const isCheckingSession = ref(true)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Validasi password sederhana
-const isPasswordValid = computed(() => {
-  return password.value.length >= 8
-})
+const isPasswordValid = computed(() => password.value.length >= 8)
+const isFormValid = computed(
+  () => isPasswordValid.value && password.value === confirmPassword.value && password.value.length > 0
+)
+const isLoading = computed(() => authStore.loading)
 
-// Cek apakah form valid
-const isFormValid = computed(() => {
-  return isPasswordValid.value && 
-         password.value === confirmPassword.value && 
-         password.value.length > 0
-})
-
-// Check session saat komponen di-mount
 onMounted(async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    
+    const { data: { session } } = await client.auth.getSession()
     if (session) {
       isValidSession.value = true
     } else {
-      toastStore.error('Link reset password tidak valid atau sudah kadaluarsa.')
-      setTimeout(() => {
-        router.push('/auth/forgot-password')
-      }, 2000)
+      toast.error('Link reset password tidak valid atau sudah kadaluarsa.')
+      setTimeout(() => router.push('/auth/forgot-password'), 2000)
     }
-  } catch (error) {
-    console.error('Error checking session:', error)
-    toastStore.error('Terjadi kesalahan saat memverifikasi session.')
+  } catch {
+    toast.error('Terjadi kesalahan saat memverifikasi session.')
     router.push('/auth/forgot-password')
   } finally {
     isCheckingSession.value = false
   }
 })
 
-// Handler update password
 const handleUpdatePassword = async () => {
   if (!isFormValid.value) {
-    toastStore.warning('Pastikan semua field diisi dengan benar.')
+    toast.warning('Pastikan semua field diisi dengan benar.')
     return
   }
-
   if (password.value !== confirmPassword.value) {
-    toastStore.error('Password konfirmasi tidak cocok.')
+    toast.error('Password konfirmasi tidak cocok.')
     return
   }
 
-  try {
-    isLoading.value = true
-    
-    const { success, error } = await updatePassword(password.value)
+  const { success, error } = await authStore.updatePassword(password.value)
 
-    if (!success) {
-      toastStore.error('Gagal mengupdate password. ' + (error || ''))
-      return
-    }
-
-    toastStore.success('Password berhasil diperbarui!')
-    
-    setTimeout(() => {
-      router.push('/auth/login')
-    }, 2000)
-    
-  } catch (error) {
-    console.error('Error updating password:', error)
-    toastStore.error('Terjadi kesalahan saat mengupdate password.')
-  } finally {
-    isLoading.value = false
+  if (!success) {
+    toast.error('Gagal mengupdate password. ' + (error || ''))
+    return
   }
+
+  toast.success('Password berhasil diperbarui!')
+  setTimeout(() => router.push('/auth/login'), 2000)
 }
 </script>
 

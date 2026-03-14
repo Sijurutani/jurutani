@@ -2,10 +2,11 @@
 </script>
 
 <template>
+  <UApp>
     <NuxtLoadingIndicator />
     <FirstVisitModal />
-    <AppToast /> 
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+  </UApp>
 </template>

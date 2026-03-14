@@ -1,35 +1,21 @@
-import { useAuth } from '~/composables/useAuth'
-import { useUserProfile } from '~/composables/useUserProfile'
-import { toastStore } from '~/composables/useJuruTaniToast'
-
 /**
- * Auth Middleware
- * Proteksi route yang memerlukan authentication
- * Menggunakan useAuth untuk check auth status dan useUserProfile untuk fetch profile
+ * Auth Middleware — proteksi route yang memerlukan autentikasi.
+ * Menggunakan useSupabaseUser() dari @nuxtjs/supabase (sudah reactive)
+ * dan Pinia store untuk data profil.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { user, session, initialize, isAuthenticated } = useAuth()
-  const { fetchProfile, profileData } = useUserProfile()
+  const user = useSupabaseUser()
 
-  // Pastikan auth sudah diinisialisasi
   if (!user.value) {
-    await initialize()
-  }
-
-  // Jika tidak authenticated, redirect ke login dengan query redirect
-  if (!isAuthenticated.value) {
     return navigateTo({
       path: '/auth/login',
-      query: {
-        redirect: to.fullPath // Simpan URL tujuan untuk redirect setelah login
-      }
+      query: { redirect: to.fullPath },
     })
   }
 
-  // Ambil data profil jika belum ada (optional - untuk halaman yang butuh profile data)
-  if (!profileData.value) {
-    await fetchProfile()
+  // Pastikan profil tersedia (lazy-load)
+  const authStore = useAuthStore()
+  if (!authStore.profile) {
+    await authStore.fetchProfile()
   }
-
-  // Lolos semua pengecekan, lanjutkan ke halaman
 })

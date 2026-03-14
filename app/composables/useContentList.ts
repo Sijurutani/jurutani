@@ -33,9 +33,11 @@ export function useContentList<T = any>(options: ContentListOptions) {
         const table = options.tableName.toLowerCase()
         const fieldMap: Record<string, string[]> = {
             'news': ['title', 'content', 'sub_title'],
+            'news_updated': ['title', 'sub_title'],
             'videos': ['title', 'description'],
             'courses': ['title', 'description'],
             'markets': ['name', 'description', 'seller'],
+            'product_markets': ['name', 'excerpt', 'seller', 'category'],
             'meetings': ['title', 'content']
         }
         return fieldMap[table] || ['title', 'description', 'content']

@@ -10,14 +10,6 @@
     aria-label="Profile actions"
   >
     <DarkModeSwitch />
-    
-    <!-- Placeholder untuk action buttons lainnya -->
-    <!-- <UButton
-      variant="ghost"
-      size="sm"
-      icon="i-heroicons-bell"
-      aria-label="Notifications"
-    /> -->
   </div>
 </template>
 

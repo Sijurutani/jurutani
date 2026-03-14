@@ -3,169 +3,92 @@
 // SEO Optimization
 useSeoAuth('register')
 
-// Definisikan layout
 definePageMeta({
   layout: 'blank',
   middleware: ['guest']
 })
 
-// Composable Auth
-const toastStore = usejuruTaniToast()
-const { register, loginWithSocialProvider, error } = useAuth()
+const toast = usejuruTaniToast()
+const authStore = useAuthStore()
 
-// State form
 const form = ref({
+  fullName: '',
   email: '',
   password: '',
   confirmPassword: '',
-  agreeTerms: false
+  agreeTerms: false,
 })
 
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
-const isLoading = ref(false)
 
-// Function to toggle password visibility
-const togglePasswordVisibility = () => {
-  showPassword.value = !showPassword.value
-}
+const togglePasswordVisibility = () => { showPassword.value = !showPassword.value }
+const toggleConfirmPasswordVisibility = () => { showConfirmPassword.value = !showConfirmPassword.value }
 
-// Function to toggle confirm password visibility
-const toggleConfirmPasswordVisibility = () => {
-  showConfirmPassword.value = !showConfirmPassword.value
-}
-
-// Validation functions
-const validateEmail = (email: string) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email.trim())
-}
-
-const validatePassword = (password: string) => {
-  return password.length >= 8
-}
-
-// Password strength indicator
 const passwordStrength = computed(() => {
-  const password = form.value.password
-  if (!password) return { score: 0, text: '', color: '' }
-  
-  let score = 0
-  const checks = {
-    length: password.length >= 8,
-    lowercase: /[a-z]/.test(password),
-    uppercase: /[A-Z]/.test(password),
-    number: /\d/.test(password),
-    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-  }
-  
-  score = Object.values(checks).filter(Boolean).length
-  
+  const p = form.value.password
+  if (!p) return { score: 0, text: '', color: '' }
+  const score = [
+    p.length >= 8,
+    /[a-z]/.test(p),
+    /[A-Z]/.test(p),
+    /\d/.test(p),
+    /[!@#$%^&*(),.?":{}|<>]/.test(p),
+  ].filter(Boolean).length
   if (score <= 2) return { score, text: 'Lemah', color: 'text-red-500' }
   if (score <= 3) return { score, text: 'Sedang', color: 'text-yellow-500' }
   if (score <= 4) return { score, text: 'Kuat', color: 'text-green-500' }
   return { score, text: 'Sangat Kuat', color: 'text-green-600' }
 })
 
-// Password match indicator
 const passwordsMatch = computed(() => {
   if (!form.value.confirmPassword) return null
   return form.value.password === form.value.confirmPassword
 })
 
-// Register handler
+const isLoading = computed(() => authStore.loading)
+
 const handleRegister = async () => {
-  // Validate required fields
-  if (!form.value.email || !form.value.password || !form.value.confirmPassword) {
-    toastStore.warning('Semua field harus diisi.', 3000)
+  const { fullName, email, password, confirmPassword, agreeTerms } = form.value
+
+  if (!fullName || !email || !password || !confirmPassword) {
+    toast.warning('Semua field harus diisi.', 3000)
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    toast.warning('Format email tidak valid.', 3000)
+    return
+  }
+  if (password.length < 8) {
+    toast.warning('Kata sandi harus minimal 8 karakter.', 3000)
+    return
+  }
+  if (password !== confirmPassword) {
+    toast.warning('Kata sandi dan konfirmasi kata sandi tidak cocok.', 3000)
+    return
+  }
+  if (!agreeTerms) {
+    toast.warning('Anda harus menyetujui syarat dan ketentuan.', 3000)
     return
   }
 
-  // Validate email
-  if (!validateEmail(form.value.email)) {
-    toastStore.warning('Format email tidak valid.', 3000)
-    return
-  }
+  const result = await authStore.signUp(email, password, fullName)
 
-  // Validate password strength
-  if (!validatePassword(form.value.password)) {
-    toastStore.warning('Kata sandi harus minimal 8 karakter.', 3000)
-    return
-  }
-
-  // Validate password match
-  if (form.value.password !== form.value.confirmPassword) {
-    toastStore.warning('Kata sandi dan konfirmasi kata sandi tidak cocok.', 3000)
-    return
-  }
-
-  // Validate terms agreement
-  if (!form.value.agreeTerms) {
-    toastStore.warning('Anda harus menyetujui syarat dan ketentuan.', 3000)
-    return
-  }
-
-  try {
-    isLoading.value = true
-
-    console.log('Attempting to register with:', {
-      email: form.value.email
-    })
-
-    // Call register function - using dummy data for fullName and phone
-    const result = await register(
-      form.value.email.trim().toLowerCase(), 
-      form.value.password,
-      '08123456789', // dummy phone
-      'User' // dummy fullName
-    )
-
-    console.log('Registration result:', result)
-
-    if (result.success) {
-      toastStore.success('Pendaftaran berhasil! Silakan periksa email Anda.', 3000)
-      
-      // Navigate to confirm email page with email parameter
-      await navigateTo({
-        path: '/auth/confirm-email',
-        query: { email: form.value.email }
-      })
-    } else {
-      // Handle specific error cases
-      const errorMessage = result.error || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.'
-      toastStore.error(errorMessage, 5000)
-    }
-  } catch (err: any) {
-    console.error('Unexpected error during registration:', err)
-    toastStore.error('Terjadi kesalahan tidak terduga. Silakan coba lagi.', 3000)
-  } finally {
-    isLoading.value = false
+  if (result.success) {
+    toast.success('Pendaftaran berhasil! Silakan periksa email Anda.', 3000)
+    await navigateTo({ path: '/auth/confirm-email', query: { email } })
+  } else {
+    toast.error(result.error || 'Terjadi kesalahan saat mendaftar. Silakan coba lagi.', 5000)
   }
 }
 
-// Social login handler
 const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
-  try {
-    isLoading.value = true
-    
-    const { success, error: loginError } = await loginWithSocialProvider(provider)
-
-    if (!success) {
-      toastStore.error(
-        loginError || `Login dengan ${provider} gagal.`,
-        3000
-      )
-    }
-    // Success handling will be done by the OAuth flow
-  } catch (err: any) {
-    const message = err?.message || 'Terjadi kesalahan saat login.'
-    toastStore.error(message, 3000)
-  } finally {
-    isLoading.value = false
+  const { success, error } = await authStore.signInWithSocialProvider(provider)
+  if (!success) {
+    toast.error(error || `Login dengan ${provider} gagal.`, 3000)
   }
 }
 </script>
-
 <template>
   <div class="min-h-screen flex">
     <!-- Side image - ilustrasi pertanian modern -->
@@ -235,7 +158,22 @@ const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => 
         
         <UCard class="shadow-sm border-green-100 dark:border-green-700">
           <form @submit.prevent="handleRegister">
-            <UFormField label="Email" name="email">
+            <UFormField label="Nama Lengkap" name="fullName">
+              <div class="relative">
+                <UInput
+                  v-model="form.fullName"
+                  placeholder="Contoh: Budi Santoso"
+                  size="lg"
+                  :disabled="isLoading"
+                  class="w-full"
+                />
+                <div class="absolute inset-y-0 right-3 flex items-center text-gray-400 pointer-events-none">
+                  <UIcon name="i-lucide-user" class="w-5 h-5" />
+                </div>
+              </div>
+            </UFormField>
+
+            <UFormField label="Email" name="email" class="mt-4">
               <div class="relative">
                 <UInput
                 v-model="form.email"

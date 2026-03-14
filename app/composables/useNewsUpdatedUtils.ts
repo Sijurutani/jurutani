@@ -5,7 +5,7 @@
 
 import type { JSONContent } from '@tiptap/vue-3'
 import type { NewsUpdated } from '~/types/news'
-import { Enum } from '#shared/utils/enum'
+import { Enum } from '~/utils/enum'
 
 /**
  * Format file size to human readable (standalone utility)

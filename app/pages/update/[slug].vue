@@ -1,43 +1,151 @@
 <script setup lang="ts">
 import type { NewsUpdated } from '~/types/news'
+import { Enum } from '~/utils/enum'
+import { extractTiptapText } from '~/composables/useTiptapContent'
 
 definePageMeta({
   layout: 'default'
 })
 
 const route = useRoute()
-const { supabase } = useSupabase()
-const { 
-  getImagePathUrl, 
-  getAttachmentUrl, 
-  getExcerpt, 
-  formatDate,
-  formatFileSize,
-  getFileIcon,
-  downloadAttachment,
-  getStatusBadge
-} = useNewsUpdatedUtils()
+const supabase = useSupabaseClient()
+const slugParam = computed(() => Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug)
+
+const getImagePathUrl = (path: string, bucket: 'news-images' | 'news-attachments' = 'news-images'): string => {
+  if (!path) return '/placeholder.png'
+  if (path.startsWith('http')) return path
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
+  return data.publicUrl || '/placeholder.png'
+}
+
+const getAttachmentUrl = (path: string): string => {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+
+  const { data } = supabase.storage.from('news-attachments').getPublicUrl(path)
+  return data.publicUrl || ''
+}
+
+const formatDate = (dateString: string): string => {
+  return new Intl.DateTimeFormat('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date(dateString))
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (!bytes || bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${Math.round(bytes / Math.pow(k, i) * 100) / 100} ${sizes[i]}`
+}
+
+const getFileIcon = (type: string): string => {
+  if (!type) return 'i-lucide-file'
+  if (type.includes('pdf')) return 'i-lucide-file-text'
+  if (type.includes('word') || type.includes('document')) return 'i-lucide-file-text'
+  if (type.includes('excel') || type.includes('sheet')) return 'i-lucide-table'
+  if (type.includes('image')) return 'i-lucide-file-image'
+  if (type.includes('video')) return 'i-lucide-file-video'
+  if (type.includes('audio')) return 'i-lucide-file-audio'
+  if (type.includes('zip') || type.includes('rar') || type.includes('compressed')) return 'i-lucide-file-archive'
+  return 'i-lucide-file'
+}
+
+const downloadAttachment = (attachment: { url: string, name: string }) => {
+  const url = getAttachmentUrl(attachment.url)
+  if (!url) return
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = attachment.name
+  link.target = '_blank'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const getStatusBadge = (status: string) => {
+  const statusConfig = Enum.StatusNews.find(item => item.value === status)
+
+  return statusConfig || {
+    value: status,
+    label: status,
+    icon: 'i-lucide-circle',
+    color: 'neutral'
+  }
+}
+
+const getExcerpt = (content: NewsUpdated['content'], maxLength: number = 160): string => {
+  const text = extractTiptapText(content)
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
+
+const normalizeImages = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeAttachments = (value: unknown): Array<{ name: string, url: string, size?: number, type?: string }> => {
+  if (!Array.isArray(value)) return []
+
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      name: typeof item.name === 'string' ? item.name : 'Lampiran',
+      url: typeof item.url === 'string' ? item.url : '',
+      size: typeof item.size === 'number' ? item.size : undefined,
+      type: typeof item.type === 'string' ? item.type : undefined
+    }))
+    .filter(item => !!item.url)
+}
 
 // Fetch news by slug
 const { data: news, error } = await useAsyncData(
   `news_updated_${route.params.slug}`,
   async () => {
+    if (!slugParam.value) return null
+
     const { data, error } = await supabase
       .from('news_updated')
       .select(`
-        *,
+        id,
+        title,
+        sub_title,
+        content,
+        category,
+        link,
+        status_news,
+        created_at,
+        updated_at,
+        published_at,
+        deleted_at,
+        user_id,
+        cover_image,
+        images,
+        attachments,
+        slug,
         profiles:user_id (
           id,
           full_name,
           avatar_url
         )
       `)
-      .eq('slug', route.params.slug)
+      .eq('slug', slugParam.value)
       .is('deleted_at', null)
       .single()
 
     if (error) throw error
-    return data as NewsUpdated & { profiles: any }
+
+    return {
+      ...data,
+      content: data.content as NewsUpdated['content'],
+      images: normalizeImages(data.images),
+      attachments: normalizeAttachments(data.attachments)
+    } as unknown as NewsUpdated & { profiles: any }
   }
 )
 
@@ -110,7 +218,7 @@ const { data: similarNews } = await useAsyncData(
   async () => {
     const { data, error } = await supabase
       .from('news_updated')
-      .select('*')
+      .select('id,slug,title,sub_title,content,category,created_at,cover_image,images,attachments')
       .eq('category', news.value.category)
       .eq('status_news', 'approved')
       .is('deleted_at', null)
@@ -119,7 +227,13 @@ const { data: similarNews } = await useAsyncData(
       .limit(3)
 
     if (error) return []
-    return data as NewsUpdated[]
+
+    return (data ?? []).map(item => ({
+      ...item,
+      content: item.content as NewsUpdated['content'],
+      images: normalizeImages(item.images),
+      attachments: normalizeAttachments(item.attachments)
+    })) as unknown as NewsUpdated[]
   }
 )
 </script>

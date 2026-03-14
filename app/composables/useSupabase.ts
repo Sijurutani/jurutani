@@ -1,25 +1,7 @@
-import { createClient } from '@supabase/supabase-js'
-
 /**
- * Composable untuk menyediakan Supabase client instance
- * Menggunakan singleton pattern untuk memastikan hanya ada satu instance
+ * Thin wrapper agar kode lama yang menggunakan useSupabase() tetap berjalan.
+ * Menggunakan @nuxtjs/supabase client (auto-configured via SUPABASE_URL + SUPABASE_KEY env).
  */
-
-// Singleton Supabase client
-let supabaseInstance: ReturnType<typeof createClient> | null = null
-
-export const useSupabase = () => {
-  const config = useRuntimeConfig()
-
-  // Create singleton instance
-  if (!supabaseInstance) {
-    supabaseInstance = createClient(
-      config.public.supabaseUrl,
-      config.public.supabaseKey
-    )
-  }
-
-  return {
-    supabase: supabaseInstance
-  }
-}
+export const useSupabase = () => ({
+  supabase: useSupabaseClient(),
+})

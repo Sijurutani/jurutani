@@ -2,11 +2,9 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { toastStore } from '~/composables/useJuruTaniToast'
-import { useSupabase } from '~/composables/useSupabase'
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
-// Props
 interface Props {
   modelValue: boolean
   userData: {

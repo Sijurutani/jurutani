@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useSupabase } from '~/composables/useSupabase'
 import { toastStore } from '~/composables/useJuruTaniToast'
 
 definePageMeta({
@@ -7,48 +6,58 @@ definePageMeta({
   middleware: ['guest']
 })
 
-const { supabase } = useSupabase()
+const client = useSupabaseClient()
+const authStore = useAuthStore()
 const route = useRoute()
 
 const loading = ref(true)
-const error = ref<string | null>(null)
 
 onMounted(async () => {
+  if (!import.meta.client) return
   try {
-    if (import.meta.client) {
-      const authCode = route.query.code as string
+    const existingSession = authStore.session
+    if (existingSession?.user) {
+      await authStore.fetchProfile(existingSession.user.id)
+      await navigateTo('/')
+      return
+    }
 
-      if (!authCode) {
-        toastStore.error('Login gagal: kode otorisasi tidak ditemukan.', 5000)
-        await navigateTo('/auth/login?error=missing_code')
+    const authCode = route.query.code as string
+
+    if (!authCode) {
+      toastStore.error('Login gagal: kode otorisasi tidak ditemukan.', 5000)
+      await navigateTo('/auth/login?error=missing_code')
+      return
+    }
+
+    const { data, error: authError } = await client.auth.exchangeCodeForSession(authCode)
+
+    if (authError) {
+      if (authError.message?.toLowerCase().includes('pkce code verifier not found')) {
+        toastStore.error('Login sosial kedaluwarsa. Silakan ulangi login Google dari halaman login.', 6000)
+        await navigateTo('/auth/login?error=pkce_verifier_missing')
         return
       }
 
-      const { data, error: authError } = await supabase.auth.exchangeCodeForSession(authCode)
+      toastStore.error('Login gagal: ' + authError.message, 5000)
+      await navigateTo('/auth/login?error=oauth_failed')
+      return
+    }
 
-      if (authError) {
-        console.error('OAuth callback error:', authError)
-        toastStore.error('Login gagal: ' + authError.message, 5000)
-        await navigateTo('/auth/login?error=oauth_failed')
-        return
-      }
-
-      if (data.session) {
-        toastStore.success('Login berhasil! Mengarahkan...', 1500)
-
-        // Tunggu sedikit biar toast sempat tampil
-        setTimeout(() => {
-          // Force redirect full 
-          loading.value = false
-          navigateTo('/', { external: true })
-        }, 1500)
-      } else {
-        toastStore.warning('Sesi login tidak ditemukan. Silakan coba lagi.', 3000)
-        await navigateTo('/auth/login')
-      }
+    if (data.session) {
+      // Pinia store akan otomatis mendeteksi user via useSupabaseUser watcher
+      // Tapi kita tetap eksplisit fetch profil agar data langsung tersedia
+      await authStore.fetchProfile(data.session.user.id)
+      toastStore.success('Login berhasil! Mengarahkan...', 1500)
+      setTimeout(() => {
+        loading.value = false
+        navigateTo('/', { external: true })
+      }, 1500)
+    } else {
+      toastStore.warning('Sesi login tidak ditemukan. Silakan coba lagi.', 3000)
+      await navigateTo('/auth/login')
     }
   } catch (err: any) {
-    console.error('Unexpected error in auth callback:', err)
     toastStore.error('Terjadi kesalahan: ' + (err.message || 'Error tidak diketahui'), 5000)
     await navigateTo('/auth/login?error=callback_failed')
   } finally {

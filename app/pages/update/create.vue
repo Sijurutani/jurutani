@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
-import type { EditorSuggestionMenuItem } from '@nuxt/ui'
 import type { JSONContent } from '@tiptap/vue-3'
 import { toastStore } from '~/composables/useJuruTaniToast'
-import { Enum } from '#shared/utils/enum'
 import { NEWS_UPDATED_CONSTANTS } from '~/composables/useNewsUpdatedForm'
-import { formatFileSize } from '~/composables/useNewsUpdatedUtils'
+import { formatFileSize } from '~/composables/useNewsUpdatedShared'
+import { NEWS_TIPTAP_SUGGESTION_ITEMS, getEmptyTiptapDoc, hasMeaningfulTiptapContent } from '~/composables/useTiptapContent'
 
 definePageMeta({
   layout: 'default'
@@ -17,7 +16,7 @@ useSeoMeta({
   description: 'Buat artikel berita baru dengan editor lengkap'
 })
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 const router = useRouter()
 const { 
   uploadCoverImage, 
@@ -30,7 +29,7 @@ const {
   generateUniqueSlug
 } = useNewsUpdatedForm()
 
-// Fetch categories
+// 1. Fetch Categories
 const { data: categories } = await useAsyncData('category_news_create', async () => {
   const { data, error } = await supabase
     .from('category_news')
@@ -52,17 +51,12 @@ const categoryItems = computed(() => {
   }))
 })
 
-// Form schema with separate title and sub_title
+// 2. Form Schema
 const schema = z.object({
   title: z.string().min(1, 'Judul wajib diisi').max(200, 'Judul maksimal 200 karakter'),
   sub_title: z.string().max(300, 'Sub judul maksimal 300 karakter').optional(),
   content: z.any().refine((val) => {
-    // Validate JSONContent has content
-    if (!val || typeof val !== 'object') return false
-    if (!val.content || !Array.isArray(val.content)) return false
-    // Check if there's actual text content (not just empty paragraphs)
-    const hasText = JSON.stringify(val).length > 50 // Basic check
-    return hasText
+    return hasMeaningfulTiptapContent(val as JSONContent)
   }, 'Konten berita wajib diisi'),
   category: z.string().min(1, 'Kategori wajib dipilih'),
   link: z.string().url('URL tidak valid').optional().or(z.literal('')),
@@ -75,19 +69,11 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
-// Form state
+// 3. Form State
 const state = reactive<Partial<Schema>>({
   title: '',
   sub_title: '',
-  content: {
-    type: 'doc',
-    content: [
-      {
-        type: 'paragraph',
-        content: []
-      }
-    ]
-  } as JSONContent,
+  content: getEmptyTiptapDoc(),
   category: '',
   link: '',
   coverImageFile: undefined,
@@ -97,7 +83,7 @@ const state = reactive<Partial<Schema>>({
 
 const loading = ref(false)
 
-// File upload handlers
+// 4. File Upload Handlers
 const coverImagePreview = ref<string | null>(null)
 const galleryPreviews = ref<string[]>([])
 
@@ -198,92 +184,9 @@ function removeCoverImage() {
   coverImageFile.value = null
 }
 
-// Slash command suggestions
-const suggestionItems: EditorSuggestionMenuItem[][] = [
-  [
-    {
-      type: 'label',
-      label: 'Text'
-    },
-    {
-      kind: 'paragraph',
-      label: 'Paragraph',
-      description: 'Teks paragraf biasa',
-      icon: 'i-lucide-text'
-    },
-    {
-      kind: 'heading',
-      level: 1,
-      label: 'Heading 1',
-      description: 'Judul besar',
-      icon: 'i-lucide-heading-1'
-    },
-    {
-      kind: 'heading',
-      level: 2,
-      label: 'Heading 2',
-      description: 'Judul sedang',
-      icon: 'i-lucide-heading-2'
-    },
-    {
-      kind: 'heading',
-      level: 3,
-      label: 'Heading 3',
-      description: 'Judul kecil',
-      icon: 'i-lucide-heading-3'
-    }
-  ],
-  [
-    {
-      type: 'label',
-      label: 'Lists'
-    },
-    {
-      kind: 'bulletList',
-      label: 'Bullet List',
-      description: 'Daftar dengan bullet',
-      icon: 'i-lucide-list'
-    },
-    {
-      kind: 'orderedList',
-      label: 'Numbered List',
-      description: 'Daftar dengan nomor',
-      icon: 'i-lucide-list-ordered'
-    }
-  ],
-  [
-    {
-      type: 'label',
-      label: 'Insert'
-    },
-    {
-      kind: 'blockquote',
-      label: 'Blockquote',
-      description: 'Kutipan teks',
-      icon: 'i-lucide-text-quote'
-    },
-    {
-      kind: 'codeBlock',
-      label: 'Code Block',
-      description: 'Blok kode',
-      icon: 'i-lucide-square-code'
-    },
-    {
-      kind: 'horizontalRule',
-      label: 'Divider',
-      description: 'Garis pemisah',
-      icon: 'i-lucide-separator-horizontal'
-    },
-    {
-      kind: 'image',
-      label: 'Image',
-      description: 'Insert gambar',
-      icon: 'i-lucide-image'
-    }
-  ]
-]
+const suggestionItems = NEWS_TIPTAP_SUGGESTION_ITEMS
 
-// Form submit
+// 5. Submit Handler
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   loading.value = true
 
@@ -340,8 +243,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     const { error: insertError } = await supabase
       .from('news_updated')
       .insert(payload)
-      .select()
-      .single()
 
     if (insertError) {
       console.error('Database error:', insertError)
@@ -509,90 +410,92 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         </UFormField>
       </UCard>
 
-      <!-- Gallery Section -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-images" class="w-5 h-5" />
-            <h2 class="text-xl font-semibold">Galeri Foto</h2>
-          </div>
-        </template>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gallery Section -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-images" class="w-5 h-5" />
+              <h2 class="text-xl font-semibold">Galeri Foto</h2>
+            </div>
+          </template>
 
-        <UFormField name="galleryFiles" :hint="`Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_GALLERY_IMAGES} gambar, 5MB per gambar`">
-          <div class="space-y-4">
-            <UFileUpload
-              v-model="galleryImageFiles"
-              accept="image/*"
-              multiple
-              class="min-h-32 w-full"
-            />
-            
-            <div v-if="state.galleryFiles && state.galleryFiles.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div v-for="(file, index) in state.galleryFiles" :key="index" class="relative group">
-                <img 
-                  :src="galleryPreviews[index]" 
-                  :alt="`Gallery ${index + 1}`" 
-                  class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                <UButton
-                  icon="i-lucide-x"
-                  color="error"
-                  size="xs"
-                  class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  @click="removeGalleryImage(index)"
-                />
-                <div class="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
-                  {{ formatFileSize(file.size) }}
+          <UFormField name="galleryFiles" :hint="`Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_GALLERY_IMAGES} gambar, 5MB per gambar`">
+            <div class="space-y-4">
+              <UFileUpload
+                v-model="galleryImageFiles"
+                accept="image/*"
+                multiple
+                class="min-h-32 w-full"
+              />
+              
+              <div v-if="state.galleryFiles && state.galleryFiles.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div v-for="(file, index) in state.galleryFiles" :key="index" class="relative group">
+                  <img 
+                    :src="galleryPreviews[index]" 
+                    :alt="`Gallery ${index + 1}`" 
+                    class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                  <UButton
+                    icon="i-lucide-x"
+                    color="error"
+                    size="xs"
+                    class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    @click="removeGalleryImage(index)"
+                  />
+                  <div class="absolute bottom-1 left-1 px-2 py-0.5 bg-black/70 text-white text-xs rounded">
+                    {{ formatFileSize(file.size) }}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </UFormField>
-      </UCard>
+          </UFormField>
+        </UCard>
 
-      <!-- Attachments Section -->
-      <UCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-paperclip" class="w-5 h-5" />
-            <h2 class="text-xl font-semibold">Lampiran</h2>
-          </div>
-        </template>
+        <!-- Attachments Section -->
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-lucide-paperclip" class="w-5 h-5" />
+              <h2 class="text-xl font-semibold">Lampiran</h2>
+            </div>
+          </template>
 
-        <UFormField name="attachmentFiles" :hint="`Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_ATTACHMENTS} file, 10MB per file (PDF, DOC, DOCX, XLS, XLSX)`">
-          <div class="space-y-4">
-            <UFileUpload
-              v-model="attachmentFilesList"
-              accept=".pdf,.doc,.docx,.xls,.xlsx"
-              multiple
-              class="min-h-32 w-full"
-            />
-            
-            <ul v-if="state.attachmentFiles && state.attachmentFiles.length > 0" class="space-y-2">
-              <li 
-                v-for="(file, index) in state.attachmentFiles" 
-                :key="index" 
-                class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <div class="flex items-center gap-3 flex-1 min-w-0">
-                  <UIcon name="i-lucide-file-text" class="w-5 h-5 text-primary shrink-0" />
-                  <div class="min-w-0 flex-1">
-                    <p class="font-medium truncate">{{ file.name }}</p>
-                    <p class="text-sm text-gray-500">{{ formatFileSize(file.size) }}</p>
+          <UFormField name="attachmentFiles" :hint="`Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_ATTACHMENTS} file, 10MB per file (PDF, DOC, DOCX, XLS, XLSX)`">
+            <div class="space-y-4">
+              <UFileUpload
+                v-model="attachmentFilesList"
+                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                multiple
+                class="min-h-32 w-full"
+              />
+              
+              <ul v-if="state.attachmentFiles && state.attachmentFiles.length > 0" class="space-y-2">
+                <li 
+                  v-for="(file, index) in state.attachmentFiles" 
+                  :key="index" 
+                  class="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <div class="flex items-center gap-3 flex-1 min-w-0">
+                    <UIcon name="i-lucide-file-text" class="w-5 h-5 text-primary shrink-0" />
+                    <div class="min-w-0 flex-1">
+                      <p class="font-medium truncate">{{ file.name }}</p>
+                      <p class="text-sm text-gray-500">{{ formatFileSize(file.size) }}</p>
+                    </div>
                   </div>
-                </div>
-                <UButton
-                  icon="i-lucide-x"
-                  color="error"
-                  variant="ghost"
-                  size="sm"
-                  @click="removeAttachment(index)"
-                />
-              </li>
-            </ul>
-          </div>
-        </UFormField>
-      </UCard>
+                  <UButton
+                    icon="i-lucide-x"
+                    color="error"
+                    variant="ghost"
+                    size="sm"
+                    @click="removeAttachment(index)"
+                  />
+                </li>
+              </ul>
+            </div>
+          </UFormField>
+        </UCard>
+      </div>
 
       <!-- Submit Actions -->
       <div class="flex gap-3 justify-end pt-4 sticky bottom-4 bg-white dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-lg">

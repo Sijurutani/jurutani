@@ -2,43 +2,31 @@
 // SEO Optimization
 useSeoAuth('forgot-password')
 
-// Definisikan layout
 definePageMeta({
   layout: 'blank',
   middleware: ['guest']
 })
 
-const toastStore = usejuruTaniToast()
-const { resetPassword } = useAuth()
+const toast = usejuruTaniToast()
+const authStore = useAuthStore()
 
-// State form
 const email = ref('')
-const isLoading = ref(false)
 const isSubmitted = ref(false)
+const isLoading = computed(() => authStore.loading)
 
-// Handler reset password
 const handleResetPassword = async () => {
   if (!email.value) {
-    toastStore.warning('Email tidak boleh kosong ...')
+    toast.warning('Email tidak boleh kosong ...')
     return
   }
 
-  try {
-    isLoading.value = true
-    
-    // Panggil fungsi resetPassword dari useSupabase composable
-    const { success, error } = await resetPassword(email.value)
+  const { success, error } = await authStore.resetPassword(email.value)
 
-    if (success) {
-      isSubmitted.value = true
-      toastStore.success('Benih reset password telah dikirim ke email Anda! 🌱')
-    } else {
-      toastStore.error(error?.message || 'Gagal mengirim benih reset password. Silakan coba lagi.')
-    }
-  } catch (error) {
-    toastStore.error('Terjadi kesalahan saat mengirim benih reset password. Silakan coba lagi.')
-  } finally {
-    isLoading.value = false
+  if (success) {
+    isSubmitted.value = true
+    toast.success('Benih reset password telah dikirim ke email Anda! 🌱')
+  } else {
+    toast.error(error || 'Gagal mengirim benih reset password. Silakan coba lagi.')
   }
 }
 </script>

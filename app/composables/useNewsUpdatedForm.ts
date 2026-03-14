@@ -5,6 +5,7 @@
 
 import type { NewsAttachment } from '~/types/news'
 import { toastStore } from '~/composables/useJuruTaniToast'
+import { generateNewsSlug } from '~/composables/useNewsUpdatedShared'
 
 export const NEWS_UPDATED_CONSTANTS = {
     MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
@@ -19,7 +20,6 @@ export const NEWS_UPDATED_CONSTANTS = {
 
 export function useNewsUpdatedForm() {
     const { uploadFile } = useAppFileUpload()
-    const { generateSlug } = useNewsUpdatedUtils()
 
     /**
      * Validate and process image file
@@ -174,7 +174,7 @@ export function useNewsUpdatedForm() {
      * e.g. "kota yogyakarta" → "kota-yogyakarta"
      */
     function generateUniqueSlug(title: string): string {
-        return generateSlug(title)
+        return generateNewsSlug(title)
     }
 
     return {

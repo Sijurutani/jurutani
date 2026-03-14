@@ -13,16 +13,10 @@ const {
 
 export default defineNuxtConfig({
   runtimeConfig: {
-    // Private keys yang hanya tersedia di server-side (AMAN)
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-
-    // Public keys yang tersedia di client-side
-    public: {
-      baseUrl: process.env.NUXT_PUBLIC_BASE_URL ?? 'https://jurutani.com',
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabaseKey: process.env.SUPABASE_KEY,
-      geminiApiKey: process.env.GEMINI_API_KEY || '',
-    },
+    // Private keys are only available on the server
+    groqApiKey: process.env.GROQ_API_KEY,
+    openrouterApiKey: process.env.OPENROUTER_API_KEY,
+    geminiApiKey: process.env.GEMINI_API_KEY
   },
 
   app: {
@@ -46,7 +40,6 @@ export default defineNuxtConfig({
         '/',
         '/about-us',
         '/contact-us',
-        '/news',
         '/update',
         '/tools',
         '/videos',
@@ -55,6 +48,7 @@ export default defineNuxtConfig({
         '/privacy-policy',
         '/food-prices',
         '/markets',
+        '/markets/create',
         '/educations',
         '/terms',
       ],
@@ -65,6 +59,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    '@pinia/nuxt',
     '@vueuse/nuxt',
     '@nuxt/image',
     '@vee-validate/nuxt',
@@ -74,7 +69,18 @@ export default defineNuxtConfig({
     'nuxt-schema-org',
     '@nuxt/eslint',
     '@nuxt/ui',
+    '@nuxtjs/supabase',
   ],
+
+  supabase: {
+    redirectOptions: {
+      login: '/auth/login',
+      callback: '/auth/callback',
+      exclude: ['/auth/login', '/auth/callback']
+    },
+    useSsrCookies: true,
+    redirect: false,
+  },
 
   colorMode: {
     preference: 'light',
@@ -140,15 +146,6 @@ export default defineNuxtConfig({
         '@nuxt/ui > prosemirror-view',
         '@nuxt/ui > prosemirror-gapcursor'
       ]
-    },
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'supabase': ['@supabase/supabase-js'],
-          },
-        },
-      },
     },
   },
 
