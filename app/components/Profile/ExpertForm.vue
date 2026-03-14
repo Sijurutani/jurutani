@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useProfessionalData } from '~/composables/useProfessionalData'
-import { useAuth } from '~/composables/useAuth'
-import type { ExpertFormData } from '~/types'
+import { toastStore } from '~/composables/useJuruTaniToast'
+import type { Database } from '~/types/database.types'
 
-const { user } = useAuth()
-const {
-  expertData,
-  expertCategories,
-  loading,
-  fetchExpertData,
-  fetchExpertCategories,
-  updateExpertData
-} = useProfessionalData()
+const emit = defineEmits<{
+  update: []
+}>()
+
+const authStore = useAuthStore()
+const supabase = useSupabaseClient<Database>()
 
 // Form state
-const formData = reactive<ExpertFormData>({
+const formData = reactive({
   category: '',
   note: ''
 })
 
 const isSubmitting = ref(false)
+const isLoading = ref(true)
+const expertCategories = ref<{ name: string }[]>([])
 
 // Computed
 const categoryOptions = computed(() => {
@@ -36,25 +34,79 @@ const isFormValid = computed(() => {
 
 // Load data
 const loadData = async () => {
-  if (!user.value?.id) return
+  if (!authStore.user?.id) return
+  isLoading.value = true
 
-  await fetchExpertCategories()
-  const result = await fetchExpertData(user.value.id)
+  try {
+    // Fetch categories
+    const { data: categories } = await supabase
+      .from('category_expert')
+      .select('name')
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+      
+    if (categories) {
+      expertCategories.value = categories as { name: string }[]
+    }
 
-  if (result.success && result.data) {
-    formData.category = result.data.category || ''
-    formData.note = result.data.note || ''
+    // Fetch expert data
+    const { data: expertData } = await supabase
+      .from('experts')
+      .select('*')
+      .eq('user_id', authStore.user.id)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (expertData) {
+      formData.category = expertData.category || ''
+      formData.note = expertData.note || ''
+    }
+  } catch (error) {
+    console.error('Failed to fetch expert data', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
 // Submit handler
 const handleSubmit = async () => {
-  if (!user.value?.id || !isFormValid.value) return
+  if (!authStore.user?.id || !isFormValid.value) return
 
   isSubmitting.value = true
 
   try {
-    await updateExpertData(user.value.id, formData)
+    const updates = {
+      user_id: authStore.user.id,
+      category: formData.category || null,
+      note: formData.note || null,
+      updated_at: new Date().toISOString()
+    }
+    
+    // Check if expert exists
+    const { data: existingData } = await supabase
+      .from('experts')
+      .select('id')
+      .eq('user_id', authStore.user.id)
+      .is('deleted_at', null)
+      .maybeSingle()
+      
+    let error;
+    if (existingData) {
+      const { error: updErr } = await supabase.from('experts').update(updates).eq('user_id', authStore.user.id)
+      error = updErr;
+    } else {
+      const { error: insErr } = await supabase.from('experts').insert({ ...updates, created_at: new Date().toISOString() })
+      error = insErr;
+    }
+
+    if (!error) {
+      toastStore.success('Data profesional pakar berhasil diperbarui.')
+      emit('update')
+    } else {
+      toastStore.error(error.message || 'Gagal memperbarui data pakar.')
+    }
+  } catch (err: any) {
+    toastStore.error(err.message || 'Terjadi kesalahan.')
   } finally {
     isSubmitting.value = false
   }
@@ -73,13 +125,13 @@ onMounted(() => {
     </h3>
 
     <!-- Loading State -->
-    <div v-if="loading && !expertData" class="flex items-center justify-center py-8">
+    <div v-if="isLoading" class="flex items-center justify-center py-8">
       <UIcon name="i-heroicons-arrow-path" class="animate-spin h-6 w-6 text-green-600 dark:text-green-400 mr-2" />
       <span class="text-gray-600 dark:text-gray-400">Memuat data...</span>
     </div>
 
     <!-- Form -->
-    <form v-else @submit.prevent="handleSubmit" class="space-y-6">
+    <form v-else class="space-y-6" @submit.prevent="handleSubmit">
       <!-- Category -->
       <div>
         <label for="expert-category" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">

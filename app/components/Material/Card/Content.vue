@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 interface Course {
   id: string

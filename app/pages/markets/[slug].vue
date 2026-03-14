@@ -1,47 +1,155 @@
 <script setup lang="ts">
-import { useSupabase } from '~/composables/useSupabase'
 import type { ProductMarket } from '~/types/market'
-import {
-  getImagePathUrl,
-  getMarketPublicUrl,
-  getAttachmentUrl,
-  getExcerpt,
-  formatDate,
-  formatFileSize,
-  getFileIcon,
-  downloadAttachment,
-  formatPrice
-} from '~/composables/useProductMarketUtils'
+import { extractTiptapText } from '~/composables/useTiptapContent'
+import { formatFileSize } from '~/composables/useNewsUpdatedShared'
 import { formatDateLong } from '~/utils/dateFormatter'
 import { Enum } from '~/utils/enum'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'default'
 })
 
 const route = useRoute()
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
+const slugParam = computed(() => Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug)
+
+const getImagePathUrl = (imagePath: string | null): string => {
+  if (!imagePath) return '/placeholder.png'
+  if (imagePath.startsWith('http')) return imagePath
+
+  const { data } = supabase.storage
+    .from('product-markets-images')
+    .getPublicUrl(imagePath)
+
+  return data?.publicUrl || '/placeholder.png'
+}
+
+const getAttachmentUrl = (attachmentPath: string): string => {
+  if (!attachmentPath) return '#'
+  if (attachmentPath.startsWith('http')) return attachmentPath
+
+  const { data } = supabase.storage
+    .from('product-markets-attachments')
+    .getPublicUrl(attachmentPath)
+
+  return data?.publicUrl || '#'
+}
+
+const getExcerpt = (content: ProductMarket['content'], maxLength: number = 160): string => {
+  const text = extractTiptapText(content)
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
+}
+
+const formatPrice = (price: number | null): string => {
+  if (price == null) return 'Harga tidak tersedia'
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0
+  }).format(price)
+}
+
+const getFileIcon = (fileType: string): string => {
+  const iconMap: Record<string, string> = {
+    'application/pdf': 'i-lucide-file-text',
+    'application/msword': 'i-lucide-file-text',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'i-lucide-file-text',
+    'application/vnd.ms-excel': 'i-lucide-file-spreadsheet',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'i-lucide-file-spreadsheet',
+    'image/jpeg': 'i-lucide-image',
+    'image/png': 'i-lucide-image',
+    'image/webp': 'i-lucide-image'
+  }
+  return iconMap[fileType] || 'i-lucide-file'
+}
+
+const downloadAttachment = (attachment: { url: string, name: string }) => {
+  const link = document.createElement('a')
+  link.href = getAttachmentUrl(attachment.url)
+  link.download = attachment.name
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeAttachments = (value: unknown): ProductMarket['attachments'] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      name: typeof item.name === 'string' ? item.name : 'Lampiran',
+      url: typeof item.url === 'string' ? item.url : '',
+      size: typeof item.size === 'number' ? item.size : undefined,
+      type: typeof item.type === 'string' ? item.type : undefined
+    }))
+    .filter(item => !!item.url)
+}
+
+const normalizeLinks = (value: unknown): ProductMarket['links'] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      shopee_link: typeof item.shopee_link === 'string' ? item.shopee_link : undefined,
+      tokopedia_link: typeof item.tokopedia_link === 'string' ? item.tokopedia_link : undefined,
+      tiktok_link: typeof item.tiktok_link === 'string' ? item.tiktok_link : undefined,
+      other_link: typeof item.other_link === 'string' ? item.other_link : undefined
+    }))
+}
 
 // Fetch product by slug
 const { data: product, error } = await useAsyncData(
   `product_market_${route.params.slug}`,
   async () => {
+    if (!slugParam.value) return null
+
     const { data, error } = await supabase
       .from('product_markets')
       .select(`
-        *,
+        id,
+        name,
+        slug,
+        excerpt,
+        content,
+        category,
+        price,
+        price_range,
+        price_unit,
+        thumbnail_url,
+        images,
+        attachments,
+        links,
+        seller,
+        contact_seller,
+        status,
+        published_at,
+        created_at,
+        updated_at,
+        user_id,
         profiles:user_id (
           id,
           full_name,
           avatar_url
         )
       `)
-      .eq('slug', route.params.slug)
+      .eq('slug', slugParam.value)
       .is('deleted_at', null)
       .single()
 
     if (error) throw error
-    return data as ProductMarket & { profiles: any }
+
+    return {
+      ...data,
+      content: data.content as ProductMarket['content'],
+      images: normalizeStringArray(data.images),
+      attachments: normalizeAttachments(data.attachments),
+      links: normalizeLinks(data.links)
+    } as unknown as ProductMarket & { profiles: any }
   }
 )
 
@@ -174,10 +282,11 @@ const seoKeywords = computed(() => product.value ? [
 
 // Share URL
 const shareUrl = computed(() => {
+  const slug = slugParam.value || ''
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/markets/${route.params.slug}`
+    return `${window.location.origin}/markets/${slug}`
   }
-  return `https://jurutani.com/markets/${route.params.slug}`
+  return `https://jurutani.com/markets/${slug}`
 })
 
 // Update SEO after product is loaded
@@ -200,7 +309,7 @@ const { data: similarProducts } = await useAsyncData(
   async () => {
     const { data, error } = await supabase
       .from('product_markets')
-      .select('*')
+      .select('id,name,slug,excerpt,content,category,price,price_range,price_unit,thumbnail_url,images,attachments,links,seller,contact_seller,created_at')
       .eq('category', product.value.category)
       .eq('status', 'approved')
       .is('deleted_at', null)
@@ -209,7 +318,13 @@ const { data: similarProducts } = await useAsyncData(
       .limit(3)
 
     if (error) return []
-    return data as ProductMarket[]
+    return (data ?? []).map(item => ({
+      ...item,
+      content: item.content as ProductMarket['content'],
+      images: normalizeStringArray(item.images),
+      attachments: normalizeAttachments(item.attachments),
+      links: normalizeLinks(item.links)
+    })) as unknown as ProductMarket[]
   }
 )
 </script>
@@ -221,14 +336,25 @@ const { data: similarProducts } = await useAsyncData(
       <!-- Header -->
       <div class="mb-8">
         <div class="flex items-center justify-between">
-          <UButton
-            color="success"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            @click="handleGoBack"
-          >
-            Kembali ke Pasar Tani
-          </UButton>
+          <div class="flex items-center gap-2">
+            <UButton
+              color="success"
+              variant="ghost"
+              icon="i-lucide-arrow-left"
+              @click="handleGoBack"
+            >
+              Kembali ke Pasar Tani
+            </UButton>
+
+            <UButton
+              :to="`/markets/edit/${product.id}`"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-square-pen"
+            >
+              Edit Produk
+            </UButton>
+          </div>
 
           <div class="flex items-center gap-2 text-green-700 dark:text-green-400">
             <UIcon name="i-heroicons-shopping-cart" class="w-5 h-5" />
@@ -256,7 +382,7 @@ const { data: similarProducts } = await useAsyncData(
           <!-- Left Column - Image Gallery -->
           <div class="relative bg-gray-900 dark:bg-gray-950 overflow-hidden">
             <!-- Main Image Container -->
-            <div class="relative h-96 lg:h-full min-h-[500px] overflow-hidden">
+            <div class="relative h-96 lg:h-full min-h-125 overflow-hidden">
               <img
                 v-if="allImages.length > 0"
                 :src="getImagePathUrl(allImages[currentImageIndex])"
@@ -310,7 +436,7 @@ const { data: similarProducts } = await useAsyncData(
                   v-for="(img, index) in allImages"
                   :key="index"
                   :class="[
-                    'flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all',
+                    'shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all',
                     currentImageIndex === index
                       ? 'border-emerald-400 shadow-lg ring-2 ring-emerald-300 scale-110'
                       : 'border-white/50 hover:border-white/80 opacity-70 hover:opacity-100'

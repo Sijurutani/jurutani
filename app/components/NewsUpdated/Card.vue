@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'default'
 })
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 const imageError = ref(false)
 const imageLoading = ref(true)

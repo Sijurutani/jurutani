@@ -1,22 +1,47 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useProfile } from '~/composables/useProfile'
+import type { Database } from '~/types/database.types'
 
-const {
-  userData,
-  loading,
-  error,
-  fetchUserData,
-  formatDate,
-  formatRole,
-  isValidUrl
-} = useProfile()
+const authStore = useAuthStore()
+const supabase = useSupabaseClient<Database>()
+
+const userData = computed(() => authStore.profile)
+const loading = computed(() => authStore.profileLoading)
+const error = computed(() => authStore.error)
+
+const fetchUserData = async () => { await authStore.fetchProfile() }
+
+const formatDate = (dateString?: string | null) => authStore.formatDate(dateString || undefined)
+
+const { data: professionalData, pending: professionalPending, execute: fetchProfessionalData } = await useAsyncData('current-user-professional', async () => {
+  if (!userData.value?.id) return null
+  const role = userData.value.role
+  
+  if (role === 'pakar') {
+    const { data } = await supabase.from('experts').select('*').eq('user_id', userData.value.id).maybeSingle()
+    return { type: 'pakar', data }
+  } else if (role === 'penyuluh') {
+    const { data } = await supabase.from('instructors').select('*').eq('user_id', userData.value.id).maybeSingle()
+    return { type: 'penyuluh', data }
+  }
+  return null
+}, { immediate: false })
+const isValidUrl = (string?: string | null) => {
+  if (!string) return false
+  try {
+    new URL(string.startsWith('http') ? string : `https://${string}`)
+    return true
+  } catch (_) {
+    return false
+  }
+}
 
 // Active tab state
 const activeTab = ref('personal')
 
-// Modal state
-const showEditModal = ref(false)
+// Modal states
+const showEditPersonalModal = ref(false)
+const showEditProfessionalModal = ref(false)
 
 // Computed untuk menentukan apakah user adalah pakar atau penyuluh
 const isPakar = computed(() => {
@@ -41,14 +66,6 @@ const tabs = computed(() => {
     }
   ]
 
-  if (showProfessionalTab.value) {
-    baseTabs.push({
-      label: 'Data Profesional',
-      icon: isPakar.value ? 'i-lucide-lightbulb' : 'i-lucide-user-check',
-      value: 'professional'
-    })
-  }
-
   return baseTabs
 })
 
@@ -60,14 +77,26 @@ const handleImageError = (event: Event) => {
 
 const handleProfileUpdate = async () => {
   await fetchUserData()
+  showEditPersonalModal.value = false
 }
 
-const openEditModal = () => {
-  showEditModal.value = true
+const handleProfessionalUpdate = async () => {
+  await fetchProfessionalData()
+  showEditProfessionalModal.value = false
+}
+
+const openEditPersonalModal = () => {
+  showEditPersonalModal.value = true
+}
+
+const openEditProfessionalModal = () => {
+  showEditProfessionalModal.value = true
 }
 
 onMounted(() => {
-  fetchUserData()
+  fetchUserData().then(() => {
+    fetchProfessionalData()
+  })
 })
 </script>
 
@@ -97,7 +126,7 @@ onMounted(() => {
       <div v-else-if="error" class="max-w-2xl mx-auto">
         <div class="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-400 dark:border-red-600 p-4 rounded-lg transition-colors duration-200">
           <div class="flex">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
               <UIcon name="i-heroicons-exclamation-triangle" class="h-5 w-5 text-red-400 dark:text-red-500" />
             </div>
             <div class="ml-3">
@@ -136,7 +165,7 @@ onMounted(() => {
                 <!-- Role Badge -->
                 <div class="absolute -bottom-2 -right-2 bg-white dark:bg-gray-800 rounded-full px-3 py-1 shadow-md dark:shadow-black/50 transition-all duration-200">
                   <span class="text-xs font-semibold text-green-600 dark:text-green-400">
-                    {{ formatRole(userData.role) }}
+                    {{ authStore.roleLabel }}
                   </span>
                 </div>
               </div>
@@ -205,7 +234,7 @@ onMounted(() => {
                     <div>
                       <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Role</p>
                       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 transition-colors duration-200">
-                        {{ formatRole(userData.role) }}
+                        {{ authStore.roleLabel }}
                       </span>
                     </div>
                   </div>
@@ -269,33 +298,108 @@ onMounted(() => {
                   color="success"
                   size="lg"
                   icon="i-lucide-edit"
-                  @click="openEditModal"
+                  @click="openEditPersonalModal"
                 >
-                  Edit Profil
+                  Edit Profil Pribadi
                 </UButton>
               </div>
             </div>
 
-            <!-- Tab Content: Data Profesional -->
-            <div v-else-if="activeTab === 'professional'" class="py-4">
-              <!-- Expert Form -->
-              <ProfileExpertForm v-if="isPakar" />
+            <!-- Professional Data Display based on Profile role natively without rendering the form here -->
+            <div v-if="showProfessionalTab" class="mt-8 border-t border-gray-100 dark:border-gray-800 pt-8">
+              <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                  <UIcon :name="isPakar ? 'i-lucide-lightbulb' : 'i-lucide-user-check'" class="w-6 h-6 mr-2 text-green-600 dark:text-green-400" />
+                  Data Profesional {{ isPakar ? 'Pakar' : 'Penyuluh' }}
+                </h3>
+                <UButton
+                  color="success"
+                  variant="soft"
+                  size="sm"
+                  icon="i-lucide-edit"
+                  @click="openEditProfessionalModal"
+                >
+                  Edit Data
+                </UButton>
+              </div>
+
+              <div v-if="professionalPending" class="text-gray-500 dark:text-gray-400 text-sm py-4">
+                Memuat data profesional...
+              </div>
               
-              <!-- Instructor Form -->
-              <ProfileInstructorForm v-if="isPenyuluh" />
+              <div v-else-if="professionalData && professionalData.data" class="space-y-4">
+                <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 transition-colors">
+                  <!-- Pakar fields -->
+                  <template v-if="professionalData.type === 'pakar'">
+                    <div class="mb-4">
+                      <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Kategori Ahli</p>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 mt-1">
+                        {{ (professionalData.data as any).category || '-' }}
+                      </span>
+                    </div>
+                  </template>
+
+                  <!-- Penyuluh fields -->
+                  <template v-if="professionalData.type === 'penyuluh'">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Wilayah Provinsi</p>
+                        <p class="text-gray-800 dark:text-gray-200 mt-1">{{ (professionalData.data as any).provinces || '-' }}</p>
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Kabupaten/Kota</p>
+                        <p class="text-gray-800 dark:text-gray-200 mt-1">{{ (professionalData.data as any).district || '-' }}</p>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Shared Note field -->
+                  <div v-if="professionalData.data.note" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Catatan/Ringkasan Profil</p>
+                    <p class="text-gray-800 dark:text-gray-200 leading-relaxed text-sm p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                      {{ professionalData.data.note }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Empty state when no professional data is found -->
+              <div v-else class="p-6 bg-green-50/50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-800/30 text-center">
+                <UIcon :name="isPakar ? 'i-mdi-certificate' : 'i-mdi-map-marker-radius'" class="w-12 h-12 text-green-400 dark:text-green-600/50 mx-auto mb-3" />
+                <p class="text-gray-600 dark:text-gray-400 text-sm">
+                  Anda memiliki akses sebagai <span class="font-semibold text-green-700 dark:text-green-400">{{ authStore.roleLabel }}</span>. 
+                  Pastikan kelengkapan data profesional Anda terisi dengan benar.
+                </p>
+                <UButton
+                  class="mt-4"
+                  color="success"
+                  variant="outline"
+                  size="sm"
+                  @click="openEditProfessionalModal"
+                >
+                  Kelola Data Profesional Saya
+                </UButton>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Edit Profile Modal -->
-    <ProfileModalForm 
-      v-if="userData"
-      v-model="showEditModal"
-      :user-data="userData"
-      @update="handleProfileUpdate"
-    />
+    <!-- Edit Personal Profile Modal -->
+    <UModal v-model="showEditPersonalModal">
+      <ProfileForm 
+        v-if="userData"
+        :user-data="userData"
+        @update="handleProfileUpdate"
+      />
+    </UModal>
+
+    <!-- Edit Professional Profile Modal -->
+    <UModal v-model="showEditProfessionalModal">
+      <ProfileExpertForm v-if="isPakar" @update="handleProfessionalUpdate" />
+      <ProfileInstructorForm v-if="isPenyuluh" @update="handleProfessionalUpdate" />
+    </UModal>
   </div>
 </template>
 

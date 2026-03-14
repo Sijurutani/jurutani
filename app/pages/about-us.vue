@@ -86,11 +86,11 @@
   const sponsorLogo = '/logo/sponsor1.png'
 
   const galleryImages = [
-    '/gallery/image1.JPG',
-    '/gallery/image2.JPG', 
-    '/gallery/image3.JPG',
-    '/gallery/image4.JPG',
-    '/gallery/image5.JPG'
+    '/gallery/image1.webp',
+    '/gallery/image2.webp', 
+    '/gallery/image3.webp',
+    '/gallery/image4.webp',
+    '/gallery/image5.webp'
   ] as const
 
   const galleryData = [

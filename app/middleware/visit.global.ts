@@ -1,4 +1,4 @@
-import { useSupabase } from '~/composables/useSupabase'
+ 
 
 function getTodayWIB(): string {
     const now = new Date()
@@ -28,7 +28,7 @@ export default defineNuxtRouteMiddleware(() => {
     // This prevents blocking first paint and improves Core Web Vitals
     // Googlebot gets instant HTML, analytics run after page is interactive
     const deferredTrack = async () => {
-        const { supabase } = useSupabase()
+        const supabase = useSupabaseClient()
 
         try {
             const { error } = await supabase.rpc('increment_visit', { visit_date: today })

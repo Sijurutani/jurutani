@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { h, resolveComponent } from 'vue'
-import type { FoodWithPrice } from '~/types'
-import { FOOD_CATEGORIES } from '~/types'
 
 definePageMeta({
   layout: 'default',
@@ -21,7 +19,7 @@ const {
 } = useFoodPrices()
 
 // State
-const foods = ref<FoodWithPrice[]>([])
+const foods = ref<any[]>([])
 const loading = ref(true)
 const error = ref<any>(null)
 const selectedCategory = ref('all')
@@ -250,7 +248,7 @@ useHead({
       <!-- Category Filter -->
       <nav aria-label="Filter kategori pangan">
         <AppCategoryFilter 
-          :categories="FOOD_CATEGORIES" 
+          :categories="Enum.FoodPriceCategories" 
           :current-category="selectedCategory"
           :show-all-option="false"
           @update:category="handleCategoryChange"
@@ -291,7 +289,7 @@ useHead({
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"></div>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"/>
       <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat data harga pangan...</p>
     </div>
 
@@ -345,7 +343,7 @@ useHead({
     </section>
 
     <!-- Pagination -->
-    <nav aria-label="Navigasi halaman harga pangan" v-if="!loading && totalPages > 1" class="mt-8">
+    <nav v-if="!loading && totalPages > 1" aria-label="Navigasi halaman harga pangan" class="mt-8">
       <AppPagination 
         :current-page="currentPage" 
         :total-pages="totalPages"

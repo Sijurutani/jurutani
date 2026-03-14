@@ -1,12 +1,11 @@
 import { ref, computed, watch } from 'vue'
 import type { Ref } from 'vue'
-import { useSupabase } from './useSupabase'
 import type { ContentListOptions, SortOption, FilterState } from '~/types/content'
 
 export type { ContentListOptions, SortOption, FilterState }
 
 export function useContentList<T = any>(options: ContentListOptions) {
-    const { supabase } = useSupabase()
+    const supabase = useSupabaseClient()
 
     // State
     const items = ref<T[]>([]) as Ref<T[]>

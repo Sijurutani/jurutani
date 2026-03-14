@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 import { useAsyncData } from '#app'
 
 definePageMeta({
@@ -44,7 +44,7 @@ interface Category {
 }
 
 // Supabase client
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // Data utama
 const announcements = ref<Announcement[]>([])

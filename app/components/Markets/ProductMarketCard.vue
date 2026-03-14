@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
 import type { ProductMarket } from '~/types/market'
 import { getImagePathUrl, formatPrice } from '~/composables/useProductMarketUtils'
 
@@ -12,8 +11,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   variant: 'default'
 })
-
-const { supabase } = useSupabase()
 
 const imageError = ref(false)
 const imageLoading = ref(true)
@@ -197,7 +194,7 @@ const hasMarketplaceLinks = computed(() => {
         </div>
 
         <!-- Main Content -->
-        <div class="space-y-3 md:space-y-4 transform transition-transform duration-500 group-hover:translate-y-[-6px]">
+        <div class="space-y-3 md:space-y-4 transform transition-transform duration-500 group-hover:-translate-y-1.5">
           <!-- Title -->
           <h3
             :class="[

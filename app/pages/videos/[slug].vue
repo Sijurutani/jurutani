@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, computed, watch, ref } from 'vue'
 import { useContentDetail } from '~/composables/useContentDetail'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 import type { Video } from '~/types'
 
 definePageMeta({
   layout: 'default',
 })
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // Use content detail composable
 const {

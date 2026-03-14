@@ -51,13 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
     )
 
     const roleLabel = computed(() => {
-        const map: Record<string, string> = {
-            admin: 'Administrator',
-            expert: 'Ahli Pertanian',
-            farmer: 'Petani',
-            user: 'Pengguna',
-        }
-        return map[profile.value?.role ?? 'user'] ?? 'Pengguna'
+        return Enum.UserRole.find(r => r.value === profile.value?.role)?.label || 'Pengguna'
     })
 
     /** Gabungan data auth-user + profil DB untuk konsumsi template */
@@ -381,20 +375,6 @@ export const useAuthStore = defineStore('auth', () => {
         avatarVersion.value = Math.floor(Date.now() / (5 * 60 * 1000))
     }
 
-    const formatDate = (dateString?: string) => {
-        if (!dateString) return '-'
-        try {
-            return new Date(dateString).toLocaleDateString('id-ID', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-            })
-        }
-        catch {
-            return '-'
-        }
-    }
-
     // Otomatis fetch profil saat user login / ganti user
     watch(user, async (newUser) => {
         if (newUser && !profile.value) {
@@ -407,13 +387,13 @@ export const useAuthStore = defineStore('auth', () => {
 
     // ─── Exports ──────────────────────────────────────────────────────────────
     return {
-        // State (readonly refs)
-        user: readonly(user),
-        session: readonly(session),
-        profile: readonly(profile),
-        loading: readonly(loading),
-        profileLoading: readonly(profileLoading),
-        error: readonly(error),
+        // State (refs)
+        user,
+        session,
+        profile,
+        loading,
+        profileLoading,
+        error,
 
         // Computed
         isAuthenticated,

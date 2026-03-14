@@ -7,7 +7,7 @@ import type { Food, FoodWithPrice, FoodPriceTrend, FoodCategory } from '~/types'
 import { Enum } from '~/utils/enum'
 
 export const useFoodPrices = () => {
-    const { supabase } = useSupabase()
+    const supabase = useSupabaseClient()
 
     /**
      * Get all foods with their latest prices

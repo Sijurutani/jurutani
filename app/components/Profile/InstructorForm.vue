@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useProfessionalData } from '~/composables/useProfessionalData'
-import { useAuth } from '~/composables/useAuth'
-import type { InstructorFormData } from '~/types'
+import { toastStore } from '~/composables/useJuruTaniToast'
+import type { Database } from '~/types/database.types'
 
-const { user } = useAuth()
-const {
-  instructorData,
-  loading,
-  fetchInstructorData,
-  updateInstructorData
-} = useProfessionalData()
+const emit = defineEmits<{
+  update: []
+}>()
+
+const authStore = useAuthStore()
+const supabase = useSupabaseClient<Database>()
 
 // Form state
-const formData = reactive<InstructorFormData>({
+const formData = reactive({
   provinces: '',
   district: '',
   note: ''
 })
 
 const isSubmitting = ref(false)
+const isLoading = ref(true)
 
 // Computed
 const isFormValid = computed(() => {
@@ -28,25 +27,69 @@ const isFormValid = computed(() => {
 
 // Load data
 const loadData = async () => {
-  if (!user.value?.id) return
+  if (!authStore.user?.id) return
+  isLoading.value = true
 
-  const result = await fetchInstructorData(user.value.id)
+  try {
+    const { data: instructorData } = await supabase
+      .from('instructors')
+      .select('*')
+      .eq('user_id', authStore.user.id)
+      .is('deleted_at', null)
+      .maybeSingle()
 
-  if (result.success && result.data) {
-    formData.provinces = result.data.provinces || ''
-    formData.district = result.data.district || ''
-    formData.note = result.data.note || ''
+    if (instructorData) {
+      formData.provinces = instructorData.provinces || ''
+      formData.district = instructorData.district || ''
+      formData.note = instructorData.note || ''
+    }
+  } catch (error) {
+    console.error('Failed to fetch instructor data', error)
+  } finally {
+    isLoading.value = false
   }
 }
 
 // Submit handler
 const handleSubmit = async () => {
-  if (!user.value?.id || !isFormValid.value) return
+  if (!authStore.user?.id || !isFormValid.value) return
 
   isSubmitting.value = true
 
   try {
-    await updateInstructorData(user.value.id, formData)
+    const updates = {
+      user_id: authStore.user.id,
+      provinces: formData.provinces || null,
+      district: formData.district || null,
+      note: formData.note || null,
+      updated_at: new Date().toISOString()
+    }
+    
+    // Check if instructor exists
+    const { data: existingData } = await supabase
+      .from('instructors')
+      .select('id')
+      .eq('user_id', authStore.user.id)
+      .is('deleted_at', null)
+      .maybeSingle()
+      
+    let error;
+    if (existingData) {
+      const { error: updErr } = await supabase.from('instructors').update(updates).eq('user_id', authStore.user.id)
+      error = updErr;
+    } else {
+      const { error: insErr } = await supabase.from('instructors').insert({ ...updates, created_at: new Date().toISOString() })
+      error = insErr;
+    }
+
+    if (!error) {
+      toastStore.success('Data profesional penyuluh berhasil diperbarui.')
+      emit('update')
+    } else {
+      toastStore.error(error.message || 'Gagal memperbarui data penyuluh.')
+    }
+  } catch (err: any) {
+    toastStore.error(err.message || 'Terjadi kesalahan.')
   } finally {
     isSubmitting.value = false
   }
@@ -65,13 +108,13 @@ onMounted(() => {
     </h3>
 
     <!-- Loading State -->
-    <div v-if="loading && !instructorData" class="flex items-center justify-center py-8">
+    <div v-if="isLoading" class="flex items-center justify-center py-8">
       <UIcon name="i-heroicons-arrow-path" class="animate-spin h-6 w-6 text-green-600 dark:text-green-400 mr-2" />
       <span class="text-gray-600 dark:text-gray-400">Memuat data...</span>
     </div>
 
     <!-- Form -->
-    <form v-else @submit.prevent="handleSubmit" class="space-y-6">
+    <form v-else class="space-y-6" @submit.prevent="handleSubmit">
       <!-- Provinces -->
       <div>
         <label for="instructor-provinces" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">

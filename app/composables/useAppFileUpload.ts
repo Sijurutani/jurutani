@@ -1,4 +1,3 @@
-import { useSupabase } from './useSupabase'
 import { toastStore } from './useJuruTaniToast'
 
 export interface FileUploadOptions {
@@ -18,7 +17,7 @@ export interface FileUploadResult {
  * Provides reusable file upload, validation, and preview functionality
  */
 export const useAppFileUpload = () => {
-    const { supabase } = useSupabase()
+    const supabase = useSupabaseClient()
 
     /**
      * Generate a unique file path with timestamp

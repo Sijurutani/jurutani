@@ -67,9 +67,9 @@ export const Enum = {
   // ─── User Roles ─────────────────────────────────────────────────────────────
   UserRole: [
     { value: 'admin', label: 'Admin', color: 'error', icon: 'i-lucide-shield-user' },
-    { value: 'pakar', label: 'Expert', color: 'success', icon: 'i-lucide-brain' },
-    { value: 'penyuluh', label: 'Instructor', color: 'warning', icon: 'i-lucide-book-open' },
-    { value: 'petani', label: 'Farmer', color: 'neutral', icon: 'i-lucide-user' }
+    { value: 'pakar', label: 'Pakar', color: 'success', icon: 'i-lucide-brain' },
+    { value: 'penyuluh', label: 'Penyuluh', color: 'warning', icon: 'i-lucide-book-open' },
+    { value: 'petani', label: 'Petani', color: 'neutral', icon: 'i-lucide-user' }
   ] satisfies { value: string, label: string, color: string, icon: string }[],
 
   // ─── Course Categories ──────────────────────────────────────────────────────

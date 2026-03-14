@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useContentList } from '~/composables/useContentList'
 import { useAsyncData } from '#app'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 
 // Types
 interface Course {
@@ -24,7 +24,7 @@ interface Category {
   value?: string
 }
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // Use content list composable
 const {

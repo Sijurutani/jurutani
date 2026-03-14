@@ -29,7 +29,7 @@ export const PRODUCT_MARKETS_CONSTANTS = {
 } as const
 
 export function useProductMarketForm() {
-  const { supabase } = useSupabase()
+  const supabase = useSupabaseClient()
   const toast = useToast()
 
   /**

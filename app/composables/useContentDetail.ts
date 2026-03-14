@@ -1,13 +1,12 @@
 import { ref, computed, watch } from 'vue'
 import type { Ref } from 'vue'
-import { useSupabase } from './useSupabase'
 import { useRoute, useRouter } from 'vue-router'
 import type { ContentDetailOptions } from '~/types/content'
 
 export type { ContentDetailOptions }
 
 export function useContentDetail<T = any>(options: ContentDetailOptions) {
-    const { supabase } = useSupabase()
+    const supabase = useSupabaseClient()
     const route = useRoute()
     const router = useRouter()
 

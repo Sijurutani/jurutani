@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { toastStore } from '~/composables/useJuruTaniToast'
+import type { Database } from '~/types/database.types'
 
 definePageMeta({
   layout: 'default',
   middleware: ['guest']
 })
 
-const client = useSupabaseClient()
+const client = useSupabaseClient<Database>()
 const authStore = useAuthStore()
 const route = useRoute()
 
@@ -15,8 +16,11 @@ const loading = ref(true)
 onMounted(async () => {
   if (!import.meta.client) return
   try {
+    // @ts-ignore
     const existingSession = authStore.session
+    // @ts-ignore
     if (existingSession?.user) {
+      // @ts-ignore
       await authStore.fetchProfile(existingSession.user.id)
       await navigateTo('/')
       return

@@ -1,10 +1,9 @@
-import { useSupabase } from './useSupabase';
 import type { HeroData } from '~/types/hero'
 
 export type { HeroData }
 
 export const useHeroData = () => {
-    const { supabase } = useSupabase();
+    const supabase = useSupabaseClient();
     const carouselItems = ref<HeroData[]>([])
     const error = ref<string | null>(null)
     const loading = ref(false) // Start from false, will be set to true in fetchHeroData

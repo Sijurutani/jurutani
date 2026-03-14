@@ -1,26 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
-import { useAsyncData } from '#app'
-
-// Types
-interface Market {
-  id: string
-  category: string
-  status: string
-  created_at: string
-  deleted_at?: string
-  archived_at?: string
-}
-
-interface Category {
-  id?: string
-  name: string
-  value?: string
-}
-
-// Supabase client
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // Data utama
 const marketsList = ref<Market[]>([])

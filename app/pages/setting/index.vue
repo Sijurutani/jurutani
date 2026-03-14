@@ -86,7 +86,7 @@
           <form class="space-y-4" @submit.prevent="handleResetPassword">
             <div class="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800 mb-4 transition-colors duration-200">
               <div class="flex items-start">
-                <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2 flex-shrink-0" />
+                <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2 shrink-0" />
                 <div class="text-sm text-green-800 dark:text-green-200">
                   <p class="font-medium mb-1">Reset Password</p>
                   <p>Kami akan mengirim link reset password ke email Anda.</p>
@@ -126,8 +126,10 @@
 
         <!-- Success Messages -->
         <div v-if="successMessage" class="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800 transition-colors duration-200">
-          <div class="flex items-start">
-            <UIcon name="i-heroicons-check-circle" class="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2 flex-shrink-0" />
+          <div class="flex">
+            <div class="shrink-0 mt-0.5 mr-2">
+              <UIcon name="i-heroicons-check-circle" class="h-5 w-5 text-green-500 dark:text-green-400" />
+            </div>
             <p class="text-sm text-green-800 dark:text-green-200">{{ successMessage }}</p>
           </div>
         </div>
@@ -138,23 +140,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
 import { toastStore } from '~/composables/useJuruTaniToast'
-import { useProfile } from '~/composables/useProfile';
 
-const {
-  userData,
-  loading,
-  error,
-  isEditing,
-  fetchUserData,
-  updateUserProfile,
-  formatDate,
-  formatRole,
-  isValidUrl
-} = useProfile();
-
-const { supabase } = useSupabase()
+const authStore = useAuthStore()
+const supabase = useSupabaseClient()
 
 // SEO Meta
 useHead({
@@ -164,8 +153,8 @@ useHead({
   ]
 })
 
-// Get current user from Supabase auth
-const currentUser = ref(null)
+// Get current user from auth store
+const currentUser = computed(() => authStore.user)
 
 // State
 const newEmail = ref('')
@@ -178,16 +167,9 @@ const confirmEmailError = ref('')
 const resetEmailError = ref('')
 const successMessage = ref('')
 
-// Function to get current user
+// Function to get current user is not needed anymore
 const getCurrentUser = async () => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    currentUser.value = user
-    return user
-  } catch (error) {
-    console.error('Error getting current user:', error)
-    return null
-  }
+  return authStore.user
 }
 
 // Email validation
@@ -315,19 +297,14 @@ const handleResetPassword = async () => {
   resetEmailError.value = ''
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      resetEmail.value.toLowerCase().trim(),
-      {
-        redirectTo: `${window.location.origin}/reset-password`
-      }
-    )
+    const { success, error } = await authStore.resetPassword(resetEmail.value.toLowerCase().trim())
 
-    if (error) {
+    if (!success) {
       let errorMessage = 'Gagal mengirim link reset password'
       
-      if (error.message.includes('rate_limit')) {
+      if (error && error.includes('rate_limit')) {
         errorMessage = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
-      } else if (error.message.includes('user_not_found')) {
+      } else if (error && error.includes('user_not_found')) {
         errorMessage = 'Email tidak terdaftar di sistem'
       }
       
@@ -338,7 +315,7 @@ const handleResetPassword = async () => {
       toastStore.success('Link reset password berhasil dikirim!')
       resetEmail.value = ''
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Reset password error:', error)
     resetEmailError.value = 'Terjadi kesalahan sistem. Silakan coba lagi.'
     toastStore.error('Terjadi kesalahan sistem. Silakan coba lagi.')
@@ -349,25 +326,18 @@ const handleResetPassword = async () => {
 
 // Initialize component
 onMounted(async () => {
-  await fetchUserData()
-  const user = await getCurrentUser()
+  await authStore.fetchProfile()
   
   // Auto-fill current user email for reset password
-  if (user?.email) {
-    resetEmail.value = user.email
+  if (currentUser.value?.email) {
+    resetEmail.value = currentUser.value.email
   }
 })
 
-// Listen for auth state changes
-supabase.auth.onAuthStateChange((event, session) => {
-  if (session?.user) {
-    currentUser.value = session.user
-    if (session.user.email && !resetEmail.value) {
-      resetEmail.value = session.user.email
-    }
-  } else {
-    currentUser.value = null
-    resetEmail.value = ''
+// Listen for auth store changes instead of Supabase client manually
+watch(currentUser, (user) => {
+  if (user?.email && !resetEmail.value) {
+    resetEmail.value = user.email
   }
 })
 </script>

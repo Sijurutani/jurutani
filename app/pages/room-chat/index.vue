@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // Empty state when no conversation is selected
-const { sidebarOpen, isMobile, toggleSidebar } = useChatLayout()
 </script>
 
 <template>
@@ -16,7 +15,6 @@ const { sidebarOpen, isMobile, toggleSidebar } = useChatLayout()
           variant="ghost"
           color="neutral"
           size="sm"
-          @click="toggleSidebar"
         >
           List Chat
         </UButton>
@@ -75,7 +73,6 @@ const { sidebarOpen, isMobile, toggleSidebar } = useChatLayout()
             icon="i-heroicons-bars-3"
             color="success"
             block
-            @click="toggleSidebar"
           >
             Lihat List Chat
           </UButton>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 
 // Types
 interface Banner {
@@ -9,7 +9,7 @@ interface Banner {
   updated_at: string
 }
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // State
 const banner = ref<Banner | null>(null)

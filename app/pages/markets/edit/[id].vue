@@ -1,26 +1,27 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
-import { formatFileSize } from '~/utils/storage'
+import type { JSONContent } from '@tiptap/vue-3'
 import { PRODUCT_MARKETS_CONSTANTS } from '~/composables/useProductMarketForm'
 import { Enum } from '~/utils/enum'
 import { NEWS_TIPTAP_SUGGESTION_ITEMS, getEmptyTiptapDoc } from '~/composables/useTiptapContent'
+import { formatFileSize } from '~/utils/storage'
+import type { MarketAttachment, MarketLink } from '~/types/market'
 
 definePageMeta({
   layout: 'default'
 })
 
 useSeoMeta({
-  title: 'Jual Produk Pertanian',
-  description: 'Jual produk pertanian Anda di Pasar Tani JuruTani'
+  title: 'Edit Produk Pertanian',
+  description: 'Perbarui data produk di Pasar Tani JuruTani'
 })
 
-const supabase = useSupabaseClient()
+const route = useRoute()
 const router = useRouter()
+const supabase = useSupabaseClient()
 const toast = useToast()
-
-// Pre-generate ID untuk storage paths
-const productId = crypto.randomUUID()
+const idParam = computed(() => Array.isArray(route.params.id) ? route.params.id[0] : route.params.id)
 
 const {
   uploadThumbnail,
@@ -33,8 +34,48 @@ const {
   generateUniqueSlug
 } = useProductMarketForm()
 
-// Fetch categories
-const { data: categories } = await useAsyncData('category_markets_create', async () => {
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeAttachments = (value: unknown): MarketAttachment[] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      name: typeof item.name === 'string' ? item.name : 'Lampiran',
+      url: typeof item.url === 'string' ? item.url : '',
+      size: typeof item.size === 'number' ? item.size : undefined,
+      type: typeof item.type === 'string' ? item.type : undefined
+    }))
+    .filter(item => !!item.url)
+}
+
+const normalizeLinks = (value: unknown): MarketLink[] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      shopee_link: typeof item.shopee_link === 'string' ? item.shopee_link : undefined,
+      tokopedia_link: typeof item.tokopedia_link === 'string' ? item.tokopedia_link : undefined,
+      tiktok_link: typeof item.tiktok_link === 'string' ? item.tiktok_link : undefined,
+      other_link: typeof item.other_link === 'string' ? item.other_link : undefined
+    }))
+}
+
+const getImagePathUrl = (imagePath: string | null): string => {
+  if (!imagePath) return '/placeholder.png'
+  if (imagePath.startsWith('http')) return imagePath
+
+  const { data } = supabase.storage
+    .from('product-markets-images')
+    .getPublicUrl(imagePath)
+
+  return data?.publicUrl || '/placeholder.png'
+}
+
+const { data: categories } = await useAsyncData('category_markets_edit', async () => {
   const { data, error } = await supabase
     .from('category_markets')
     .select('name, value')
@@ -44,7 +85,8 @@ const { data: categories } = await useAsyncData('category_markets_create', async
     console.error('Error fetching categories:', error)
     return []
   }
-  return data
+
+  return data ?? []
 })
 
 const categoryItems = computed(() => {
@@ -55,10 +97,33 @@ const categoryItems = computed(() => {
   }))
 })
 
-// Price unit options from Enum
-const priceUnitItems = Enum.PriceUnits
+const { data: existingProduct, error: existingProductError } = await useAsyncData(`product_market_edit_${route.params.id}`, async () => {
+  if (!idParam.value) return null
 
-// ─── Schema ───────────────────────────────────────────────────────────────────
+  const { data, error } = await supabase
+    .from('product_markets')
+    .select('id,name,excerpt,content,category,slug,seller,contact_seller,price,price_unit,price_range,thumbnail_url,images,attachments,links,status,deleted_at')
+    .eq('id', idParam.value)
+    .is('deleted_at', null)
+    .single()
+
+  if (error) throw error
+
+  return {
+    ...data,
+    images: normalizeStringArray(data.images),
+    attachments: normalizeAttachments(data.attachments),
+    links: normalizeLinks(data.links)
+  }
+})
+
+if (existingProductError.value || !existingProduct.value) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Produk tidak ditemukan'
+  })
+}
+
 const schema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi').max(200, 'Nama produk maksimal 200 karakter'),
   excerpt: z.string().max(300, 'Ringkasan maksimal 300 karakter').optional(),
@@ -66,7 +131,6 @@ const schema = z.object({
   slug: z.string().optional(),
   seller: z.string().min(1, 'Nama penjual wajib diisi'),
   contact_seller: z.string().min(10, 'Nomor WhatsApp minimal 10 digit').optional(),
-  // price mode: 'fixed' | 'range'
   price_mode: z.enum(['fixed', 'range']),
   price: z.number({ invalid_type_error: 'Harga harus berupa angka' }).min(0).optional().nullable(),
   price_unit: z.string().optional(),
@@ -75,27 +139,27 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
-// ─── Form state ───────────────────────────────────────────────────────────────
 const form = reactive<Partial<Schema>>({
-  name: '',
-  excerpt: '',
-  category: '',
-  slug: '',
-  seller: '',
-  contact_seller: '',
-  price_mode: 'fixed',
-  price: null,
-  price_unit: '',
-  price_range: ''
+  name: existingProduct.value.name,
+  excerpt: existingProduct.value.excerpt || '',
+  category: existingProduct.value.category,
+  slug: existingProduct.value.slug || '',
+  seller: existingProduct.value.seller,
+  contact_seller: existingProduct.value.contact_seller || '',
+  price_mode: existingProduct.value.price != null ? 'fixed' : 'range',
+  price: existingProduct.value.price,
+  price_unit: existingProduct.value.price_unit || '',
+  price_range: existingProduct.value.price_range || ''
 })
 
+const content = shallowRef<JSONContent>((existingProduct.value.content as JSONContent) || getEmptyTiptapDoc())
+const suggestionItems = NEWS_TIPTAP_SUGGESTION_ITEMS
+const priceUnitItems = Enum.PriceUnits
 const saving = ref(false)
 const uploading = ref(false)
-const content = ref(getEmptyTiptapDoc())
 
-// ─── Links ────────────────────────────────────────────────────────────────────
-type LinkItem = { shopee_link?: string; tokopedia_link?: string; tiktok_link?: string }
-const links = ref<LinkItem[]>([])
+const slugEdited = ref(false)
+const links = ref<MarketLink[]>(existingProduct.value.links || [])
 
 function addLink() {
   links.value.push({ shopee_link: '', tokopedia_link: '', tiktok_link: '' })
@@ -105,21 +169,32 @@ function removeLink(idx: number) {
   links.value.splice(idx, 1)
 }
 
-// ─── Thumbnail ────────────────────────────────────────────────────────────────
+function onNameInput() {
+  if (!slugEdited.value && form.name) {
+    form.slug = generateUniqueSlug(form.name)
+  }
+}
+
+const existingThumbnailPath = ref<string | null>(existingProduct.value.thumbnail_url || null)
+const existingGalleryPaths = ref<string[]>(existingProduct.value.images || [])
+const existingAttachments = ref<MarketAttachment[]>(existingProduct.value.attachments || [])
+
 const thumbnailFile = ref<File | null>(null)
-const thumbnailPreview = ref<string | null>(null)
+const thumbnailPreview = ref<string | null>(existingThumbnailPath.value ? getImagePathUrl(existingThumbnailPath.value) : null)
+const galleryFiles = ref<File[]>([])
+const galleryPreviews = ref<string[]>([])
+const newGalleryInput = ref<File[]>([])
+const attachmentFiles = ref<File[]>([])
+const newAttachmentInput = ref<File[]>([])
 
 watch(thumbnailFile, async (file) => {
-  if (!file) {
-    thumbnailPreview.value = null
-    return
-  }
-  
+  if (!file) return
+
   if (!validateImageFile(file)) {
     thumbnailFile.value = null
     return
   }
-  
+
   try {
     thumbnailPreview.value = await createImagePreview(file)
   } catch (error) {
@@ -128,46 +203,44 @@ watch(thumbnailFile, async (file) => {
   }
 })
 
-function removeThumbnail() {
-  thumbnailFile.value = null
-  thumbnailPreview.value = null
+function removeExistingThumbnail() {
+  existingThumbnailPath.value = null
+  if (!thumbnailFile.value) {
+    thumbnailPreview.value = null
+  }
 }
 
-// ─── Gallery ─────────────────────────────────────────────────────────────────
-const galleryFiles = ref<File[]>([])
-const galleryPreviews = ref<string[]>([])
-const newGalleryInput = ref<File[]>([])
+function removeThumbnail() {
+  thumbnailFile.value = null
+  thumbnailPreview.value = existingThumbnailPath.value ? getImagePathUrl(existingThumbnailPath.value) : null
+}
 
-function addGalleryFiles(files: File | File[] | null) {
-  const list = Array.isArray(files) ? files : files ? [files] : []
-  const valid = list.filter(f => {
-    if (!PRODUCT_MARKETS_CONSTANTS.ALLOWED_IMAGE_TYPES.some(type => f.type.includes(type))) {
-      toast.add({ title: `File ${f.name} bukan format gambar (JPG/PNG/WebP)`, color: 'error' })
-      return false
+watch(newGalleryInput, async (files) => {
+  if (!files || files.length === 0) return
+
+  const valid: File[] = []
+  for (const file of files) {
+    if (!validateImageFile(file)) continue
+
+    const currentCount = existingGalleryPaths.value.length + galleryFiles.value.length + valid.length
+    if (currentCount >= PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES) {
+      toast.add({ title: `Maksimal ${PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES} gambar galeri`, color: 'error' })
+      break
     }
-    if (f.size > PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_SIZE) {
-      toast.add({ title: `File ${f.name} melebihi 5MB`, color: 'error' })
-      return false
-    }
-    return true
-  })
-  
-  if (valid.length < list.length) {
-    toast.add({ title: 'Beberapa file diabaikan (format salah atau ukuran > 5MB)', color: 'warning' })
+
+    valid.push(file)
   }
-  
-  if (galleryFiles.value.length + valid.length > PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES) {
-    toast.add({ title: `Maksimal ${PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES} gambar galeri`, color: 'error' })
-    const remaining = PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES - galleryFiles.value.length
-    valid.splice(remaining)
-  }
-  
+
+  if (valid.length === 0) return
+
   galleryFiles.value.push(...valid)
-  
-  // Create previews
-  createImagePreviews(valid).then(previews => {
-    galleryPreviews.value.push(...previews)
-  })
+  const previews = await createImagePreviews(valid)
+  galleryPreviews.value.push(...previews)
+  newGalleryInput.value = []
+})
+
+function removeExistingGallery(idx: number) {
+  existingGalleryPaths.value.splice(idx, 1)
 }
 
 function removeGallery(idx: number) {
@@ -175,74 +248,39 @@ function removeGallery(idx: number) {
   galleryPreviews.value.splice(idx, 1)
 }
 
-watch(newGalleryInput, (files) => {
-  if (!files || files.length === 0) return
-  addGalleryFiles(files)
-  newGalleryInput.value = []
-})
-
-// ─── Attachments ─────────────────────────────────────────────────────────────
-const attachmentFiles = ref<File[]>([])
-const newAttachmentInput = ref<File[]>([])
-
 watch(newAttachmentInput, (files) => {
   if (!files || files.length === 0) return
-  
-  const valid = files.filter(f => {
-    if (!PRODUCT_MARKETS_CONSTANTS.ALLOWED_ATTACHMENT_TYPES.some(type => f.type.includes(type))) {
-      toast.add({ title: `File ${f.name} bukan format yang didukung (PDF/DOC/XLS)`, color: 'error' })
-      return false
+
+  const valid: File[] = []
+  for (const file of files) {
+    if (!validateAttachmentFile(file)) continue
+
+    const currentCount = existingAttachments.value.length + attachmentFiles.value.length + valid.length
+    if (currentCount >= PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS) {
+      toast.add({ title: `Maksimal ${PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS} lampiran`, color: 'error' })
+      break
     }
-    if (f.size > PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENT_SIZE) {
-      toast.add({ title: `File ${f.name} melebihi 10MB`, color: 'error' })
-      return false
-    }
-    return true
-  })
-  
-  if (valid.length < files.length) {
-    toast.add({ title: 'Beberapa file diabaikan (format salah atau ukuran > 10MB)', color: 'warning' })
+
+    valid.push(file)
   }
-  
-  if (attachmentFiles.value.length + valid.length > PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS) {
-    toast.add({ title: `Maksimal ${PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS} lampiran`, color: 'error' })
-    const remaining = PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS - attachmentFiles.value.length
-    valid.splice(remaining)
-  }
-  
+
   attachmentFiles.value.push(...valid)
   newAttachmentInput.value = []
 })
+
+function removeExistingAttachment(idx: number) {
+  existingAttachments.value.splice(idx, 1)
+}
 
 function removeAttachment(idx: number) {
   attachmentFiles.value.splice(idx, 1)
 }
 
-// ─── Auto-slug ────────────────────────────────────────────────────────────────
-const slugEdited = ref<boolean>(false)
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-}
-
-function onNameInput() {
-  if (!slugEdited.value && form.name) {
-    form.slug = slugify(form.name)
-  }
-}
-
-const suggestionItems = NEWS_TIPTAP_SUGGESTION_ITEMS
-
-// ─── Submit ───────────────────────────────────────────────────────────────────
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
   uploading.value = true
-  
+
   try {
-    // Validate required fields
     if (!event.data.name || !event.data.category || !event.data.seller) {
       toast.add({ title: 'Nama produk, kategori, dan nama penjual wajib diisi', color: 'error' })
       saving.value = false
@@ -250,44 +288,34 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       return
     }
 
-    // Generate slug
-    const slug = event.data.slug?.trim() || generateUniqueSlug(event.data.name)
+    const nextSlug = event.data.slug?.trim() || generateUniqueSlug(event.data.name)
 
-    // Upload files
     const [thumbnailPath, galleryPaths, attachmentsData] = await Promise.all([
-      thumbnailFile.value ? uploadThumbnail(thumbnailFile.value, slug) : Promise.resolve(null),
-      galleryFiles.value.length > 0 ? uploadGalleryImages(galleryFiles.value, slug) : Promise.resolve([]),
-      attachmentFiles.value.length > 0 ? uploadAttachments(attachmentFiles.value, slug) : Promise.resolve([])
+      thumbnailFile.value ? uploadThumbnail(thumbnailFile.value, nextSlug) : Promise.resolve(existingThumbnailPath.value),
+      galleryFiles.value.length > 0 ? uploadGalleryImages(galleryFiles.value, nextSlug) : Promise.resolve([]),
+      attachmentFiles.value.length > 0 ? uploadAttachments(attachmentFiles.value, nextSlug) : Promise.resolve([])
     ])
-    
+
     uploading.value = false
 
-    // Filter empty links
-    const validLinks = links.value.filter(l => 
-      l.shopee_link || l.tokopedia_link || l.tiktok_link
-    )
+    const validLinks = links.value.filter(l => l.shopee_link || l.tokopedia_link || l.tiktok_link || l.other_link)
 
-    // Prepare payload
     const payload: any = {
-      id: productId,
       name: event.data.name.trim(),
       excerpt: event.data.excerpt?.trim() || null,
       content: content.value,
       category: event.data.category,
-      slug: slug,
+      slug: nextSlug,
       seller: event.data.seller.trim(),
       contact_seller: event.data.contact_seller?.trim() || null,
-      status: 'pending',
       thumbnail_url: thumbnailPath,
-      images: galleryPaths,
-      attachments: attachmentsData,
+      images: [...existingGalleryPaths.value, ...galleryPaths],
+      attachments: [...existingAttachments.value, ...attachmentsData],
       links: validLinks,
-      user_id: null, // Will be set by RLS or trigger
-      created_at: new Date().toISOString(),
+      status: existingProduct.value.status,
       updated_at: new Date().toISOString()
     }
 
-    // Add price fields based on mode
     if (event.data.price_mode === 'fixed') {
       payload.price = event.data.price ?? null
       payload.price_unit = event.data.price_unit || null
@@ -298,21 +326,21 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       payload.price_range = event.data.price_range?.trim() || null
     }
 
-    // Insert to database
-    const { error: insertError } = await supabase
+    const { error: updateError } = await supabase
       .from('product_markets')
-      .insert(payload)
+      .update(payload)
+      .eq('id', existingProduct.value.id)
 
-    if (insertError) {
-      console.error('Database error:', insertError)
-      throw insertError
+    if (updateError) {
+      console.error('Database error:', updateError)
+      throw updateError
     }
 
-    toast.add({ title: 'Produk berhasil dibuat! Menunggu persetujuan admin.', color: 'success' })
-    router.push(`/markets/${slug}`)
+    toast.add({ title: 'Produk berhasil diperbarui', color: 'success' })
+    router.push(`/markets/${nextSlug}`)
   } catch (error: any) {
-    console.error('Error creating product:', error)
-    toast.add({ title: 'Gagal membuat produk: ' + (error.message || 'Silakan coba lagi.'), color: 'error' })
+    console.error('Error updating product:', error)
+    toast.add({ title: 'Gagal memperbarui produk: ' + (error.message || 'Silakan coba lagi.'), color: 'error' })
   } finally {
     saving.value = false
     uploading.value = false
@@ -322,12 +350,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
 <template>
   <main class="container mx-auto px-4 py-8 max-w-7xl">
-    <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h1 class="text-3xl font-bold mb-2">Jual Produk Pertanian</h1>
-          <p class="text-gray-600 dark:text-gray-400">Tawarkan produk pertanian Anda kepada ribuan petani lainnya</p>
+          <h1 class="text-3xl font-bold mb-2">Edit Produk Pertanian</h1>
+          <p class="text-gray-600 dark:text-gray-400">Perbarui informasi produk di Pasar Tani</p>
         </div>
         <UButton
           to="/markets"
@@ -343,17 +370,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         icon="i-lucide-info"
         color="primary"
         variant="soft"
-        title="Informasi Penjualan"
-        description="Produk yang Anda buat akan berstatus 'Pending' dan menunggu persetujuan dari admin sebelum ditampilkan di Pasar Tani."
+        title="Informasi Edit Produk"
+        description="Perubahan akan langsung diterapkan pada data produk ini."
       />
     </div>
 
-    <!-- Form -->
     <UForm :schema="schema" :state="form" class="space-y-6" @submit="onSubmit">
       <div class="grid lg:grid-cols-3 gap-6">
-        <!-- ── Main column ──────────────────────────────────────────── -->
         <div class="lg:col-span-2 space-y-6">
-          <!-- Product info -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -396,7 +420,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </div>
           </UCard>
 
-          <!-- Rich content -->
           <UCard>
             <template #header>
               <div class="flex items-center justify-between">
@@ -427,7 +450,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </UFormField>
           </UCard>
 
-          <!-- Seller info -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -455,7 +477,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </div>
           </UCard>
 
-          <!-- Price -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -465,7 +486,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </template>
 
             <div class="space-y-4">
-              <!-- Price mode toggle -->
               <div class="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden w-fit">
                 <button
                   type="button"
@@ -512,7 +532,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                 <UFormField name="price_range" label="Range Harga">
                   <UInput
                     v-model="form.price_range"
-                    placeholder="Contoh: Rp 5.000 – Rp 10.000 / kg"
+                    placeholder="Contoh: Rp 5.000 - Rp 10.000 / kg"
                     class="w-full"
                   />
                 </UFormField>
@@ -520,7 +540,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </div>
           </UCard>
 
-          <!-- Links -->
           <UCard>
             <template #header>
               <div class="flex items-center justify-between">
@@ -570,7 +589,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                   @click="removeLink(idx)"
                 />
               </div>
-              
+
               <p v-if="links.length === 0" class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
                 Belum ada link marketplace. Klik "Tambah Link" untuk menambahkan.
               </p>
@@ -578,9 +597,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </UCard>
         </div>
 
-        <!-- ── Sidebar ──────────────────────────────────────────────── -->
         <div class="space-y-6">
-          <!-- Publish settings -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -607,13 +624,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                 size="lg"
                 :loading="saving"
               >
-                <UIcon name="i-lucide-send" class="w-4 h-4 mr-2" />
-                {{ saving ? (uploading ? 'Mengunggah...' : 'Menyimpan...') : 'Jual Produk' }}
+                <UIcon name="i-lucide-save" class="w-4 h-4 mr-2" />
+                {{ saving ? (uploading ? 'Mengunggah...' : 'Menyimpan...') : 'Simpan Perubahan' }}
               </UButton>
             </div>
           </UCard>
 
-          <!-- Thumbnail -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -623,35 +639,40 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </template>
 
             <div class="space-y-3">
-              <div
-                v-if="thumbnailPreview"
-                class="relative rounded-lg overflow-hidden aspect-video bg-gray-100 dark:bg-gray-800"
-              >
+              <div v-if="thumbnailPreview" class="relative rounded-lg overflow-hidden aspect-video bg-gray-100 dark:bg-gray-800">
                 <img :src="thumbnailPreview" class="w-full h-full object-cover" alt="Thumbnail">
-                <UButton
-                  icon="i-lucide-x"
-                  color="error"
-                  variant="solid"
-                  size="xs"
-                  class="absolute top-2 right-2"
-                  @click="removeThumbnail"
-                />
+                <div class="absolute top-2 right-2 flex gap-2">
+                  <UButton
+                    icon="i-lucide-x"
+                    color="error"
+                    variant="solid"
+                    size="xs"
+                    @click="removeThumbnail"
+                  />
+                  <UButton
+                    v-if="existingThumbnailPath"
+                    icon="i-lucide-trash"
+                    color="warning"
+                    variant="solid"
+                    size="xs"
+                    @click="removeExistingThumbnail"
+                  />
+                </div>
               </div>
-              
+
               <UFileUpload
-                v-else
+                v-if="!thumbnailFile"
                 v-model="thumbnailFile"
                 accept="image/*"
                 class="min-h-32 w-full"
               />
-              
+
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 PNG, JPG, WebP · maksimal 5MB
               </p>
             </div>
           </UCard>
 
-          <!-- Gallery -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -661,13 +682,27 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </template>
 
             <div class="space-y-3">
-              <div
-                v-if="galleryPreviews.length > 0"
-                class="grid grid-cols-3 gap-2"
-              >
+              <div v-if="existingGalleryPaths.length > 0" class="grid grid-cols-3 gap-2">
+                <div
+                  v-for="(path, idx) in existingGalleryPaths"
+                  :key="`existing-${idx}`"
+                  class="relative rounded-md overflow-hidden aspect-square bg-gray-100 dark:bg-gray-800 group"
+                >
+                  <img :src="getImagePathUrl(path)" class="w-full h-full object-cover" alt="">
+                  <button
+                    type="button"
+                    class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                    @click="removeExistingGallery(idx)"
+                  >
+                    <UIcon name="i-lucide-trash-2" class="w-5 h-5 text-white" />
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="galleryPreviews.length > 0" class="grid grid-cols-3 gap-2">
                 <div
                   v-for="(url, idx) in galleryPreviews"
-                  :key="idx"
+                  :key="`new-${idx}`"
                   class="relative rounded-md overflow-hidden aspect-square bg-gray-100 dark:bg-gray-800 group"
                 >
                   <img :src="url" class="w-full h-full object-cover" alt="">
@@ -680,21 +715,20 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                   </button>
                 </div>
               </div>
-              
+
               <UFileUpload
                 v-model="newGalleryInput"
                 accept="image/*"
                 multiple
                 class="min-h-32 w-full"
               />
-              
+
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 Multiple · maksimal {{ PRODUCT_MARKETS_CONSTANTS.MAX_GALLERY_IMAGES }} foto · 5MB/foto
               </p>
             </div>
           </UCard>
 
-          <!-- Attachments -->
           <UCard>
             <template #header>
               <div class="flex items-center gap-2">
@@ -704,10 +738,29 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             </template>
 
             <div class="space-y-3">
+              <div v-if="existingAttachments.length > 0" class="space-y-1.5">
+                <div
+                  v-for="(file, idx) in existingAttachments"
+                  :key="`existing-attachment-${idx}`"
+                  class="flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800"
+                >
+                  <UIcon name="i-lucide-file-text" class="w-4 h-4 text-gray-500 shrink-0" />
+                  <span class="flex-1 truncate text-gray-700 dark:text-gray-300">{{ file.name }}</span>
+                  <span class="text-xs text-gray-500">{{ formatFileSize(file.size || 0) }}</span>
+                  <UButton
+                    icon="i-lucide-x"
+                    size="xs"
+                    color="neutral"
+                    variant="ghost"
+                    @click="removeExistingAttachment(idx)"
+                  />
+                </div>
+              </div>
+
               <div v-if="attachmentFiles.length > 0" class="space-y-1.5">
                 <div
                   v-for="(file, idx) in attachmentFiles"
-                  :key="idx"
+                  :key="`new-attachment-${idx}`"
                   class="flex items-center gap-2 text-sm px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800"
                 >
                   <UIcon name="i-lucide-file-text" class="w-4 h-4 text-gray-500 shrink-0" />
@@ -722,14 +775,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
                   />
                 </div>
               </div>
-              
+
               <UFileUpload
                 v-model="newAttachmentInput"
                 accept=".pdf,.doc,.docx,.xls,.xlsx"
                 multiple
                 class="min-h-32 w-full"
               />
-              
+
               <p class="text-xs text-gray-500 dark:text-gray-400">
                 PDF, DOC, XLS · maksimal {{ PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENTS }} file · 10MB/file
               </p>

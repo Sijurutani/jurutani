@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
-import { useSupabase } from '~/composables/useSupabase';
+ ;
 
-const { supabase } = useSupabase();
+const supabase = useSupabaseClient();
 
 interface Instructor {
   id: number;

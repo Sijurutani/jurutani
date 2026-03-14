@@ -12,7 +12,7 @@ export function getImagePathUrl(imagePath: string | null): string {
   if (!imagePath) return '/placeholder.png'
   if (imagePath.startsWith('http')) return imagePath
 
-  const { supabase } = useSupabase()
+  const supabase = useSupabaseClient()
   const { data } = supabase.storage
     .from('product-markets-images')
     .getPublicUrl(imagePath)
@@ -33,7 +33,7 @@ export function getMarketPublicUrl(imagePath: string | null): string {
 export function getAttachmentUrl(attachmentPath: string): string {
   if (attachmentPath.startsWith('http')) return attachmentPath
 
-  const { supabase } = useSupabase()
+  const supabase = useSupabaseClient()
   const { data } = supabase.storage
     .from('product-markets-attachments')
     .getPublicUrl(attachmentPath)

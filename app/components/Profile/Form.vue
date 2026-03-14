@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { useSupabase } from '~/composables/useSupabase';
 import { toastStore } from '~/composables/useJuruTaniToast';
 
 interface UserData {
@@ -24,7 +23,7 @@ const emit = defineEmits<{
   update: [];
 }>();
 
-const { supabase } = useSupabase();
+const authStore = useAuthStore();
 
 // State
 const loading = ref(false);
@@ -114,59 +113,6 @@ const resetImage = () => {
   imagePreview.value = null;
 };
 
-// Avatar upload utility
-const uploadAvatar = async (userId: string): Promise<string | null> => {
-  if (!imageFile.value) return null;
-
-  console.log('Starting avatar upload process...');
-  
-  // Delete old avatar
-  if (formData.avatar_url?.includes('avatars/')) {
-    try {
-      const oldPath = formData.avatar_url.split('avatars/')[1].split('?')[0];
-      if (oldPath) {
-        console.log('Attempting to delete old avatar:', oldPath);
-        await supabase.storage.from('avatars').remove([oldPath]);
-        console.log('Old avatar deleted successfully');
-      }
-    } catch (error) {
-      console.warn('Error deleting old avatar:', error);
-    }
-  }
-
-  // Upload new avatar
-  const fileExt = imageFile.value.name.split('.').pop();
-  const fileName = `avatar_${Date.now()}.${fileExt}`;
-  const filePath = `${userId}/${fileName}`;
-
-  console.log('Uploading new avatar:', { fileName, filePath, fileSize: imageFile.value.size });
-
-  const { data, error } = await supabase.storage
-    .from('avatars')
-    .upload(filePath, imageFile.value, {
-      cacheControl: '3600',
-      upsert: true
-    });
-
-  if (error) {
-    console.error('Upload error:', error);
-    throw new Error(`Gagal mengunggah gambar profil: ${error.message}`);
-  }
-
-  console.log('Avatar uploaded successfully:', data);
-
-  // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from('avatars')
-    .getPublicUrl(filePath);
-
-  if (!publicUrl) {
-    throw new Error('Gagal mendapatkan URL gambar profil.');
-  }
-
-  return `${publicUrl}?t=${Date.now()}`;
-};
-
 // Main submit handler
 const handleSubmit = async () => {
   if (!isFormValid.value) {
@@ -177,22 +123,12 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    // Get authenticated user
-    const { data: user } = await supabase.auth.getUser();
-    console.log("auth.uid():", user?.user?.id);
-    console.log("props.userData.id:", props.userData.id);
-    
-    if (!user?.user?.id) {
-      console.error('No authenticated user found');
+    if (!authStore.user?.id) {
       toastStore.error('Anda harus login untuk memperbarui profil.');
       return;
     }
 
-    if (user.user.id !== props.userData.id) {
-      console.error('User ID mismatch:', {
-        authUserId: user.user.id,
-        profileUserId: props.userData.id
-      });
+    if (authStore.user.id !== props.userData.id) {
       toastStore.error('Tidak dapat memperbarui profil pengguna lain.');
       return;
     }
@@ -200,16 +136,18 @@ const handleSubmit = async () => {
     // Handle avatar upload
     let newAvatarUrl = formData.avatar_url;
     if (imageFile.value) {
-      newAvatarUrl = await uploadAvatar(user.user.id);
-      if (newAvatarUrl) {
+      const uploadRes = await authStore.uploadAvatar(imageFile.value);
+      if (uploadRes.success && uploadRes.data) {
+        newAvatarUrl = uploadRes.data.avatar_url;
         formData.avatar_url = newAvatarUrl;
-        console.log('New avatar URL:', newAvatarUrl);
+      } else {
+        const errorMsg = 'error' in uploadRes ? String(uploadRes.error) : 'Gagal mengupload gambar profil';
+        throw new Error(errorMsg);
       }
     }
 
     // Prepare update data
     const updates = {
-      id: user.user.id,
       full_name: formData.full_name.trim(),
       username: formData.username.trim() || null,
       phone: formData.phone.trim() || null,
@@ -218,26 +156,14 @@ const handleSubmit = async () => {
       website: formData.website.trim() || null,
       birth_date: formData.birth_date || null,
       avatar_url: newAvatarUrl,
-      updated_at: new Date().toISOString()
     };
 
-    console.log('Updating profile with data:', updates);
-
     // Update profile
-    const { data: updateData, error: updateError } = await supabase
-      .from('profiles')
-      .upsert(updates, {
-        onConflict: 'id',
-        ignoreDuplicates: false
-      })
-      .select();
+    const updateRes = await authStore.updateProfile(updates);
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError);
-      throw new Error(`Gagal memperbarui profil: ${updateError.message}`);
+    if (!updateRes.success) {
+      throw new Error(updateRes.error || 'Gagal memperbarui profil');
     }
-
-    console.log('Profile updated successfully:', updateData);
 
     // Emit success
     emit('update');
@@ -281,7 +207,7 @@ const formatWebsiteUrl = (url: string) => {
       <label class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">Foto Profil</label>
       
       <div class="flex items-center">
-        <div class="w-24 h-24 rounded-full overflow-hidden mr-4 bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+        <div class="w-24 h-24 rounded-full overflow-hidden mr-4 bg-gray-100 dark:bg-gray-800 shrink-0">
           <NuxtImg 
             :src="currentAvatar" 
             alt="Avatar Preview"

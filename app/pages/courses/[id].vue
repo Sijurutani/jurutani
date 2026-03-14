@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useSupabase } from '~/composables/useSupabase';
+ ;
 
 definePageMeta({
   layout: 'default',
@@ -9,7 +9,7 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
-const { supabase } = useSupabase();
+const supabase = useSupabaseClient();
 
 const meeting = ref(null);
 const author = ref(null);

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Database } from '~/types/database.types'
+
 // SEO Optimization
 useSeoAuth('reset-password')
 
@@ -9,7 +11,7 @@ definePageMeta({
 
 const toast = usejuruTaniToast()
 const authStore = useAuthStore()
-const client = useSupabaseClient()
+const client = useSupabaseClient<Database>()
 const router = useRouter()
 
 const password = ref('')

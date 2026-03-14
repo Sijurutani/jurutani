@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import type { FoodWithPrice, FoodCategory } from '~/types'
-import { FOOD_CATEGORIES } from '~/types'
 
 const { getFoodsWithLatestPrices, formatCurrency, formatDate, getCategoryIcon, getCategoryLabel } = useFoodPrices()
 
 // State
 const loading = ref(true)
-const allFoods = ref<FoodWithPrice[]>([])
+const allFoods = ref<any[]>([])
 
 // Filter kategori utama (4 kategori, exclude 'all')
 const mainCategories = computed(() => {
-  return FOOD_CATEGORIES
+  return Enum.FoodPriceCategories
     .filter(cat => cat.value !== 'all')
     .slice(0, 4)
 })
@@ -132,7 +130,7 @@ onMounted(() => {
 
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"></div>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"/>
       <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat data harga pangan...</p>
     </div>
 

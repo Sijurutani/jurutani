@@ -1,3 +1,139 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { toastStore } from '@/composables/useJuruTaniToast'
+
+const supabase = useSupabaseClient()
+
+// SEO Meta
+useHead({
+  title: 'Ganti Password - JuruTani',
+  meta: [
+    { name: 'description', content: 'Ubah password akun JuruTani Anda dengan mudah dan aman.' }
+  ]
+})
+
+// Form data
+const newPassword = ref('')
+const confirmPassword = ref('')
+const loading = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
+
+// Password strength calculation
+const passwordStrength = computed(() => {
+  const password = newPassword.value
+  let score = 0
+  
+  if (password.length >= 8) score += 1
+  if (password.length >= 12) score += 1
+  if (/[a-z]/.test(password)) score += 1
+  if (/[A-Z]/.test(password)) score += 1
+  if (/[0-9]/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+  
+  return score
+})
+
+const passwordStrengthText = computed(() => {
+  const score = passwordStrength.value
+  if (score === 0) return ''
+  if (score <= 2) return 'Lemah'
+  if (score <= 4) return 'Sedang'
+  return 'Kuat'
+})
+
+const passwordStrengthColor = computed(() => {
+  const score = passwordStrength.value
+  if (score <= 2) return 'bg-red-500'
+  if (score <= 4) return 'bg-yellow-500'
+  return 'bg-green-500'
+})
+
+const passwordStrengthTextColor = computed(() => {
+  const score = passwordStrength.value
+  if (score <= 2) return 'text-red-600'
+  if (score <= 4) return 'text-yellow-600'
+  return 'text-green-600'
+})
+
+const passwordStrengthWidth = computed(() => {
+  const score = passwordStrength.value
+  return `${Math.min(score * 16.67, 100)}%`
+})
+
+// Form validation
+const isFormValid = computed(() => {
+  return newPassword.value.length >= 6 && 
+         newPassword.value === confirmPassword.value &&
+         passwordStrength.value >= 3
+})
+
+// Form submission
+const handleChangePassword = async () => {
+  // Validation
+  if (newPassword.value !== confirmPassword.value) {
+    toastStore.error('Password tidak cocok')
+    return
+  }
+
+  if (newPassword.value.length < 6) {
+    toastStore.error('Password harus minimal 6 karakter')
+    return
+  }
+
+  if (passwordStrength.value < 3) {
+    toastStore.error('Password terlalu lemah. Gunakan kombinasi huruf besar, kecil, angka, dan simbol.')
+    return
+  }
+
+  loading.value = true
+  
+  try {
+    const { error } = await supabase.auth.updateUser({ 
+      password: newPassword.value 
+    })
+
+    if (error) {
+      let errorMessage = 'Gagal mengganti password'
+      
+      if (error.message.includes('rate_limit')) {
+        errorMessage = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
+      } else if (error.message.includes('weak_password')) {
+        errorMessage = 'Password terlalu lemah. Gunakan password yang lebih kuat.'
+      } else if (error.message.includes('same_password')) {
+        errorMessage = 'Password baru tidak boleh sama dengan password lama.'
+      }
+      
+      toastStore.error(errorMessage)
+    } else {
+      toastStore.success('Password berhasil diperbarui! Akun Anda sekarang lebih aman.')
+      
+      // Clear form
+      newPassword.value = ''
+      confirmPassword.value = ''
+      
+      // Optional: redirect after success
+      // setTimeout(() => {
+      //   navigateTo('/profile')
+      // }, 2000)
+    }
+  } catch (error) {
+    console.error('Password update error:', error)
+    toastStore.error('Terjadi kesalahan sistem. Silakan coba lagi.')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Auto-focus new password input on mount
+onMounted(() => {
+  const passwordInput = document.getElementById('newPassword')
+  if (passwordInput) {
+    passwordInput.focus()
+  }
+})
+</script>
+
 <template>
   <div class="min-h-screen py-12 px-4 transition-colors duration-200">
     <div class="max-w-md mx-auto">
@@ -176,140 +312,3 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useSupabase } from '@/composables/useSupabase'
-import { toastStore } from '@/composables/useJuruTaniToast'
-
-const { supabase } = useSupabase()
-
-// SEO Meta
-useHead({
-  title: 'Ganti Password - JuruTani',
-  meta: [
-    { name: 'description', content: 'Ubah password akun JuruTani Anda dengan mudah dan aman.' }
-  ]
-})
-
-// Form data
-const newPassword = ref('')
-const confirmPassword = ref('')
-const loading = ref(false)
-const showNewPassword = ref(false)
-const showConfirmPassword = ref(false)
-
-// Password strength calculation
-const passwordStrength = computed(() => {
-  const password = newPassword.value
-  let score = 0
-  
-  if (password.length >= 8) score += 1
-  if (password.length >= 12) score += 1
-  if (/[a-z]/.test(password)) score += 1
-  if (/[A-Z]/.test(password)) score += 1
-  if (/[0-9]/.test(password)) score += 1
-  if (/[^A-Za-z0-9]/.test(password)) score += 1
-  
-  return score
-})
-
-const passwordStrengthText = computed(() => {
-  const score = passwordStrength.value
-  if (score === 0) return ''
-  if (score <= 2) return 'Lemah'
-  if (score <= 4) return 'Sedang'
-  return 'Kuat'
-})
-
-const passwordStrengthColor = computed(() => {
-  const score = passwordStrength.value
-  if (score <= 2) return 'bg-red-500'
-  if (score <= 4) return 'bg-yellow-500'
-  return 'bg-green-500'
-})
-
-const passwordStrengthTextColor = computed(() => {
-  const score = passwordStrength.value
-  if (score <= 2) return 'text-red-600'
-  if (score <= 4) return 'text-yellow-600'
-  return 'text-green-600'
-})
-
-const passwordStrengthWidth = computed(() => {
-  const score = passwordStrength.value
-  return `${Math.min(score * 16.67, 100)}%`
-})
-
-// Form validation
-const isFormValid = computed(() => {
-  return newPassword.value.length >= 6 && 
-         newPassword.value === confirmPassword.value &&
-         passwordStrength.value >= 3
-})
-
-// Form submission
-const handleChangePassword = async () => {
-  // Validation
-  if (newPassword.value !== confirmPassword.value) {
-    toastStore.error('Password tidak cocok')
-    return
-  }
-
-  if (newPassword.value.length < 6) {
-    toastStore.error('Password harus minimal 6 karakter')
-    return
-  }
-
-  if (passwordStrength.value < 3) {
-    toastStore.error('Password terlalu lemah. Gunakan kombinasi huruf besar, kecil, angka, dan simbol.')
-    return
-  }
-
-  loading.value = true
-  
-  try {
-    const { error } = await supabase.auth.updateUser({ 
-      password: newPassword.value 
-    })
-
-    if (error) {
-      let errorMessage = 'Gagal mengganti password'
-      
-      if (error.message.includes('rate_limit')) {
-        errorMessage = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
-      } else if (error.message.includes('weak_password')) {
-        errorMessage = 'Password terlalu lemah. Gunakan password yang lebih kuat.'
-      } else if (error.message.includes('same_password')) {
-        errorMessage = 'Password baru tidak boleh sama dengan password lama.'
-      }
-      
-      toastStore.error(errorMessage)
-    } else {
-      toastStore.success('Password berhasil diperbarui! Akun Anda sekarang lebih aman.')
-      
-      // Clear form
-      newPassword.value = ''
-      confirmPassword.value = ''
-      
-      // Optional: redirect after success
-      // setTimeout(() => {
-      //   navigateTo('/profile')
-      // }, 2000)
-    }
-  } catch (error) {
-    console.error('Password update error:', error)
-    toastStore.error('Terjadi kesalahan sistem. Silakan coba lagi.')
-  } finally {
-    loading.value = false
-  }
-}
-
-// Auto-focus new password input on mount
-onMounted(() => {
-  const passwordInput = document.getElementById('newPassword')
-  if (passwordInput) {
-    passwordInput.focus()
-  }
-})
-</script>

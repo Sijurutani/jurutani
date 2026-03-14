@@ -1,92 +1,228 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useContentList } from '~/composables/useContentList'
-import { useAsyncData } from '#app'
-import { useSupabase } from '~/composables/useSupabase'
-import type { ProductMarket, Category } from '~/types'
+import { watchDebounced } from '@vueuse/core'
+import type { ProductMarket } from '~/types/market'
+import type { SortOption } from '~/types/content'
+import { Enum } from '~/utils/enum'
 
 definePageMeta({
-  layout: 'default',
+  layout: 'default'
 })
 
-// SEO Optimization
-useSeoOptimized('markets')
+useSeoMeta({
+  title: 'Pasar Tani JuruTani',
+  description: 'Marketplace produk pertanian, peternakan, dan alat tani terpercaya'
+})
 
-const { supabase } = useSupabase()
+const route = useRoute()
+const router = useRouter()
+const supabase = useSupabaseClient()
+const pageSize = 12
 
-// Use content list composable
-const {
-  items: marketsList,
-  loading,
-  error,
-  currentPage,
-  totalPages,
-  totalItems,
-  filters,
-  isLoading,
-  hasError,
-  hasData,
-  showPagination,
-  sortOptions,
-  currentSort,
-  fetchItems,
-  handleCategoryChange,
-  handleSearchChange,
-  handleSortChange,
-  handlePageChange
-} = useContentList<ProductMarket>({
-  tableName: 'product_markets',
-  pageSize: 12,
-  statusField: 'status',
-  statusValue: 'approved',
-  categoryField: 'category',
-  defaultSort: {
-    column: 'created_at',
-    ascending: false
+const category = computed<string>({
+  get() {
+    const raw = route.query.category
+    return typeof raw === 'string' ? raw : 'all'
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === 'all' || value === 'semua') {
+      delete nextQuery.category
+    } else {
+      nextQuery.category = value
+    }
+    router.replace({ query: nextQuery })
   }
 })
 
-// Categories
-const categories = ref<Category[]>([])
+const search = computed<string | undefined>({
+  get() {
+    const raw = route.query.search
+    return typeof raw === 'string' && raw.trim() ? raw : undefined
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || !value.trim()) {
+      delete nextQuery.search
+    } else {
+      nextQuery.search = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
 
-// Fetch categories
+const sort = computed<string>({
+  get() {
+    const raw = route.query.sort
+    return typeof raw === 'string' ? raw : Enum.SortOptions[0].value
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === Enum.SortOptions[0].value) {
+      delete nextQuery.sort
+    } else {
+      nextQuery.sort = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
+
+const page = computed<number>({
+  get() {
+    const raw = route.query.page
+    if (typeof raw !== 'string') return 1
+    const parsed = Number.parseInt(raw, 10)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    const normalized = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
+    if (normalized <= 1) {
+      delete nextQuery.page
+    } else {
+      nextQuery.page = String(normalized)
+    }
+    router.replace({ query: nextQuery })
+  }
+})
+
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
+}
+
+const normalizeAttachments = (value: unknown): ProductMarket['attachments'] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      name: typeof item.name === 'string' ? item.name : 'Lampiran',
+      url: typeof item.url === 'string' ? item.url : '',
+      size: typeof item.size === 'number' ? item.size : undefined,
+      type: typeof item.type === 'string' ? item.type : undefined
+    }))
+    .filter(item => !!item.url)
+}
+
+const normalizeLinks = (value: unknown): ProductMarket['links'] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
+    .map(item => ({
+      shopee_link: typeof item.shopee_link === 'string' ? item.shopee_link : undefined,
+      tokopedia_link: typeof item.tokopedia_link === 'string' ? item.tokopedia_link : undefined,
+      tiktok_link: typeof item.tiktok_link === 'string' ? item.tiktok_link : undefined,
+      other_link: typeof item.other_link === 'string' ? item.other_link : undefined
+    }))
+}
+
+const query = computed(() => {
+  let q = supabase
+    .from('product_markets')
+    .select('id,name,slug,excerpt,content,category,price,price_range,price_unit,thumbnail_url,images,attachments,links,seller,contact_seller,created_at', { count: 'exact' })
+    .is('deleted_at', null)
+    .eq('status', 'approved')
+
+  if (category.value && category.value !== 'all' && category.value !== 'semua') {
+    q = q.eq('category', category.value)
+  }
+
+  if (search.value) {
+    const term = search.value.trim()
+    q = q.or(`name.ilike.%${term}%,excerpt.ilike.%${term}%,seller.ilike.%${term}%`)
+  }
+
+  const [rawColumn, direction] = sort.value.split('-')
+  const column = rawColumn === 'name' ? 'name' : rawColumn
+
+  return q.order(column, { ascending: direction === 'asc' })
+})
+
+const { data, pending, error, refresh } = await useAsyncData('markets-list', async () => {
+  const from = (page.value - 1) * pageSize
+  const to = page.value * pageSize - 1
+
+  const { data: marketsData, count, error: fetchError } = await query.value.range(from, to)
+  if (fetchError) throw fetchError
+
+  const items = (marketsData ?? []).map(item => ({
+    ...item,
+    content: item.content as ProductMarket['content'],
+    images: normalizeStringArray(item.images),
+    attachments: normalizeAttachments(item.attachments),
+    links: normalizeLinks(item.links)
+  })) as ProductMarket[]
+
+  return {
+    items,
+    total: count || 0
+  }
+}, {
+  default: () => ({ items: [] as ProductMarket[], total: 0 }),
+  watch: [sort, page, category]
+})
+
 const { data: categoriesData } = await useAsyncData('market-categories', async () => {
-  try {
-    const { data, error: catError } = await supabase
-      .from('category_markets')
-      .select('name')
-      .order('name', { ascending: true })
+  const { data, error: catError } = await supabase
+    .from('category_markets')
+    .select('name')
+    .order('name', { ascending: true })
 
-    if (catError) throw catError
-
-    return data as Category[]
-  } catch (err) {
-    console.error('Error fetching categories:', err)
-    return []
-  }
+  if (catError) throw catError
+  return data ?? []
 })
 
-// Set categories
-if (categoriesData.value) {
-  categories.value = categoriesData.value.map(cat => ({
+const categories = computed(() => {
+  return (categoriesData.value ?? []).map((cat: any) => ({
     name: cat.name,
     value: cat.name
   }))
-}
+})
 
-// Bento grid pattern - determines which cards should be large
-const getBentoVariant = (index: number): 'default' | 'large' | 'wide' | 'tall' => {
-  // Pattern: large card every 8 items, wide card every 6 items
-  if (index % 8 === 0) return 'large'
-  if (index % 6 === 0) return 'wide'
-  if (index % 13 === 0) return 'tall'
+watchDebounced([search], async () => {
+  page.value = 1
+  await refresh()
+}, { debounce: 500 })
+
+watch([category, sort], () => {
+  page.value = 1
+})
+
+const sortOptions: SortOption[] = Enum.SortOptions.map((option) => {
+  const [rawColumn, direction] = option.value.split('-')
+  return {
+    label: option.label,
+    value: option.value,
+    column: rawColumn === 'name' ? 'name' : rawColumn,
+    ascending: direction === 'asc'
+  }
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(data.value.total / pageSize)))
+const hasData = computed(() => data.value.items.length > 0)
+const showPagination = computed(() => !pending.value && hasData.value && totalPages.value > 1)
+
+const getBentoVariant = (index: number, total: number): 'default' | 'large' | 'wide' => {
+  const remainder = total % 3
+  if (remainder === 2 && index === total - 2) return 'wide'
+  if (remainder === 2 && index === total - 1) return 'default'
+  if (remainder === 1 && index === total - 1) return 'wide'
+  if (index === 0) return 'large'
+  const pattern = (index - 1) % 5
+  if (pattern === 3 || pattern === 4) return 'wide'
   return 'default'
 }
 
-// Initial fetch
-onMounted(() => {
-  fetchItems()
-})
+const handleCategoryChange = (value: string) => {
+  category.value = value
+}
+
+const handleSortChange = (value: string) => {
+  sort.value = value
+}
+
+const handlePageChange = (value: number) => {
+  page.value = value
+}
 </script>
 
 <template>
@@ -125,9 +261,8 @@ onMounted(() => {
 
       <!-- Search Bar - Full width on all screens -->
       <AppSearchBar
-        v-model="filters.search"
+        v-model="search"
         placeholder="Cari produk, kategori, atau penjual..."
-        @search="handleSearchChange"
       />
 
       <!-- Sort and Results Row -->
@@ -135,30 +270,30 @@ onMounted(() => {
         <!-- Sort Dropdown -->
         <AppSortDropdown
           :sort-options="sortOptions"
-          :current-sort="filters.sort"
+          :current-sort="sort"
           @update:sort="handleSortChange"
         />
 
         <!-- Results Count -->
-        <div v-if="!isLoading && hasData" class="text-sm text-gray-600 dark:text-gray-400">
-          Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ marketsList.length }}</span> dari <span class="font-semibold">{{ totalItems }}</span> produk
+        <div v-if="!pending && hasData" class="text-sm text-gray-600 dark:text-gray-400">
+          Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ data.items.length }}</span> dari <span class="font-semibold">{{ data.total }}</span> produk
         </div>
       </div>
     </div>
 
     <!-- Markets Content with Bento Grid -->
     <div class="mt-8">
-      <LoadingData v-if="isLoading" />
-      <ErrorData v-else-if="hasError" :error="error" />
+      <LoadingData v-if="pending" />
+      <ErrorData v-else-if="error" :error="error.message" />
       <NotFoundData v-else-if="!hasData" />
 
       <!-- Bento Grid Layout -->
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
         <MarketsProductMarketCard
-          v-for="(product, index) in marketsList"
+          v-for="(product, index) in data.items"
           :key="product.id"
           :product="product"
-          :variant="getBentoVariant(index)"
+          :variant="getBentoVariant(index, data.items.length)"
         />
       </div>
     </div>
@@ -166,10 +301,10 @@ onMounted(() => {
     <!-- Pagination -->
     <AppPagination
       v-if="showPagination"
-      :current-page="currentPage"
+      :current-page="page"
       :total-pages="totalPages"
-      :total-items="totalItems"
-      :page-size="12"
+      :total-items="data.total"
+      :page-size="pageSize"
       :show-page-info="true"
       :show-first-last="true"
       @update:page="handlePageChange"

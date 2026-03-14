@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 import { discussionServices, discussionStatsFallback } from '~/data/discussion'
 
 definePageMeta({
@@ -10,7 +10,7 @@ definePageMeta({
 // SEO Optimization
 useSeoOptimized('discussions')
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 const profilesCount = ref(0)
 const instructorsCount = ref(0)

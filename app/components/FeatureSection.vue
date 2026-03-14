@@ -6,7 +6,7 @@ const features = [
     title: 'Konsultasi Pertanian',
     description: 'Konsultasi langsung dengan pakar pertanian berpengalaman untuk hasil panen terbaik',
     icon: 'i-lucide-message-circle',
-    image: '/feature/consult.JPG',
+    image: '/feature/consult.webp',
     url: '/discussions',
     color: 'green'
   },
@@ -14,7 +14,7 @@ const features = [
     id: 2,
     title: 'Alat Pertanian',
     description: 'Hitung kebutuhan pertanian Anda dengan kalkulator kami dan dapatkan rekomendasi terbaik',
-    image: '/feature/cuaca.JPG',
+    image: '/feature/cuaca.webp',
     color: 'blue',
     url: '/tools',
     icon: 'i-lucide-sun'
@@ -24,7 +24,7 @@ const features = [
     title: 'Marketplace Hasil Tani',
     description: 'Jual hasil pertanian Anda langsung ke konsumen tanpa perantara',
     icon: 'i-lucide-store',
-    image: '/feature/markets.JPG',
+    image: '/feature/markets.webp',
     url: '/markets',
     color: 'orange'
   },
@@ -33,7 +33,7 @@ const features = [
     title: 'Kursus & Pelatihan',
     description: 'Tingkatkan pengetahuan dan keterampilan bertani melalui kursus online dan offline',
     icon: 'i-lucide-graduation-cap',
-    image: '/feature/training.JPG',
+    image: '/feature/training.webp',
     url: '/courses',
     color: 'yellow'
   },
@@ -42,7 +42,7 @@ const features = [
     title: 'Komunitas Petani',
     description: 'Bergabung dengan komunitas petani untuk berbagi pengalaman dan pengetahuan',
     icon: 'i-lucide-users',
-    image: '/feature/comunity.JPG',
+    image: '/feature/comunity.webp',
     url: '/discussions/group',
     color: 'indigo'
   },
@@ -51,7 +51,7 @@ const features = [
     title: 'Daftar Harga Pangan',
     description: 'Cek harga pangan terbaru dan terpercaya Daerah Istimewa Yogyakarta',
     icon: 'i-lucide-list',
-    image: '/feature/priceslist.JPG',
+    image: '/feature/priceslist.webp',
     url: '/food-prices',
     color: 'green'
   }

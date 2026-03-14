@@ -2,11 +2,8 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { toastStore } from '~/composables/useJuruTaniToast'
-import { useSupabase } from '~/composables/useSupabase'
-import { useProfile } from '~/composables/useProfile'
-// import { useFileUpload } from '~/composables/useFileUpload' // Removed, auto-imported as useAppFileUpload
-
-const { supabase } = useSupabase()
+ 
+const supabase = useSupabaseClient()
 const { userData, fetchUserData } = useProfile()
 const { uploadFile } = useAppFileUpload()
 

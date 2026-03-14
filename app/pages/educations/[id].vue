@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed, watch } from 'vue'
 import { useContentDetail } from '~/composables/useContentDetail'
-import { useSupabase } from '~/composables/useSupabase'
+ 
 
 definePageMeta({
   layout: 'default',
@@ -29,7 +29,7 @@ interface ParsedFile {
   url: string
 }
 
-const { supabase } = useSupabase()
+const supabase = useSupabaseClient()
 
 // Use content detail composable
 const {
