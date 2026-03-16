@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { watchDebounced } from '@vueuse/core'
-import type { ProductMarket } from '~/types/market'
-import type { SortOption } from '~/types/content'
+import type { JSONContent } from '@tiptap/vue-3'
+import type { Database } from '~/types/database.types'
 import { Enum } from '~/utils/enum'
 
 definePageMeta({
@@ -13,84 +13,43 @@ useSeoMeta({
   description: 'Marketplace produk pertanian, peternakan, dan alat tani terpercaya'
 })
 
-const route = useRoute()
-const router = useRouter()
-const supabase = useSupabaseClient()
-const pageSize = 12
+// ─── Types ─────────────────────────────────────────────────────────────────────
+type ProductMarketRow = Database['public']['Tables']['product_markets']['Row']
+type CategoryMarketsRow = Database['public']['Tables']['category_markets']['Row']
 
-const category = computed<string>({
-  get() {
-    const raw = route.query.category
-    return typeof raw === 'string' ? raw : 'all'
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || value === 'all' || value === 'semua') {
-      delete nextQuery.category
-    } else {
-      nextQuery.category = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+interface MarketAttachment {
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
 
-const search = computed<string | undefined>({
-  get() {
-    const raw = route.query.search
-    return typeof raw === 'string' && raw.trim() ? raw : undefined
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || !value.trim()) {
-      delete nextQuery.search
-    } else {
-      nextQuery.search = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+interface MarketLink {
+  shopee_link?: string
+  tokopedia_link?: string
+  tiktok_link?: string
+  other_link?: string
+}
 
-const sort = computed<string>({
-  get() {
-    const raw = route.query.sort
-    return typeof raw === 'string' ? raw : Enum.SortOptions[0].value
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || value === Enum.SortOptions[0].value) {
-      delete nextQuery.sort
-    } else {
-      nextQuery.sort = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+type ProductMarket = Omit<ProductMarketRow, 'content' | 'images' | 'attachments' | 'links'> & {
+  content: JSONContent
+  images: string[]
+  attachments: MarketAttachment[]
+  links: MarketLink[]
+  profiles?: {
+    id: string
+    full_name: string | null
+    avatar_url: string | null
+  } | null
+}
 
-const page = computed<number>({
-  get() {
-    const raw = route.query.page
-    if (typeof raw !== 'string') return 1
-    const parsed = Number.parseInt(raw, 10)
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    const normalized = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
-    if (normalized <= 1) {
-      delete nextQuery.page
-    } else {
-      nextQuery.page = String(normalized)
-    }
-    router.replace({ query: nextQuery })
-  }
-})
-
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 const normalizeStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return []
   return value.filter((item): item is string => typeof item === 'string')
 }
 
-const normalizeAttachments = (value: unknown): ProductMarket['attachments'] => {
+const normalizeAttachments = (value: unknown): MarketAttachment[] => {
   if (!Array.isArray(value)) return []
   return value
     .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
@@ -103,7 +62,7 @@ const normalizeAttachments = (value: unknown): ProductMarket['attachments'] => {
     .filter(item => !!item.url)
 }
 
-const normalizeLinks = (value: unknown): ProductMarket['links'] => {
+const normalizeLinks = (value: unknown): MarketLink[] => {
   if (!Array.isArray(value)) return []
   return value
     .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object')
@@ -115,7 +74,34 @@ const normalizeLinks = (value: unknown): ProductMarket['links'] => {
     }))
 }
 
-const query = computed(() => {
+// ─── Setup ─────────────────────────────────────────────────────────────────────
+const supabase = useSupabaseClient()
+const pageSize = 12
+
+// ─── Reactive Route Queries ────────────────────────────────────────────────────
+const search = useRouteQuery<string>('search', '')
+const category = useRouteQuery<string>('category', 'all')
+const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
+const page = useRouteQuery<number>('page', 1, { transform: Number })
+
+// ─── Data Kategori ─────────────────────────────────────────────────────────────
+const { data: categoriesData } = await useAsyncData('market-categories', async () => {
+  const { data } = await supabase
+    .from('category_markets')
+    .select('*')
+    .order('name', { ascending: true })
+  return (data ?? []) as CategoryMarketsRow[]
+}, { default: () => [] as CategoryMarketsRow[] })
+
+const categories = computed(() =>
+  (categoriesData.value ?? []).map(cat => ({ name: cat.name, value: cat.name }))
+)
+
+// ─── Computed Query Builder ────────────────────────────────────────────────────
+const marketQuery = computed(() => {
+  const [field, dir] = sortValue.value.split('-') as [string, string]
+  const dbField = field === 'title' ? 'name' : field
+
   let q = supabase
     .from('product_markets')
     .select('id,name,slug,excerpt,content,category,price,price_range,price_unit,thumbnail_url,images,attachments,links,seller,contact_seller,created_at', { count: 'exact' })
@@ -126,68 +112,44 @@ const query = computed(() => {
     q = q.eq('category', category.value)
   }
 
-  if (search.value) {
+  if (search.value && search.value.trim()) {
     const term = search.value.trim()
     q = q.or(`name.ilike.%${term}%,excerpt.ilike.%${term}%,seller.ilike.%${term}%`)
   }
 
-  const [rawColumn, direction] = sort.value.split('-')
-  const column = rawColumn === 'name' ? 'name' : rawColumn
-
-  return q.order(column, { ascending: direction === 'asc' })
+  return q.order(dbField, { ascending: dir === 'asc' })
 })
 
+// ─── Fetch Data ────────────────────────────────────────────────────────────────
 const { data, pending, error, refresh } = await useAsyncData('markets-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 
-  const { data: marketsData, count, error: fetchError } = await query.value.range(from, to)
+  const { data: marketsData, count, error: fetchError } = await marketQuery.value.range(from, to)
   if (fetchError) throw fetchError
 
   const items = (marketsData ?? []).map(item => ({
     ...item,
-    content: item.content as ProductMarket['content'],
+    content: item.content as JSONContent,
     images: normalizeStringArray(item.images),
     attachments: normalizeAttachments(item.attachments),
     links: normalizeLinks(item.links)
   })) as ProductMarket[]
 
-  return {
-    items,
-    total: count || 0
-  }
+  return { items, total: count || 0 }
 }, {
   default: () => ({ items: [] as ProductMarket[], total: 0 }),
-  watch: [sort, page, category]
+  watch: [sortValue, page]
 })
 
-const { data: categoriesData } = await useAsyncData('market-categories', async () => {
-  const { data, error: catError } = await supabase
-    .from('category_markets')
-    .select('name')
-    .order('name', { ascending: true })
-
-  if (catError) throw catError
-  return data ?? []
-})
-
-const categories = computed(() => {
-  return (categoriesData.value ?? []).map((cat: any) => ({
-    name: cat.name,
-    value: cat.name
-  }))
-})
-
-watchDebounced([search], async () => {
+// ─── Debounce Search & Category ───────────────────────────────────────────────
+watchDebounced([search, category], async () => {
   page.value = 1
   await refresh()
-}, { debounce: 500 })
+}, { debounce: 400, deep: true })
 
-watch([category, sort], () => {
-  page.value = 1
-})
-
-const sortOptions: SortOption[] = Enum.SortOptions.map((option) => {
+// ─── Sort Options ──────────────────────────────────────────────────────────────
+const sortOptions = Enum.SortOptions.map((option) => {
   const [rawColumn, direction] = option.value.split('-')
   return {
     label: option.label,
@@ -197,6 +159,7 @@ const sortOptions: SortOption[] = Enum.SortOptions.map((option) => {
   }
 })
 
+// ─── Computed ─────────────────────────────────────────────────────────────────
 const totalPages = computed(() => Math.max(1, Math.ceil(data.value.total / pageSize)))
 const hasData = computed(() => data.value.items.length > 0)
 const showPagination = computed(() => !pending.value && hasData.value && totalPages.value > 1)
@@ -212,83 +175,73 @@ const getBentoVariant = (index: number, total: number): 'default' | 'large' | 'w
   return 'default'
 }
 
-const handleCategoryChange = (value: string) => {
-  category.value = value
-}
-
-const handleSortChange = (value: string) => {
-  sort.value = value
-}
-
-const handlePageChange = (value: number) => {
-  page.value = value
-}
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+const handleCategoryChange = (value: string) => { category.value = value }
+const handleSortChange = (value: string) => { sortValue.value = value }
+const handlePageChange = (value: number) => { page.value = value }
 </script>
 
 <template>
-  <div class="markets-page container mx-auto px-4 py-12">
-    <!-- Markets Section Header -->
-    <div class="mx-auto mb-8 max-w-4xl text-center">
+  <main class="markets-page container mx-auto px-4 py-12">
+    <!-- Header -->
+    <header class="mx-auto mb-8 max-w-4xl text-center">
       <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
         <UIcon name="i-lucide-shopping-bag" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         <span class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Marketplace Petani Terpercaya</span>
       </div>
 
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
         Pasar Tani JuruTani
-      </h2>
+      </h1>
 
       <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto mb-8">
         Jelajahi marketplace produk lokal dengan pilihan lengkap
         <span class="font-semibold text-emerald-600 dark:text-emerald-400">hasil pertanian segar</span>,
         <span class="font-semibold text-teal-600 dark:text-teal-400">produk peternakan berkualitas</span>, dan
-        <span class="font-semibold text-cyan-600 dark:text-cyan-400">olahan artisan</span> langsung dari petani dan produsen terpercaya.
+        <span class="font-semibold text-cyan-600 dark:text-cyan-400">olahan artisan</span>
+        langsung dari petani dan produsen terpercaya.
       </p>
 
-      <!-- Category Filter -->
-      <AppCategoryFilter
-        :categories="categories"
-        :current-category="filters.category"
-        :show-all-option="true"
-        all-option-text="Semua"
-        all-option-value="all"
-        @update:category="handleCategoryChange"
-      />
-    </div>
+      <nav aria-label="Filter kategori pasar tani">
+        <AppCategoryFilter
+          :categories="categories"
+          :current-category="category"
+          :show-all-option="true"
+          all-option-text="Semua"
+          all-option-value="all"
+          @update:category="handleCategoryChange"
+        />
+      </nav>
+    </header>
 
     <!-- Filter & Sort Bar -->
-    <div class="flex flex-col gap-4 mb-8">
-
-      <!-- Search Bar - Full width on all screens -->
+    <aside class="flex flex-col gap-4 mb-8" aria-label="Filter dan pencarian produk">
       <AppSearchBar
         v-model="search"
         placeholder="Cari produk, kategori, atau penjual..."
       />
 
-      <!-- Sort and Results Row -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <!-- Sort Dropdown -->
-        <AppSortDropdown
-          :sort-options="sortOptions"
-          :current-sort="sort"
-          @update:sort="handleSortChange"
-        />
-
-        <!-- Results Count -->
         <div v-if="!pending && hasData" class="text-sm text-gray-600 dark:text-gray-400">
           Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ data.items.length }}</span> dari <span class="font-semibold">{{ data.total }}</span> produk
         </div>
+        <AppSortDropdown
+          :sort-options="sortOptions"
+          :current-sort="sortValue"
+          @update:sort="handleSortChange"
+        />
       </div>
-    </div>
+    </aside>
 
-    <!-- Markets Content with Bento Grid -->
-    <div class="mt-8">
+    <!-- Products Grid -->
+    <section aria-labelledby="markets-list-heading" class="mt-8">
+      <h2 id="markets-list-heading" class="sr-only">Daftar Produk Pasar Tani</h2>
+
       <LoadingData v-if="pending" />
       <ErrorData v-else-if="error" :error="error.message" />
       <NotFoundData v-else-if="!hasData" />
 
-      <!-- Bento Grid Layout -->
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto">
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto grid-flow-row-dense">
         <MarketsProductMarketCard
           v-for="(product, index) in data.items"
           :key="product.id"
@@ -296,21 +249,23 @@ const handlePageChange = (value: number) => {
           :variant="getBentoVariant(index, data.items.length)"
         />
       </div>
-    </div>
+    </section>
 
     <!-- Pagination -->
-    <AppPagination
-      v-if="showPagination"
-      :current-page="page"
-      :total-pages="totalPages"
-      :total-items="data.total"
-      :page-size="pageSize"
-      :show-page-info="true"
-      :show-first-last="true"
-      @update:page="handlePageChange"
-    />
+    <nav aria-label="Navigasi halaman pasar tani">
+      <AppPagination
+        v-if="showPagination"
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="data.total"
+        :page-size="pageSize"
+        :show-page-info="true"
+        :show-first-last="true"
+        @update:page="handlePageChange"
+      />
+    </nav>
 
-    <!-- Create Button - Link to create page -->
+    <!-- CTA - Jual Produk -->
     <div class="mt-8 flex justify-center">
       <NuxtLink
         to="/markets/create"
@@ -320,5 +275,5 @@ const handlePageChange = (value: number) => {
         Jual Produk Sekarang
       </NuxtLink>
     </div>
-  </div>
+  </main>
 </template>

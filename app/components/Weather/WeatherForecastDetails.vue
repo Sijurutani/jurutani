@@ -72,7 +72,7 @@ const getWeatherIconClass = (weatherMain: string) => {
                 class="w-full h-full object-cover scale-105 transition-transform duration-[3000ms] group-hover:scale-110 filter blur-sm"
                 style="background: rgba(0,0,0,0.3);"
                 loading="lazy"
-              />              
+              >              
 
               <!-- Animated Particles -->
               <div class="particle particle-1" />
@@ -90,7 +90,7 @@ const getWeatherIconClass = (weatherMain: string) => {
                     :alt="day.main_weather.description"
                     class="w-12 h-12 sm:w-16 sm:h-16"
                     :class="getWeatherIconClass(day.main_weather.main)"
-                  />
+                  >
                 </div>
 
                 <!-- Weather Details -->

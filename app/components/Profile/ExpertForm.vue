@@ -53,7 +53,7 @@ const loadData = async () => {
     const { data: expertData } = await supabase
       .from('experts')
       .select('*')
-      .eq('user_id', authStore.user.id)
+      .eq('user_id', authStore.user.sub)
       .is('deleted_at', null)
       .maybeSingle()
 
@@ -86,13 +86,13 @@ const handleSubmit = async () => {
     const { data: existingData } = await supabase
       .from('experts')
       .select('id')
-      .eq('user_id', authStore.user.id)
+      .eq('user_id', authStore.user.sub)
       .is('deleted_at', null)
       .maybeSingle()
       
     let error;
     if (existingData) {
-      const { error: updErr } = await supabase.from('experts').update(updates).eq('user_id', authStore.user.id)
+      const { error: updErr } = await supabase.from('experts').update(updates).eq('user_id', authStore.user.sub)
       error = updErr;
     } else {
       const { error: insErr } = await supabase.from('experts').insert({ ...updates, created_at: new Date().toISOString() })
@@ -140,7 +140,7 @@ onMounted(() => {
         <USelect
           id="expert-category"
           v-model="formData.category"
-          :options="categoryOptions"
+          :items="categoryOptions"
           placeholder="Pilih kategori keahlian"
           size="lg"
           :disabled="categoryOptions.length === 0"

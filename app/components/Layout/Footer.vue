@@ -200,7 +200,9 @@ onBeforeUnmount(() => {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           <!-- Brand Identity -->
           <div class="flex flex-col space-y-4">
-            <TheLogo />
+              <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+                <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+              </NuxtLink>
             <p class="text-sm text-green-700/80 dark:text-green-300/90 max-w-xs">
               Memberdayakan petani Indonesia dengan teknologi modern dan solusi berkelanjutan untuk pertanian yang lebih baik.
             </p>

@@ -1,13 +1,8 @@
 import { defineStore } from 'pinia'
-import type { UserProfile } from '~/types/user'
+import type { Database } from '~/types/database.types'
 
-/**
- * Pinia Auth Store — satu-satunya sumber kebenaran untuk autentikasi & profil.
- * Menggunakan @nuxtjs/supabase composables:
- *   - useSupabaseClient()  → Supabase client (singleton per request)
- *   - useSupabaseUser()    → Reactive ref<User | null>, auto-update via onAuthStateChange
- *   - useSupabaseSession() → Reactive ref<Session | null>
- */
+type UserProfile = Database['public']['Tables']['profiles']['Row']
+
 export const useAuthStore = defineStore('auth', () => {
     // ─── Supabase primitives (dari @nuxtjs/supabase) ─────────────────────────
     const client = useSupabaseClient()
@@ -66,7 +61,7 @@ export const useAuthStore = defineStore('auth', () => {
             phone: profile.value?.phone ?? user.value?.user_metadata?.phone ?? '',
             role: profile.value?.role ?? 'user',
             bio: profile.value?.bio ?? '',
-            location: profile.value?.location ?? '',
+            location: profile.value?.address ?? '',
             createdAt: profile.value?.created_at ?? '',
             updatedAt: profile.value?.updated_at ?? '',
             isAuthenticated: !!user.value,
@@ -279,7 +274,7 @@ export const useAuthStore = defineStore('auth', () => {
     // ─── Profile Actions ──────────────────────────────────────────────────────
 
     const fetchProfile = async (userId?: string) => {
-        const targetId = userId ?? user.value?.id
+        const targetId = userId ?? user.value?.sub
         if (!targetId) return { success: false, error: 'User ID tidak ditemukan' }
 
         profileLoading.value = true
@@ -308,7 +303,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const updateProfile = async (updates: Partial<UserProfile>) => {
-        if (!user.value?.id) return { success: false, error: 'User tidak terautentikasi' }
+        if (!user.value?.sub) return { success: false, error: 'User tidak terautentikasi' }
 
         profileLoading.value = true
         error.value = null
@@ -316,7 +311,7 @@ export const useAuthStore = defineStore('auth', () => {
             const { data, error: updateError } = await client
                 .from('profiles')
                 .update(updates)
-                .eq('id', user.value.id)
+                .eq('id', user.value.sub)
                 .select()
                 .single()
 
@@ -337,13 +332,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const uploadAvatar = async (file: File) => {
-        if (!user.value?.id) return { success: false, error: 'User tidak terautentikasi' }
+        if (!user.value?.sub) return { success: false, error: 'User tidak terautentikasi' }
 
         profileLoading.value = true
         error.value = null
         try {
             const fileExt = file.name.split('.').pop()
-            const fileName = `${user.value.id}-${Date.now()}.${fileExt}`
+            const fileName = `${user.value.sub}-${Date.now()}.${fileExt}`
             const filePath = `avatars/${fileName}`
 
             const { error: uploadError } = await client.storage
@@ -378,7 +373,7 @@ export const useAuthStore = defineStore('auth', () => {
     // Otomatis fetch profil saat user login / ganti user
     watch(user, async (newUser) => {
         if (newUser && !profile.value) {
-            await fetchProfile(newUser.id)
+            await fetchProfile(newUser.sub)
         }
         else if (!newUser) {
             profile.value = null
@@ -417,6 +412,5 @@ export const useAuthStore = defineStore('auth', () => {
         updateProfile,
         uploadAvatar,
         refreshAvatarCache,
-        formatDate,
     }
 })

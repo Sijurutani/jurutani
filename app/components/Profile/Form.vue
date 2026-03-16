@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
+import type { Database } from '~/types/database.types';
 import { toastStore } from '~/composables/useJuruTaniToast';
 
-interface UserData {
-  id: string;
-  email?: string;
-  full_name?: string;
-  username?: string;
-  phone?: string;
-  address?: string;
-  bio?: string;
-  website?: string;
-  birth_date?: string;
-  avatar_url?: string;
-}
+type UserData = Database['public']['Tables']['profiles']['Row'];
+
+const authStore = useAuthStore();
+const supabase = useSupabaseClient<Database>();
 
 const props = defineProps<{
   userData: UserData;
@@ -22,8 +15,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   update: [];
 }>();
-
-const authStore = useAuthStore();
 
 // State
 const loading = ref(false);
@@ -123,46 +114,68 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    if (!authStore.user?.id) {
+    if (!authStore.user?.sub) {
       toastStore.error('Anda harus login untuk memperbarui profil.');
       return;
     }
 
-    if (authStore.user.id !== props.userData.id) {
+    if (authStore.user.sub !== props.userData.id) {
       toastStore.error('Tidak dapat memperbarui profil pengguna lain.');
       return;
     }
 
-    // Handle avatar upload
     let newAvatarUrl = formData.avatar_url;
+    
+    // Handle avatar upload locally
     if (imageFile.value) {
-      const uploadRes = await authStore.uploadAvatar(imageFile.value);
-      if (uploadRes.success && uploadRes.data) {
-        newAvatarUrl = uploadRes.data.avatar_url;
-        formData.avatar_url = newAvatarUrl;
-      } else {
-        const errorMsg = 'error' in uploadRes ? String(uploadRes.error) : 'Gagal mengupload gambar profil';
-        throw new Error(errorMsg);
+      const fileExt = imageFile.value.name.split('.').pop();
+      const fileName = `${authStore.user.sub}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, imageFile.value, { upsert: true });
+
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Gagal mengupload gambar profil');
       }
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      newAvatarUrl = publicUrl;
+      formData.avatar_url = newAvatarUrl;
+      
+      // Update cache version equivalent
+      authStore.refreshAvatarCache?.();
     }
 
     // Prepare update data
     const updates = {
-      full_name: formData.full_name.trim(),
-      username: formData.username.trim() || null,
-      phone: formData.phone.trim() || null,
-      address: formData.address.trim() || null,
-      bio: formData.bio.trim() || null,
-      website: formData.website.trim() || null,
+      full_name: (formData.full_name || '').trim(),
+      username: (formData.username || '').trim() || null,
+      phone: (formData.phone || '').trim() || null,
+      address: (formData.address || '').trim() || null,
+      bio: (formData.bio || '').trim() || null,
+      website: (formData.website || '').trim() || null,
       birth_date: formData.birth_date || null,
       avatar_url: newAvatarUrl,
+      updated_at: new Date().toISOString()
     };
 
-    // Update profile
-    const updateRes = await authStore.updateProfile(updates);
+    // Update profile directly to supabase
+    const { data: updateData, error: updateError } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', authStore.user.sub)
+      .select()
+      .single();
 
-    if (!updateRes.success) {
-      throw new Error(updateRes.error || 'Gagal memperbarui profil');
+    if (updateError) {
+      throw new Error(updateError.message || 'Gagal memperbarui profil');
+    }
+
+    // Update local store state if needed, assuming reactive
+    if (authStore.profile) {
+      Object.assign(authStore.profile, updates);
     }
 
     // Emit success

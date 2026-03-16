@@ -37,7 +37,12 @@ const { data: professionalData, pending: professionalPending } = await useAsyncD
   return null;
 }, { watch: [userData] });
 
-const formatDate = (dateString?: string | null) => authStore.formatDate(dateString || undefined);
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return '-'
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'long',
+  }).format(new Date(dateString))
+};
 
 const userRoleLabel = computed(() => {
   return Enum.UserRole.find(r => r.value === userData.value?.role)?.label || 'Pengguna'
@@ -53,9 +58,21 @@ const isValidUrl = (string?: string | null) => {
   }
 };
 
-const handleChat = () => {
-  // TODO: Implement chat functionality
-  console.log('Mulai chat dengan', userData.value?.full_name);
+const toast = useToast()
+const { createOrGetConversation } = useMessages()
+
+const handleChat = async () => {
+  if (!userData.value) return
+  if (!authStore.isAuthenticated) {
+    await navigateTo('/auth/login')
+    return
+  }
+  try {
+    const conversationId = await createOrGetConversation(userData.value.id)
+    await navigateTo(`/messages/${conversationId}`)
+  } catch (e: any) {
+    toast.add({ title: 'Gagal membuka chat', description: e?.message, color: 'error' })
+  }
 };
 </script>
 
@@ -117,7 +134,6 @@ const handleChat = () => {
                   variant="solid"
                   size="lg"
                   icon="i-heroicons-chat-bubble-left-right"
-                  disabled
                   @click="handleChat"
                 >
                   Mulai Chat
@@ -143,15 +159,38 @@ const handleChat = () => {
             <!-- Personal Info -->
             <div class="space-y-4">
               <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-green-200 dark:border-green-800 pb-2 transition-colors duration-200">
-                Informasi
+                Informasi Pribadi
               </h3>
               
               <div class="space-y-3">
                 <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Nama Lengkap</p>
+                  <p class="text-gray-800 dark:text-gray-200">{{ userData.full_name || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Username</p>
+                  <p class="text-gray-800 dark:text-gray-200">@{{ userData.username || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Email</p>
+                  <p class="text-gray-800 dark:text-gray-200 wrap-break-word">{{ userData.email || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Nomor Telepon</p>
+                  <p class="text-gray-800 dark:text-gray-200">{{ userData.phone || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Alamat</p>
+                  <p class="text-gray-800 dark:text-gray-200">{{ userData.address || '-' }}</p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Tanggal Lahir</p>
+                  <p class="text-gray-800 dark:text-gray-200">{{ formatDate(userData.birth_date) }}</p>
+                </div>
+                <div>
                   <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Bergabung Sejak</p>
                   <p class="text-gray-800 dark:text-gray-200">{{ formatDate(userData.created_at) }}</p>
                 </div>
-                
                 <div>
                   <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Website</p>
                   <div v-if="userData.website">

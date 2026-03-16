@@ -44,7 +44,7 @@ export const discussionServices: DiscussionService[] = [
         description: 'Diskusi langsung dalam room chat khusus berdasarkan komoditas seperti padi, sayuran, buah-buahan, dan peternakan untuk solusi cepat.',
         icon: 'i-lucide-message-circle',
         image: '/services/chatjurutani.webp',
-        route: '/room-chat'
+        route: '/messages'
     },
     {
         id: 'chat-admin',
@@ -53,7 +53,7 @@ export const discussionServices: DiscussionService[] = [
         description: 'Hubungi tim support JuruTani untuk bantuan teknis aplikasi, keluhan layanan, atau pertanyaan umum dengan respon prioritas.',
         icon: 'i-lucide-headset',
         image: '/services/admin.webp',
-        route: '/room-chat/admin'
+        route: '/messages?admin=1'
     }
 ]
 

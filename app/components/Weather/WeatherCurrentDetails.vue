@@ -105,7 +105,8 @@ const props = defineProps<{
           ]"
         >
           <div class="flex items-center gap-3">
-            <div :class="[
+            <div
+:class="[
               'p-2 rounded-xl backdrop-blur-sm',
               farmingConditions.suitable 
                 ? 'bg-green-500/20' 
@@ -119,10 +120,10 @@ const props = defineProps<{
                 ]"
               />
             </div>
-            <p class="font-semibold text-lg text-green-800 dark:text-green-100" v-if="farmingConditions.suitable">
+            <p v-if="farmingConditions.suitable" class="font-semibold text-lg text-green-800 dark:text-green-100">
               Kondisi Optimal
             </p>
-            <p class="font-semibold text-lg text-yellow-800 dark:text-yellow-100" v-else>
+            <p v-else class="font-semibold text-lg text-yellow-800 dark:text-yellow-100">
               Perlu Perhatian
             </p>
           </div>

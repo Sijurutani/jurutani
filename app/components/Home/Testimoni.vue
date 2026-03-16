@@ -99,7 +99,7 @@ const testimonials = [...testimonialsBase, ...testimonialsBase, ...testimonialsB
                     :alt="testimonial.name"
                     class="relative w-14 h-14 rounded-full object-cover border-2 border-white/50 dark:border-green-700/50 shadow-lg"
                     loading="lazy"
-                  />
+                  >
                 </div>
                 
                 <div class="flex-1 min-w-0">

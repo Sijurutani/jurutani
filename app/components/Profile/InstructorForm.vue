@@ -20,21 +20,49 @@ const formData = reactive({
 const isSubmitting = ref(false)
 const isLoading = ref(true)
 
+// District data from Supabase
+const districts = ref<Database['public']['Tables']['districts']['Row'][]>([])
+
+const provinceOptions = computed(() => {
+  const set = new Set<string>()
+  for (const d of districts.value) {
+    if (d.province) set.add(d.province)
+  }
+  return Array.from(set).sort().map(p => ({ label: p, value: p }))
+})
+
+const districtOptions = computed(() => {
+  if (!formData.provinces) return []
+  return districts.value
+    .filter(d => d.province === formData.provinces)
+    .map(d => ({ label: d.name, value: d.name }))
+})
+
 // Computed
 const isFormValid = computed(() => {
-  return formData.provinces && formData.provinces.trim().length > 0
+  return !!formData.provinces && !!formData.district
 })
 
 // Load data
 const loadData = async () => {
-  if (!authStore.user?.id) return
+  if (!authStore.user?.sub) return
   isLoading.value = true
 
   try {
+    // load districts
+    const { data: districtsData } = await supabase
+      .from('districts')
+      .select('id, name, province')
+      .order('province', { ascending: true })
+      .order('name', { ascending: true })
+
+    districts.value = (districtsData ?? []) as Database['public']['Tables']['districts']['Row'][]
+
+    // load instructor profile
     const { data: instructorData } = await supabase
       .from('instructors')
       .select('*')
-      .eq('user_id', authStore.user.id)
+      .eq('user_id', authStore.user.sub)
       .is('deleted_at', null)
       .maybeSingle()
 
@@ -52,13 +80,13 @@ const loadData = async () => {
 
 // Submit handler
 const handleSubmit = async () => {
-  if (!authStore.user?.id || !isFormValid.value) return
+  if (!authStore.user?.sub || !isFormValid.value) return
 
   isSubmitting.value = true
 
   try {
     const updates = {
-      user_id: authStore.user.id,
+      user_id: authStore.user.sub,
       provinces: formData.provinces || null,
       district: formData.district || null,
       note: formData.note || null,
@@ -69,13 +97,13 @@ const handleSubmit = async () => {
     const { data: existingData } = await supabase
       .from('instructors')
       .select('id')
-      .eq('user_id', authStore.user.id)
+      .eq('user_id', authStore.user.sub)
       .is('deleted_at', null)
       .maybeSingle()
       
     let error;
     if (existingData) {
-      const { error: updErr } = await supabase.from('instructors').update(updates).eq('user_id', authStore.user.id)
+      const { error: updErr } = await supabase.from('instructors').update(updates).eq('user_id', authStore.user.sub)
       error = updErr;
     } else {
       const { error: insErr } = await supabase.from('instructors').insert({ ...updates, created_at: new Date().toISOString() })
@@ -120,14 +148,13 @@ onMounted(() => {
         <label for="instructor-provinces" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
           Provinsi *
         </label>
-        <input
+        <USelect
           id="instructor-provinces"
           v-model="formData.provinces"
-          type="text"
-          required
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
-          placeholder="Contoh: Jawa Barat"
-        >
+          :items="provinceOptions"
+          placeholder="Pilih provinsi"
+          class="w-full"
+        />
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Provinsi wilayah kerja Anda sebagai penyuluh
         </p>
@@ -136,15 +163,16 @@ onMounted(() => {
       <!-- District -->
       <div>
         <label for="instructor-district" class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2">
-          Kabupaten/Kota
+          Kabupaten/Kota *
         </label>
-        <input
+        <USelect
           id="instructor-district"
           v-model="formData.district"
-          type="text"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors"
-          placeholder="Contoh: Bandung"
-        >
+          :items="districtOptions"
+          :disabled="!formData.provinces"
+          placeholder="Pilih kabupaten/kota"
+          class="w-full"
+        />
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Kabupaten atau kota wilayah kerja Anda
         </p>

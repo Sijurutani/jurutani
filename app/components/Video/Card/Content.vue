@@ -1,22 +1,10 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
- 
+import type { Database } from '~/types/database.types'
 
-const supabase = useSupabaseClient()
-
-interface Video {
-  id: string
-  slug: string
-  title: string
-  description: string
-  link_yt: string
-  category: string
-  created_at: string
-  thumbnail?: string
-}
+type VideoRow = Database['public']['Tables']['videos']['Row']
 
 interface Props {
-  video: Video
+  video: VideoRow
   variant?: 'default' | 'large' | 'wide' | 'tall'
   index?: number
 }
@@ -72,14 +60,16 @@ const formattedDate = computed(() => {
 })
 
 const formattedCategory = computed(() => {
-  return props.video.category.charAt(0).toUpperCase() + props.video.category.slice(1)
+  const cat = props.video.category ?? ''
+  return cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : 'Video'
 })
 
 const excerpt = computed(() => {
+  const desc = props.video.description ?? ''
   const maxLength = props.variant === 'large' ? 180 : 100
-  return props.video.description.length > maxLength 
-    ? props.video.description.substring(0, maxLength) + '...' 
-    : props.video.description
+  return desc.length > maxLength
+    ? desc.substring(0, maxLength) + '...'
+    : desc
 })
 
 // Image handlers
@@ -158,7 +148,7 @@ const viewDetails = () => {
         loading="lazy"
         @error="handleImageError"
         @load="handleImageLoad"
-      />
+      >
       
       <!-- Fallback Background -->
       <div 

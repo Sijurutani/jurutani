@@ -1,5 +1,21 @@
 <script setup lang="ts">
-import type { NewsUpdated } from '~/types/news'
+import type { JSONContent } from '@tiptap/vue-3'
+import type { Database } from '~/types/database.types'
+
+type NewsUpdatedRow = Database['public']['Tables']['news_updated']['Row']
+
+interface NewsAttachment {
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
+
+type NewsUpdated = Omit<NewsUpdatedRow, 'content' | 'images' | 'attachments'> & {
+  content: JSONContent
+  images: string[]
+  attachments: NewsAttachment[]
+}
 
 interface Props {
   news: NewsUpdated

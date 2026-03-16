@@ -92,20 +92,20 @@ const handleReload = () => window.location.reload()
       <!-- Action Buttons -->
       <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
         <UButton
-          @click="handleClearError"
           size="lg"
           color="primary"
           icon="i-lucide-home"
+          @click="handleClearError"
         >
           Kembali ke Beranda
         </UButton>
         
         <UButton
-          @click="handleReload"
           size="lg"
           color="neutral"
           variant="outline"
           icon="i-lucide-refresh-cw"
+          @click="handleReload"
         >
           Muat Ulang Halaman
         </UButton>

@@ -11,21 +11,38 @@ const error = computed(() => authStore.error)
 
 const fetchUserData = async () => { await authStore.fetchProfile() }
 
-const formatDate = (dateString?: string | null) => authStore.formatDate(dateString || undefined)
+const formatDate = (dateString?: string | null) => {
+  if (!dateString) return '-'
+  return new Intl.DateTimeFormat('id-ID', {
+    dateStyle: 'long',
+  }).format(new Date(dateString))
+}
 
-const { data: professionalData, pending: professionalPending, execute: fetchProfessionalData } = await useAsyncData('current-user-professional', async () => {
-  if (!userData.value?.id) return null
-  const role = userData.value.role
+const professionalData = ref<{type: string, data: any} | null>(null)
+const professionalPending = ref(false)
+
+const fetchProfessionalData = async () => {
+  if (!userData.value?.id) return
+  professionalPending.value = true
   
-  if (role === 'pakar') {
-    const { data } = await supabase.from('experts').select('*').eq('user_id', userData.value.id).maybeSingle()
-    return { type: 'pakar', data }
-  } else if (role === 'penyuluh') {
-    const { data } = await supabase.from('instructors').select('*').eq('user_id', userData.value.id).maybeSingle()
-    return { type: 'penyuluh', data }
+  try {
+    const role = userData.value.role
+    if (role === 'pakar') {
+      const { data } = await supabase.from('experts').select('*').eq('user_id', userData.value.id).maybeSingle()
+      professionalData.value = { type: 'pakar', data }
+    } else if (role === 'penyuluh') {
+      const { data } = await supabase.from('instructors').select('*').eq('user_id', userData.value.id).maybeSingle()
+      professionalData.value = { type: 'penyuluh', data }
+    } else {
+      professionalData.value = null
+    }
+  } catch (error) {
+    console.error('Error fetching professional data:', error)
+  } finally {
+    professionalPending.value = false
   }
-  return null
-}, { immediate: false })
+}
+
 const isValidUrl = (string?: string | null) => {
   if (!string) return false
   try {
@@ -65,7 +82,6 @@ const tabs = computed(() => {
       value: 'personal'
     }
   ]
-
   return baseTabs
 })
 
@@ -103,7 +119,6 @@ onMounted(() => {
 <template>
   <div class="min-h-screen py-12 transition-colors duration-200">
     <div class="container mx-auto px-4 py-8">
-      <!-- Header Section -->
       <div class="text-center mb-8">
         <div class="inline-flex items-center justify-center w-16 h-16 bg-green-600 dark:bg-green-700 rounded-full mb-4 shadow-lg dark:shadow-green-900/50">
           <UIcon name="i-lucide-user" class="w-8 h-8 text-white" />
@@ -114,7 +129,6 @@ onMounted(() => {
         </p>
       </div>
 
-      <!-- Loading State -->
       <div v-if="loading" class="text-center py-16">
         <div class="inline-flex items-center px-6 py-3 bg-white dark:bg-gray-900 rounded-lg shadow-sm dark:shadow-md border border-gray-100 dark:border-gray-800">
           <UIcon name="i-heroicons-arrow-path" class="animate-spin -ml-1 mr-3 h-5 w-5 text-green-600 dark:text-green-400" />
@@ -122,7 +136,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Error State -->
       <div v-else-if="error" class="max-w-2xl mx-auto">
         <div class="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-400 dark:border-red-600 p-4 rounded-lg transition-colors duration-200">
           <div class="flex">
@@ -145,14 +158,10 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Profile Content with Tabs -->
       <div v-else-if="userData" class="max-w-4xl mx-auto">
-        <!-- Profile Header Card -->
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-black/50 border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-200 mb-6">
-          <!-- Header Profile dengan Background -->
           <div class="bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-700 dark:to-emerald-700 px-6 py-8 transition-all duration-200">
             <div class="flex flex-col md:flex-row items-center">
-              <!-- Profile Image -->
               <div class="relative mb-4 md:mb-0 md:mr-6">
                 <div class="w-32 h-32 rounded-full overflow-hidden bg-white dark:bg-gray-800 p-1 shadow-lg dark:shadow-black/50">
                   <NuxtImg 
@@ -162,7 +171,6 @@ onMounted(() => {
                     @error="handleImageError"
                   />
                 </div>
-                <!-- Role Badge -->
                 <div class="absolute -bottom-2 -right-2 bg-white dark:bg-gray-800 rounded-full px-3 py-1 shadow-md dark:shadow-black/50 transition-all duration-200">
                   <span class="text-xs font-semibold text-green-600 dark:text-green-400">
                     {{ authStore.roleLabel }}
@@ -170,7 +178,6 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- User Info -->
               <div class="flex-1 text-center md:text-left text-white">
                 <h2 class="text-2xl font-bold mb-1">
                   {{ userData.full_name || 'Pengguna JuruTani' }}
@@ -183,10 +190,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Tabs Section -->
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-black/50 border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-200">
           <div class="p-6">
-            <!-- Tabs Navigation -->
             <UTabs 
               v-model="activeTab" 
               color="neutral" 
@@ -196,9 +201,7 @@ onMounted(() => {
               class="w-full mb-6"
             />
 
-            <!-- Tab Content: Profil Pribadi -->
             <div v-if="activeTab === 'personal'" class="py-4">
-              <!-- Bio Section -->
               <div v-if="userData.bio" class="mb-6 p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-100 dark:border-green-800 transition-colors duration-200">
                 <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
                   <UIcon name="i-heroicons-chat-bubble-left" class="w-5 h-5 mr-2 text-green-600 dark:text-green-400" />
@@ -207,9 +210,7 @@ onMounted(() => {
                 <p class="text-gray-600 dark:text-gray-400 leading-relaxed">{{ userData.bio }}</p>
               </div>
 
-              <!-- Information Grid -->
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-                <!-- Personal Info -->
                 <div class="space-y-4">
                   <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-green-200 dark:border-green-800 pb-2 transition-colors duration-200">
                     Informasi Pribadi
@@ -240,7 +241,6 @@ onMounted(() => {
                   </div>
                 </div>
 
-                <!-- Contact Info -->
                 <div class="space-y-4">
                   <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-green-200 dark:border-green-800 pb-2 transition-colors duration-200">
                     Kontak
@@ -277,7 +277,6 @@ onMounted(() => {
                   </div>
                 </div>
 
-                <!-- Address Info -->
                 <div class="space-y-4">
                   <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-green-200 dark:border-green-800 pb-2 transition-colors duration-200">
                     Alamat
@@ -292,7 +291,6 @@ onMounted(() => {
                 </div>
               </div>
 
-              <!-- Edit Button -->
               <div class="flex justify-center pt-4">
                 <UButton
                   color="success"
@@ -305,7 +303,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Professional Data Display based on Profile role natively without rendering the form here -->
             <div v-if="showProfessionalTab" class="mt-8 border-t border-gray-100 dark:border-gray-800 pt-8">
               <div class="flex items-center justify-between mb-6">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -329,7 +326,6 @@ onMounted(() => {
               
               <div v-else-if="professionalData && professionalData.data" class="space-y-4">
                 <div class="p-6 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 transition-colors">
-                  <!-- Pakar fields -->
                   <template v-if="professionalData.type === 'pakar'">
                     <div class="mb-4">
                       <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Kategori Ahli</p>
@@ -339,7 +335,6 @@ onMounted(() => {
                     </div>
                   </template>
 
-                  <!-- Penyuluh fields -->
                   <template v-if="professionalData.type === 'penyuluh'">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
@@ -353,7 +348,6 @@ onMounted(() => {
                     </div>
                   </template>
 
-                  <!-- Shared Note field -->
                   <div v-if="professionalData.data.note" class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
                     <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Catatan/Ringkasan Profil</p>
                     <p class="text-gray-800 dark:text-gray-200 leading-relaxed text-sm p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800">
@@ -363,7 +357,6 @@ onMounted(() => {
                 </div>
               </div>
               
-              <!-- Empty state when no professional data is found -->
               <div v-else class="p-6 bg-green-50/50 dark:bg-green-900/10 rounded-xl border border-green-100 dark:border-green-800/30 text-center">
                 <UIcon :name="isPakar ? 'i-mdi-certificate' : 'i-mdi-map-marker-radius'" class="w-12 h-12 text-green-400 dark:text-green-600/50 mx-auto mb-3" />
                 <p class="text-gray-600 dark:text-gray-400 text-sm">
@@ -386,19 +379,40 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Edit Personal Profile Modal -->
-    <UModal v-model="showEditPersonalModal">
-      <ProfileForm 
-        v-if="userData"
-        :user-data="userData"
-        @update="handleProfileUpdate"
-      />
+    <UModal 
+      v-model:open="showEditPersonalModal" 
+      title="Edit Profil Pribadi"
+      description="Perbarui informasi data diri Anda di bawah ini."
+    >
+      <template #body>
+        <ProfileForm 
+          v-if="showEditPersonalModal && userData"
+          :user-data="userData"
+          @update="handleProfileUpdate"
+          @cancel="showEditPersonalModal = false"
+        />
+      </template>
     </UModal>
 
-    <!-- Edit Professional Profile Modal -->
-    <UModal v-model="showEditProfessionalModal">
-      <ProfileExpertForm v-if="isPakar" @update="handleProfessionalUpdate" />
-      <ProfileInstructorForm v-if="isPenyuluh" @update="handleProfessionalUpdate" />
+    <UModal 
+      v-model:open="showEditProfessionalModal" 
+      title="Edit Data Profesional"
+      description="Lengkapi atau perbarui informasi profesional Anda."
+    >
+      <template #body>
+        <div v-if="showEditProfessionalModal">
+          <ProfileExpertForm 
+            v-if="isPakar" 
+            @update="handleProfessionalUpdate" 
+            @cancel="showEditProfessionalModal = false" 
+          />
+          <ProfileInstructorForm 
+            v-if="isPenyuluh" 
+            @update="handleProfessionalUpdate" 
+            @cancel="showEditProfessionalModal = false" 
+          />
+        </div>
+      </template>
     </UModal>
   </div>
 </template>

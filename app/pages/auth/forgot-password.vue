@@ -49,7 +49,9 @@ const handleResetPassword = async () => {
         <!-- Header with plant icon -->
         <div class="text-center space-y-4">
           <!-- Plant Icon -->
-            <TheLogo class="mx-auto" />
+              <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+                <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+              </NuxtLink>
           
           <h1 class="text-3xl font-bold bg-linear-to-r from-green-600 via-emerald-600 to-teal-600 dark:from-green-400 dark:via-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
             Lupa Password?

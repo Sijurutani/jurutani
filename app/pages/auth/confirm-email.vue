@@ -58,7 +58,9 @@ onMounted(() => {
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="flex items-center justify-center space-x-3 mb-8">
-        <TheLogo />
+            <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+              <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+            </NuxtLink>
       </div>
       
       <UCard class="shadow-lg border-0">

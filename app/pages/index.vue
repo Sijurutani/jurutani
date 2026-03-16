@@ -18,36 +18,36 @@ useJsonLdSchemas(schemas)
 <template>
   <main>
     <!-- Hero Section with h1 -->
-    <HeroSection />
+    <HomeHeroSection />
     
     <!-- Weather Section -->
     <section aria-labelledby="weather-section" class="mt-16">
       <h2 id="weather-section" class="sr-only">Informasi Cuaca Pertanian</h2>
-      <WeatherSection />
+      <HomeWeatherSection />
     </section>
     
     <!-- Promo Section -->
     <section aria-labelledby="promo-section" class="mt-16 sm:px-4">
       <h2 id="promo-section" class="sr-only">Promo dan Penawaran Spesial</h2>
-      <LaunchSale />
+      <HomeLaunchSale />
     </section>
     
     <!-- Hot Deals Section -->
     <section aria-labelledby="deals-section" class="mt-16">
       <h2 id="deals-section" class="sr-only">Penawaran Terbaik Hari Ini</h2>
-      <HotDeals />
+      <HomeHotDeals />
     </section>
     
     <!-- Food Price Section -->
     <section aria-labelledby="food-price-section" class="mt-16">
       <h2 id="food-price-section" class="sr-only">Informasi Harga Pangan</h2>
-      <FoodPriceSection />
+      <HomeFoodPriceSection />
     </section>
     
     <!-- Features Section -->
     <section aria-labelledby="features-section" class="mt-16">
       <h2 id="features-section" class="sr-only">Fitur Unggulan JuruTani</h2>
-      <FeatureSection />
+      <HomeFeatureSection />
     </section>
     
     
@@ -66,7 +66,7 @@ useJsonLdSchemas(schemas)
     <!-- Android App Promotion Section -->
     <section aria-labelledby="android-app-section" class="my-16 container mx-auto px-4">
       <h2 id="android-app-section" class="sr-only">Download Aplikasi JuruTani di Android</h2>
-      <AndroidAppPromotion />
+      <HomeAndroidAppPromotion />
     </section>
     <!-- Chatbot -->
     <ChatbotJurutani />

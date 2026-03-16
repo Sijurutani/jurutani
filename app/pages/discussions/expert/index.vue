@@ -206,8 +206,8 @@ useHead({
           />
           <UButton
             color="success"
-            @click="fetchExperts"
             icon="i-lucide-refresh-cw"
+            @click="fetchExperts"
           >
             Coba Lagi
           </UButton>
@@ -260,8 +260,9 @@ useHead({
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <DiscussionsDiscussionCard
                   v-for="expert in paginatedExperts"
-                  :key="expert.id"
                   :id="expert.id"
+                  :key="expert.id"
+                  :user-id="expert.user_id"
                   :profile="expert.profiles"
                   :category="expert.category"
                   :note="expert.note || `Ahli dalam bidang ${expert.category.toLowerCase()} yang telah berpengalaman membantu petani.`"

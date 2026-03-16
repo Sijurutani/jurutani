@@ -266,7 +266,7 @@ watch(() => course.value, (newVal) => {
             :src="imageUrl"
             :alt="course.title"
             class="w-full h-full object-cover"
-          />
+          >
           <div v-else class="flex items-center justify-center h-full">
             <div class="text-center text-green-600 dark:text-green-400">
               <UIcon name="i-heroicons-book-open" class="w-16 h-16 mx-auto mb-2 opacity-50" />

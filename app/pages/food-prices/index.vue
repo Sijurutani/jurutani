@@ -1,5 +1,12 @@
 <script setup lang="ts">
+
 import { h, resolveComponent } from 'vue'
+import { watchDebounced } from '@vueuse/core'
+
+import { Enum } from '~/utils/enum'
+import { formatCurrency } from '~/utils/currency'
+import type { Database } from '~/types/database.types'
+import { useRoute, useRouter, useSupabaseClient } from '#imports'
 
 definePageMeta({
   layout: 'default',
@@ -9,54 +16,193 @@ const UIcon = resolveComponent('UIcon')
 const UBadge = resolveComponent('UBadge')
 const UButton = resolveComponent('UButton')
 
+const route = useRoute()
 const router = useRouter()
-const { 
-  getFoodsWithLatestPrices, 
-  formatCurrency, 
-  formatDate,
-  getCategoryIcon,
-  getCategoryLabel 
-} = useFoodPrices()
 
-// State
-const foods = ref<any[]>([])
-const loading = ref(true)
-const error = ref<any>(null)
-const selectedCategory = ref('all')
-const searchQuery = ref('')
-const currentSort = ref<'name' | 'price-asc' | 'price-desc' | 'updated'>('updated')
-const currentPage = ref(1)
+
+// --- Food Price Utilities ---
+const supabase = useSupabaseClient<Database>()
+type FoodRow = Database['public']['Tables']['foods']['Row'] & {
+  latest_price?: number
+  latest_price_date?: string
+  price_change?: number
+  price_change_percent?: number
+}
+
+const getFoodsWithLatestPrices = async (category?: string, search?: string) => {
+  // Ambil semua food utama
+  let foodQuery = supabase
+    .from('foods')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .is('deleted_at', null)
+  if (category && category !== 'all') {
+    foodQuery = foodQuery.eq('category', category)
+  }
+  if (search && search.trim()) {
+    foodQuery = foodQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+  }
+  const { data: foods, error: foodErr } = await foodQuery
+  if (foodErr) return { data: [], error: foodErr }
+  if (!foods) return { data: [], error: null }
+
+  // Ambil harga terbaru dan sebelumnya untuk perubahan harga
+  const { data: prices, error: priceErr } = await supabase
+    .from('food_prices')
+    .select('food_id,price,date')
+    .is('deleted_at', null)
+    .order('date', { ascending: false })
+  if (priceErr) return { data: [], error: priceErr }
+
+  // Gabungkan harga terbaru dan perubahan ke setiap food
+  const foodsWithPrice: FoodRow[] = foods.map(food => {
+    const priceEntries = prices.filter(p => p.food_id === food.id)
+    const latest = priceEntries[0]
+    const prev = priceEntries[1]
+    let price_change = 0
+    let price_change_percent = 0
+    if (latest && prev) {
+      price_change = latest.price - prev.price
+      price_change_percent = prev.price ? (price_change / prev.price) * 100 : 0
+    }
+    return {
+      ...food,
+      latest_price: latest?.price ?? 0,
+      latest_price_date: latest?.date ?? food.updated_at ?? null,
+      price_change,
+      price_change_percent
+    }
+  })
+  return { data: foodsWithPrice, error: null }
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return ''
+  try {
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date)
+  } catch {
+    return ''
+  }
+}
+
+const getCategoryIcon = (categoryValue: string) => {
+  const icons: Record<string, string> = {
+    'hortikultura': 'i-lucide-leaf',
+    'perkebunan': 'i-lucide-tree-deciduous',
+    'peternakan': 'i-lucide-beef',
+    'perikanan': 'i-lucide-fish',
+  }
+  return icons[categoryValue] || 'i-lucide-package'
+}
+
+const getCategoryLabel = (categoryValue: string) => {
+  const found = Enum.FoodPriceCategories.find(cat => cat.value === categoryValue)
+  return found ? found.label : categoryValue
+}
+
+// 1. Reactive Route Queries (State URL)
+const selectedCategory = computed<string>({
+  get() {
+    const raw = route.query.category
+    return typeof raw === 'string' ? raw : 'all'
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === 'all' || value === 'semua') {
+      delete nextQuery.category
+    } else {
+      nextQuery.category = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
+
+const searchQuery = computed<string | undefined>({
+  get() {
+    const raw = route.query.search
+    return typeof raw === 'string' && raw.trim() ? raw : undefined
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || !value.trim()) {
+      delete nextQuery.search
+    } else {
+      nextQuery.search = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
+
+const currentSort = computed<string>({
+  get() {
+    const raw = route.query.sort
+    return typeof raw === 'string' ? raw : 'updated'
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    if (!value || value === 'updated') {
+      delete nextQuery.sort
+    } else {
+      nextQuery.sort = value
+    }
+    router.replace({ query: nextQuery })
+  }
+})
+
+const currentPage = computed<number>({
+  get() {
+    const raw = route.query.page
+    if (typeof raw !== 'string') return 1
+    const parsed = Number.parseInt(raw, 10)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+  },
+  set(value) {
+    const nextQuery = { ...route.query }
+    const normalizedPage = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
+
+    if (normalizedPage <= 1) {
+      delete nextQuery.page
+    } else {
+      nextQuery.page = String(normalizedPage)
+    }
+
+    router.replace({ query: nextQuery })
+  }
+})
+
 const itemsPerPage = 15
 
-// Fetch data from Supabase
-const fetchFoods = async () => {
-  loading.value = true
-  error.value = null
-  
+// 3. Fetch Data secara Deklaratif
+const { data: rawFoods, pending: loading, error, refresh } = await useAsyncData('food-prices-list', async () => {
   const { data, error: fetchError } = await getFoodsWithLatestPrices(
     selectedCategory.value,
     searchQuery.value
   )
-  
-  if (fetchError) {
-    error.value = fetchError
-    console.error('Error fetching foods:', fetchError)
-  } else {
-    foods.value = data || []
-  }
-  
-  loading.value = false
-}
+  if (fetchError) throw fetchError
+  return data || []
+}, {
+  default: () => [],
+  watch: [selectedCategory]
+})
 
-// Watch for filter changes
-watch([selectedCategory, searchQuery], () => {
+// 5. Debounce Search & Reset Page Handler
+watchDebounced([searchQuery], async () => {
   currentPage.value = 1
-  fetchFoods()
+  await refresh()
+}, { debounce: 500 })
+
+// Reset page ke 1 setiap kali filter kategori atau sort berubah
+watch([selectedCategory, currentSort], () => {
+  currentPage.value = 1
 })
 
 // Sort foods
 const sortedData = computed(() => {
-  const data = [...foods.value]
+  const data = [...rawFoods.value]
   
   switch (currentSort.value) {
     case 'name':
@@ -77,7 +223,7 @@ const sortedData = computed(() => {
 })
 
 // Pagination
-const totalPages = computed(() => Math.ceil(sortedData.value.length / itemsPerPage))
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedData.value.length / itemsPerPage)))
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
@@ -210,10 +356,6 @@ const handlePageChange = (page: number) => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-// Initial fetch
-onMounted(() => {
-  fetchFoods()
-})
 
 // SEO
 useSeoOptimized('food-prices')
@@ -248,7 +390,7 @@ useHead({
       <!-- Category Filter -->
       <nav aria-label="Filter kategori pangan">
         <AppCategoryFilter 
-          :categories="Enum.FoodPriceCategories" 
+          :categories="Enum.FoodPriceCategories.map(c => ({ name: c.label, value: c.value }))" 
           :current-category="selectedCategory"
           :show-all-option="false"
           @update:category="handleCategoryChange"
@@ -299,15 +441,15 @@ useHead({
       <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
         Gagal memuat data
       </h3>
-      <p class="text-gray-600 dark:text-gray-400 mb-4">
-        Terjadi kesalahan saat mengambil data. Silakan coba lagi.
-      </p>
-      <UButton 
-        color="primary" 
-        @click="fetchFoods"
-      >
-        Coba Lagi
-      </UButton>
+          <p class="text-gray-600 dark:text-gray-400 mb-4">
+            Terjadi kesalahan saat mengambil data. Silakan coba lagi.
+          </p>
+          <UButton 
+            color="primary" 
+            @click="refresh"
+          >
+            Coba Lagi
+          </UButton>
     </div>
 
     <!-- Data Table -->

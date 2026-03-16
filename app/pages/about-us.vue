@@ -266,7 +266,7 @@
     <div class="container mx-auto px-4 pb-16">
       
       <!-- Tentang Si JuruTani -->
-      <section class="mb-16" id="tentang" aria-labelledby="about-heading">
+      <section id="tentang" class="mb-16" aria-labelledby="about-heading">
         <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl border border-green-100 dark:border-green-800">
           <h2 id="about-heading" class="text-3xl md:text-4xl font-bold text-green-800 dark:text-green-300 mb-2 text-center">
             Apa itu Si JuruTani?
@@ -332,7 +332,7 @@
       </section>
 
       <!-- Gallery Section -->
-      <section class="mb-16 pt-6" id="galeri" aria-labelledby="gallery-heading">
+      <section id="galeri" class="mb-16 pt-6" aria-labelledby="gallery-heading">
         <div class="text-center mb-12">
           <h2 id="gallery-heading" class="text-3xl md:text-4xl font-bold text-green-800 dark:text-green-300 mb-4">
             Galeri Inovasi Penyuluhan Digital
@@ -440,7 +440,7 @@
         </div>
       </section>
       <!-- Sponsor Section -->
-      <section class="mb-16" id="sponsor" aria-labelledby="sponsor-heading">
+      <section id="sponsor" class="mb-16" aria-labelledby="sponsor-heading">
         <div class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 md:p-12 shadow-xl border border-green-100 dark:border-green-800">
           <div class="text-center mb-10">
             <h2 id="sponsor-heading" class="text-3xl font-bold text-green-800 dark:text-green-300 mb-2">
@@ -474,7 +474,7 @@
       </section>
 
       <!-- Tim Pengembang -->
-      <section class="mb-16" id="tim-developer" aria-labelledby="team-heading">
+      <section id="tim-developer" class="mb-16" aria-labelledby="team-heading">
         <div class="bg-linear-to-r from-green-600 to-emerald-600 rounded-2xl p-8 md:p-12 text-white text-center shadow-xl">
           <h2 id="team-heading" class="text-3xl md:text-4xl font-bold mb-3">
             Tim Pengembang Inovasi

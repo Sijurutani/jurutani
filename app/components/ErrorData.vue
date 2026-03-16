@@ -31,11 +31,11 @@ const handleRetry = () => {
     <template #actions>
       <UButton 
         v-if="showRetry"
-        @click="handleRetry"
-        color="success" 
+        color="success"
         variant="outline" 
-        size="xs"
+        size="xs" 
         icon="i-heroicons-arrow-path"
+        @click="handleRetry"
       >
         Coba Lagi
       </UButton>

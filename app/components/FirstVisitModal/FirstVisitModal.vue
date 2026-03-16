@@ -45,7 +45,9 @@ defineExpose({
   >
     <template #header>
       <div class="flex justify-center w-full">
-        <TheLogo class="h-20" />
+            <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+              <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+            </NuxtLink>
       </div>
     </template>
 

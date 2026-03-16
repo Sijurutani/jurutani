@@ -1,9 +1,42 @@
 <script setup lang="ts">
-import type { ProductMarket } from '~/types/market'
+import type { JSONContent } from '@tiptap/vue-3'
+import type { Database } from '~/types/database.types'
 import { extractTiptapText } from '~/composables/useTiptapContent'
-import { formatFileSize } from '~/composables/useNewsUpdatedShared'
 import { formatDateLong } from '~/utils/dateFormatter'
 import { Enum } from '~/utils/enum'
+import { useAuthStore } from '~/stores/auth'
+const auth = useAuthStore()
+const canEditProduct = computed(() =>
+  auth.isAuthenticated && auth.computedProfile?.id === product.value?.user_id
+)
+
+type ProductMarketRow = Database['public']['Tables']['product_markets']['Row']
+
+interface MarketAttachment {
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
+
+interface MarketLink {
+  shopee_link?: string
+  tokopedia_link?: string
+  tiktok_link?: string
+  other_link?: string
+}
+
+type ProductMarket = Omit<ProductMarketRow, 'content' | 'images' | 'attachments' | 'links'> & {
+  content: JSONContent
+  images: string[]
+  attachments: MarketAttachment[]
+  links: MarketLink[]
+  profiles?: {
+    id: string
+    full_name: string | null
+    avatar_url: string | null
+  } | null
+}
 
 definePageMeta({
   layout: 'default'
@@ -13,25 +46,18 @@ const route = useRoute()
 const supabase = useSupabaseClient()
 const slugParam = computed(() => Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug)
 
+
 const getImagePathUrl = (imagePath: string | null): string => {
   if (!imagePath) return '/placeholder.png'
   if (imagePath.startsWith('http')) return imagePath
-
-  const { data } = supabase.storage
-    .from('product-markets-images')
-    .getPublicUrl(imagePath)
-
+  const { data } = supabase.storage.from('markets').getPublicUrl(imagePath)
   return data?.publicUrl || '/placeholder.png'
 }
 
 const getAttachmentUrl = (attachmentPath: string): string => {
   if (!attachmentPath) return '#'
   if (attachmentPath.startsWith('http')) return attachmentPath
-
-  const { data } = supabase.storage
-    .from('product-markets-attachments')
-    .getPublicUrl(attachmentPath)
-
+  const { data } = supabase.storage.from('markets').getPublicUrl(attachmentPath)
   return data?.publicUrl || '#'
 }
 
@@ -243,10 +269,14 @@ const statusColor = computed((): 'neutral' | 'success' | 'warning' | 'error' => 
 // Check if e-commerce links exist
 const hasMarketplaceLinks = computed(() => {
   if (!product.value.links || product.value.links.length === 0) return false
-  return product.value.links.some(link => 
+  return product.value.links.some(link =>
     link.shopee_link || link.tokopedia_link || link.tiktok_link
   )
 })
+
+const shopeeLinks = computed(() => product.value.links.filter(l => l.shopee_link))
+const tokopediaLinks = computed(() => product.value.links.filter(l => l.tokopedia_link))
+const tiktokLinks = computed(() => product.value.links.filter(l => l.tiktok_link))
 
 // Format WhatsApp link
 const whatsappLink = computed(() => {
@@ -347,6 +377,7 @@ const { data: similarProducts } = await useAsyncData(
             </UButton>
 
             <UButton
+              v-if="canEditProduct"
               :to="`/markets/edit/${product.id}`"
               color="neutral"
               variant="outline"
@@ -366,11 +397,11 @@ const { data: similarProducts } = await useAsyncData(
       <!-- Breadcrumb -->
       <nav class="mb-8 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <NuxtLink to="/" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-          Beranda
+          <UIcon name="i-lucide-home" class="w-4 h-4" />
         </NuxtLink>
         <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
         <NuxtLink to="/markets" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-          Pasar Tani
+          <UIcon name="i-lucide-store" class="w-4 h-4" />
         </NuxtLink>
         <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
         <span class="text-gray-900 dark:text-white font-medium">{{ product.name }}</span>
@@ -389,7 +420,7 @@ const { data: similarProducts } = await useAsyncData(
                 :alt="product.name"
                 class="w-full h-full object-cover"
                 @error="(e: any) => e.target.src = '/product.png'"
-              />
+              >
               <div v-else class="w-full h-full flex items-center justify-center bg-gray-800">
                 <UIcon name="i-heroicons-shopping-bag" class="w-20 h-20 text-gray-600" />
               </div>
@@ -553,7 +584,6 @@ const { data: similarProducts } = await useAsyncData(
                       </div>
                       <div class="min-w-0 flex-1">
                         <p class="font-medium truncate">{{ attachment.name }}</p>
-                        <p class="text-sm text-gray-500">{{ formatFileSize(attachment.size || 0) }}</p>
                       </div>
                     </div>
                     <UButton color="primary" variant="ghost" icon="i-lucide-download" />
@@ -569,10 +599,9 @@ const { data: similarProducts } = await useAsyncData(
                 </h2>
                 <div class="flex flex-wrap gap-3">
                   <NuxtLink
-                    v-for="(link, index) in product.links"
-                    :key="index"
-                    v-if="link.shopee_link"
-                    :to="link.shopee_link"
+                    v-for="(link, index) in shopeeLinks"
+                    :key="`shopee-${index}`"
+                    :to="link.shopee_link!"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="inline-flex items-center px-4 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-500 transition-all transform hover:scale-105 shadow-sm font-medium"
@@ -582,10 +611,9 @@ const { data: similarProducts } = await useAsyncData(
                   </NuxtLink>
 
                   <NuxtLink
-                    v-for="(link, index) in product.links"
-                    :key="index"
-                    v-if="link.tokopedia_link"
-                    :to="link.tokopedia_link"
+                    v-for="(link, index) in tokopediaLinks"
+                    :key="`tokopedia-${index}`"
+                    :to="link.tokopedia_link!"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="inline-flex items-center px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 transition-all transform hover:scale-105 shadow-sm font-medium"
@@ -595,10 +623,9 @@ const { data: similarProducts } = await useAsyncData(
                   </NuxtLink>
 
                   <NuxtLink
-                    v-for="(link, index) in product.links"
-                    :key="index"
-                    v-if="link.tiktok_link"
-                    :to="link.tiktok_link"
+                    v-for="(link, index) in tiktokLinks"
+                    :key="`tiktok-${index}`"
+                    :to="link.tiktok_link!"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="inline-flex items-center px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all transform hover:scale-105 shadow-sm font-medium"
@@ -609,11 +636,12 @@ const { data: similarProducts } = await useAsyncData(
                 </div>
               </div>
 
+
               <!-- Contact Button -->
               <div class="mt-auto pt-6">
                 <button
-                  @click="openWhatsApp"
                   class="inline-flex items-center justify-center w-full px-6 py-4 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500 transition-all transform hover:scale-105 text-lg font-semibold shadow-lg hover:shadow-xl"
+                  @click="openWhatsApp"
                 >
                   <UIcon name="i-mdi-whatsapp" class="text-2xl mx-4" />
                   Hubungi Penjual
@@ -667,7 +695,7 @@ const { data: similarProducts } = await useAsyncData(
 
         <!-- Similar Products Grid -->
         <div v-if="similarProducts && similarProducts.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <ProductMarketCard
+          <MarketsProductMarketCard
             v-for="item in similarProducts"
             :key="item.id"
             :product="item"

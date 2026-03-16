@@ -8,7 +8,7 @@ export const navs = {
             icon: 'i-lucide-headset',
             children: [
                 { title: 'Diskusi', to: '/discussions', icon: 'i-lucide-messages-square' },
-                { title: 'Messages', to: '/room-chat', icon: 'i-lucide-message-square' },
+                { title: 'Messages', to: '/messages', icon: 'i-lucide-message-square' },
                 { title: 'Marketplace', to: '/markets', icon: 'i-lucide-shopping-bag' },
                 { title: 'Harga Pangan', to: '/food-prices', icon: 'i-lucide-bar-chart-2' }
             ]
@@ -18,8 +18,9 @@ export const navs = {
             title: 'Edukasi',
             icon: 'i-lucide-graduation-cap',
             children: [
-                { title: 'Materi', to: '/educations', icon: 'i-lucide-book' },
-                { title: 'Course', to: '/courses', icon: 'i-lucide-book-open' },
+                { title: 'Courses', to: '/courses', icon: 'i-lucide-book' },
+                { title: 'Meeting', to: '/meetings', icon: 'i-lucide-calendar' },
+                { title: 'Video', to: '/videos', icon: 'i-lucide-video' },
                 { title: 'Alat', to: '/tools', icon: 'i-lucide-wrench' }
             ]
         }

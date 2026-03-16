@@ -1,7 +1,29 @@
 <script setup lang="ts">
-import type { NewsUpdated } from '~/types/news'
+import type { JSONContent } from '@tiptap/vue-3'
+import type { Database } from '~/types/database.types'
 import { Enum } from '~/utils/enum'
 import { extractTiptapText } from '~/composables/useTiptapContent'
+import { getNewsPublicUrl, formatFileSize } from '~/utils/storage'
+
+type NewsUpdatedRow = Database['public']['Tables']['news_updated']['Row']
+
+interface NewsAttachment {
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
+
+type NewsUpdated = Omit<NewsUpdatedRow, 'content' | 'images' | 'attachments'> & {
+  content: JSONContent
+  images: string[]
+  attachments: NewsAttachment[]
+  profiles?: {
+    id: string
+    full_name: string | null
+    avatar_url: string | null
+  } | null
+}
 
 definePageMeta({
   layout: 'default'
@@ -11,12 +33,8 @@ const route = useRoute()
 const supabase = useSupabaseClient()
 const slugParam = computed(() => Array.isArray(route.params.slug) ? route.params.slug[0] : route.params.slug)
 
-const getImagePathUrl = (path: string, bucket: 'news-images' | 'news-attachments' = 'news-images'): string => {
-  if (!path) return '/placeholder.png'
-  if (path.startsWith('http')) return path
-
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
-  return data.publicUrl || '/placeholder.png'
+const getImagePathUrl = (path: string): string => {
+  return getNewsPublicUrl(path) || '/placeholder.png'
 }
 
 const getAttachmentUrl = (path: string): string => {
@@ -35,13 +53,7 @@ const formatDate = (dateString: string): string => {
   }).format(new Date(dateString))
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (!bytes || bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${Math.round(bytes / Math.pow(k, i) * 100) / 100} ${sizes[i]}`
-}
+// formatFileSize now imported from utils/storage
 
 const getFileIcon = (type: string): string => {
   if (!type) return 'i-lucide-file'
@@ -240,8 +252,6 @@ const { data: similarNews } = await useAsyncData(
 
 <template>
   <main class="container mx-auto px-4 py-8">
-    <!-- Breadcrumb -->
-    
     <div class="max-w-4xl mx-auto">
       <!-- Header -->
       <nav class="mb-6 text-sm">

@@ -56,7 +56,7 @@ const weatherIconClass = computed(() => {
         :alt="`${weatherData.weather[0].description} background`"
         class="w-full h-full object-cover scale-105 transition-transform duration-[3000ms] group-hover:scale-110"
         loading="lazy"
-      />
+      >
       <!-- Animated Gradient Overlays -->
       <div class="absolute inset-0 bg-linear-to-br from-blue-900/70 via-green-800/60 to-emerald-900/70 animate-gradient" />
       <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/40 to-transparent" />
@@ -96,7 +96,7 @@ const weatherIconClass = computed(() => {
               :alt="weatherData.weather[0].description"
               class="w-6 h-6"
               @error="(e) => ((e.target as HTMLImageElement).src = '/profile.png')"
-            />
+            >
             <span class="text-sm text-white/90 capitalize">{{ weatherData.weather[0].description }}</span>
           </div>
         </div>
@@ -131,7 +131,7 @@ const weatherIconClass = computed(() => {
             :alt="weatherData.weather[0].description"
             :class="['w-16 h-16 drop-shadow-lg', weatherIconClass]"
             @error="(e) => ((e.target as HTMLImageElement).src = '/profile.png')"
-          />
+          >
         </div>
       </div>
       

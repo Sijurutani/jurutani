@@ -53,7 +53,7 @@ export default defineNuxtConfig({
         '/terms',
       ],
       ignore: [
-        '/room-chat',
+        '/messages',
       ]
     },
   },

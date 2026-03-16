@@ -2,9 +2,19 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { formatFileSize } from '~/utils/storage'
-import { PRODUCT_MARKETS_CONSTANTS } from '~/composables/useProductMarketForm'
+import {
+  uploadMarketFile,
+  validateFileType,
+  validateFileSize,
+  fileToBase64
+} from '~/utils/storage'
 import { Enum } from '~/utils/enum'
 import { NEWS_TIPTAP_SUGGESTION_ITEMS, getEmptyTiptapDoc } from '~/composables/useTiptapContent'
+import { useAuthStore } from '~/stores/auth'
+import { onMounted, reactive } from 'vue'
+
+const authStore = useAuthStore()
+
 
 definePageMeta({
   layout: 'default'
@@ -22,16 +32,96 @@ const toast = useToast()
 // Pre-generate ID untuk storage paths
 const productId = crypto.randomUUID()
 
-const {
-  uploadThumbnail,
-  uploadGalleryImages,
-  uploadAttachments,
-  createImagePreview,
-  createImagePreviews,
-  validateImageFile,
-  validateAttachmentFile,
-  generateUniqueSlug
-} = useProductMarketForm()
+
+const PRODUCT_MARKETS_CONSTANTS = {
+  MAX_THUMBNAIL_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_GALLERY_IMAGES: 10,
+  MAX_GALLERY_SIZE: 5 * 1024 * 1024, // 5MB per image
+  MAX_ATTACHMENTS: 5,
+  MAX_ATTACHMENT_SIZE: 10 * 1024 * 1024, // 10MB per attachment
+  ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
+  ALLOWED_ATTACHMENT_TYPES: [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ]
+}
+
+async function uploadThumbnail(file, marketId) {
+  return await uploadMarketFile('thumbnail', marketId, file)
+}
+
+async function uploadGalleryImages(files, marketId) {
+  const uploadPromises = files.map(async (file) => {
+    return await uploadMarketFile('gallery', marketId, file)
+  })
+  return await Promise.all(uploadPromises)
+}
+
+async function uploadAttachments(files, marketId) {
+  const uploadPromises = files.map(async (file) => {
+    return await uploadMarketFile('attachments', marketId, file)
+  })
+  return await Promise.all(uploadPromises)
+}
+
+async function createImagePreview(file) {
+  return await fileToBase64(file)
+}
+
+async function createImagePreviews(files) {
+  return Promise.all(files.map(file => createImagePreview(file)))
+}
+
+function validateImageFile(file) {
+  if (!validateFileType(file, PRODUCT_MARKETS_CONSTANTS.ALLOWED_IMAGE_TYPES)) {
+    toast.add({
+      title: 'Format tidak valid',
+      description: 'File harus berupa JPG, PNG, atau WebP',
+      color: 'error'
+    })
+    return false
+  }
+  if (!validateFileSize(file, PRODUCT_MARKETS_CONSTANTS.MAX_THUMBNAIL_SIZE / 1024 / 1024)) {
+    toast.add({
+      title: 'Ukuran terlalu besar',
+      description: 'Maksimal ukuran file 5MB',
+      color: 'error'
+    })
+    return false
+  }
+  return true
+}
+
+function validateAttachmentFile(file) {
+  if (!validateFileType(file, PRODUCT_MARKETS_CONSTANTS.ALLOWED_ATTACHMENT_TYPES)) {
+    toast.add({
+      title: 'Format tidak valid',
+      description: 'File harus berupa PDF, DOC, DOCX, XLS, atau XLSX',
+      color: 'error'
+    })
+    return false
+  }
+  if (!validateFileSize(file, PRODUCT_MARKETS_CONSTANTS.MAX_ATTACHMENT_SIZE / 1024 / 1024)) {
+    toast.add({
+      title: 'Ukuran terlalu besar',
+      description: 'Maksimal ukuran file 10MB',
+      color: 'error'
+    })
+    return false
+  }
+  return true
+}
+
+function generateUniqueSlug(name) {
+  const baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+  return `${baseSlug}-${Date.now()}`
+}
 
 // Fetch categories
 const { data: categories } = await useAsyncData('category_markets_create', async () => {
@@ -81,8 +171,8 @@ const form = reactive<Partial<Schema>>({
   excerpt: '',
   category: '',
   slug: '',
-  seller: '',
-  contact_seller: '',
+  seller: authStore.computedProfile?.fullName || '',
+  contact_seller: authStore.computedProfile?.phone || '',
   price_mode: 'fixed',
   price: null,
   price_unit: '',
@@ -94,16 +184,11 @@ const uploading = ref(false)
 const content = ref(getEmptyTiptapDoc())
 
 // ─── Links ────────────────────────────────────────────────────────────────────
-type LinkItem = { shopee_link?: string; tokopedia_link?: string; tiktok_link?: string }
-const links = ref<LinkItem[]>([])
-
-function addLink() {
-  links.value.push({ shopee_link: '', tokopedia_link: '', tiktok_link: '' })
-}
-
-function removeLink(idx: number) {
-  links.value.splice(idx, 1)
-}
+const links = reactive({
+  shopee_link: '',
+  tokopedia_link: '',
+  tiktok_link: ''
+})
 
 // ─── Thumbnail ────────────────────────────────────────────────────────────────
 const thumbnailFile = ref<File | null>(null)
@@ -255,17 +340,26 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
     // Upload files
     const [thumbnailPath, galleryPaths, attachmentsData] = await Promise.all([
-      thumbnailFile.value ? uploadThumbnail(thumbnailFile.value, slug) : Promise.resolve(null),
-      galleryFiles.value.length > 0 ? uploadGalleryImages(galleryFiles.value, slug) : Promise.resolve([]),
-      attachmentFiles.value.length > 0 ? uploadAttachments(attachmentFiles.value, slug) : Promise.resolve([])
+      thumbnailFile.value ? uploadThumbnail(thumbnailFile.value, productId) : Promise.resolve(null),
+      galleryFiles.value.length > 0 ? uploadGalleryImages(galleryFiles.value, productId) : Promise.resolve([]),
+      attachmentFiles.value.length > 0 ? uploadAttachments(attachmentFiles.value, productId) : Promise.resolve([])
     ])
+    // Helper to get public URL for images in 'markets' bucket
+    function getImagePathUrl(imagePath) {
+      if (!imagePath) return '/placeholder.png'
+      if (imagePath.startsWith('http')) return imagePath
+      const { data } = supabase.storage.from('markets').getPublicUrl(imagePath)
+      return data?.publicUrl || '/placeholder.png'
+    }
     
     uploading.value = false
 
     // Filter empty links
-    const validLinks = links.value.filter(l => 
-      l.shopee_link || l.tokopedia_link || l.tiktok_link
-    )
+    const linksObj = {
+      shopee_link: links.shopee_link?.trim() || null,
+      tokopedia_link: links.tokopedia_link?.trim() || null,
+      tiktok_link: links.tiktok_link?.trim() || null
+    }
 
     // Prepare payload
     const payload: any = {
@@ -281,7 +375,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       thumbnail_url: thumbnailPath,
       images: galleryPaths,
       attachments: attachmentsData,
-      links: validLinks,
+      links: linksObj,
       user_id: null, // Will be set by RLS or trigger
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -523,57 +617,21 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           <!-- Links -->
           <UCard>
             <template #header>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-link" class="w-5 h-5" />
-                  <h2 class="text-xl font-semibold">Link Marketplace</h2>
-                </div>
-                <UButton
-                  type="button"
-                  icon="i-lucide-plus"
-                  color="neutral"
-                  variant="outline"
-                  size="sm"
-                  @click="addLink"
-                >
-                  Tambah Link
-                </UButton>
+              <div class="flex items-center gap-2">
+                <UIcon name="i-lucide-link" class="w-5 h-5" />
+                <h2 class="text-xl font-semibold">Link Marketplace</h2>
               </div>
             </template>
-
             <div class="space-y-3">
-              <div
-                v-for="(link, idx) in links"
-                :key="idx"
-                class="flex items-center gap-2"
-              >
-                <UInput
-                  v-model="link.shopee_link"
-                  placeholder="Link Shopee"
-                  class="w-full"
-                />
-                <UInput
-                  v-model="link.tokopedia_link"
-                  placeholder="Link Tokopedia"
-                  class="w-full"
-                />
-                <UInput
-                  v-model="link.tiktok_link"
-                  placeholder="Link TikTok"
-                  class="w-full"
-                />
-                <UButton
-                  icon="i-lucide-trash-2"
-                  color="error"
-                  variant="ghost"
-                  size="sm"
-                  @click="removeLink(idx)"
-                />
-              </div>
-              
-              <p v-if="links.length === 0" class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-                Belum ada link marketplace. Klik "Tambah Link" untuk menambahkan.
-              </p>
+              <UFormField label="Link Shopee">
+                <UInput v-model="links.shopee_link" placeholder="Link Shopee" class="w-full" />
+              </UFormField>
+              <UFormField label="Link Tokopedia">
+                <UInput v-model="links.tokopedia_link" placeholder="Link Tokopedia" class="w-full" />
+              </UFormField>
+              <UFormField label="Link TikTok">
+                <UInput v-model="links.tiktok_link" placeholder="Link TikTok" class="w-full" />
+              </UFormField>
             </div>
           </UCard>
         </div>

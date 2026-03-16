@@ -2,11 +2,21 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import type { JSONContent } from '@tiptap/vue-3'
-import type { NewsAttachment } from '~/types/news'
 import { toastStore } from '~/composables/useJuruTaniToast'
-import { NEWS_UPDATED_CONSTANTS } from '~/composables/useNewsUpdatedForm'
-import { formatFileSize } from '~/composables/useNewsUpdatedShared'
+import {
+  uploadNewsFile,
+  formatFileSize,
+  validateFileType,
+  fileToBase64
+} from '~/utils/storage'
 import { NEWS_TIPTAP_SUGGESTION_ITEMS, getEmptyTiptapDoc, hasMeaningfulTiptapContent } from '~/composables/useTiptapContent'
+
+interface NewsAttachment {
+  name: string
+  url: string
+  size?: number
+  type?: string
+}
 
 definePageMeta({
   layout: 'default'
@@ -21,16 +31,98 @@ const route = useRoute()
 const router = useRouter()
 const supabase = useSupabaseClient()
 const idParam = computed(() => Array.isArray(route.params.id) ? route.params.id[0] : route.params.id)
-const {
-  uploadCoverImage,
-  uploadGalleryImages,
-  uploadAttachments,
-  createImagePreview,
-  createImagePreviews,
-  validateImageFile,
-  validateAttachmentFile,
-  generateUniqueSlug
-} = useNewsUpdatedForm()
+
+// Konstanta lokal
+const NEWS_UPDATED_CONSTANTS = {
+  MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
+  MAX_ATTACHMENT_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_GALLERY_IMAGES: 10,
+  MAX_ATTACHMENTS: 5
+}
+
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function validateImageFile(file, maxSize = NEWS_UPDATED_CONSTANTS.MAX_IMAGE_SIZE) {
+  if (!file.type.startsWith('image/')) {
+    toastStore.error(`File ${file.name} bukan gambar`)
+    return false
+  }
+  if (file.size > maxSize) {
+    toastStore.error(`Ukuran ${file.name} terlalu besar (maks ${Math.round(maxSize / 1024 / 1024)}MB)`)
+    return false
+  }
+  return true
+}
+
+function validateAttachmentFile(file) {
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ]
+  if (!validateFileType(file, allowedTypes)) {
+    toastStore.error(`File ${file.name} bukan format yang didukung (PDF, DOC, DOCX, XLS, XLSX)`)
+    return false
+  }
+  if (file.size > NEWS_UPDATED_CONSTANTS.MAX_ATTACHMENT_SIZE) {
+    toastStore.error(`Ukuran ${file.name} terlalu besar (maks 10MB)`)
+    return false
+  }
+  return true
+}
+
+async function uploadCoverImage(file, slug) {
+  return await uploadNewsFile('images', slug, file)
+}
+
+async function uploadGalleryImages(files, slug) {
+  const paths = []
+  for (const file of files) {
+    const url = await uploadNewsFile('gallery', slug, file)
+    paths.push(url)
+  }
+  return paths
+}
+
+async function uploadAttachments(files, slug) {
+  const attachments = []
+  for (const file of files) {
+    const url = await uploadNewsFile('attachments', slug, file)
+    attachments.push({
+      name: file.name,
+      url,
+      size: file.size,
+      type: file.type
+    })
+  }
+  return attachments
+}
+
+async function createImagePreview(file) {
+  return await fileToBase64(file)
+}
+
+async function createImagePreviews(files) {
+  const previews = []
+  for (const file of files) {
+    try {
+      const preview = await createImagePreview(file)
+      previews.push(preview)
+    } catch (e) {
+      console.error('Error creating preview:', e)
+    }
+  }
+  return previews
+}
 
 const getImagePathUrl = (path: string): string => {
   if (!path) return '/placeholder.png'
@@ -121,8 +213,7 @@ const schema = z.object({
   category: z.string().min(1, 'Kategori wajib dipilih'),
   link: z.string().url('URL tidak valid').optional().or(z.literal('')),
   coverImageFile: z.instanceof(File).optional()
-    .refine((file) => !file || file.size <= NEWS_UPDATED_CONSTANTS.MAX_IMAGE_SIZE, 'Ukuran gambar cover maksimal 5MB')
-    .refine((file) => !file || file.type.startsWith('image/'), 'File harus berupa gambar'),
+    .refine((file) => !file || validateImageFile(file), 'File harus berupa gambar dan maksimal 5MB'),
   galleryFiles: z.array(z.instanceof(File)).max(NEWS_UPDATED_CONSTANTS.MAX_GALLERY_IMAGES, `Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_GALLERY_IMAGES} gambar galeri`),
   attachmentFiles: z.array(z.instanceof(File)).max(NEWS_UPDATED_CONSTANTS.MAX_ATTACHMENTS, `Maksimal ${NEWS_UPDATED_CONSTANTS.MAX_ATTACHMENTS} lampiran`)
 })
@@ -268,7 +359,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
     const nextSlug = event.data.title.trim() === existingNews.value.title
       ? existingNews.value.slug
-      : generateUniqueSlug(event.data.title)
+      : generateSlug(event.data.title)
 
     let coverImagePath: string | null = existingCoverImagePath.value
     if (event.data.coverImageFile) {

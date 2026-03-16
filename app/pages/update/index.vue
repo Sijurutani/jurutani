@@ -1,110 +1,60 @@
 <script setup lang="ts">
 import { watchDebounced } from '@vueuse/core'
-import type { NewsUpdated } from '~/types/news'
-import type { SortOption } from '~/types/content'
 import { Enum } from '~/utils/enum'
-const route = useRoute()
-const router = useRouter()
+import type { Database } from '~/types/database.types'
 
 useSeoMeta({
   title: 'Berita Terbaru',
   description: 'Berita dan artikel terbaru tentang pertanian dan agrikultur'
 })
 
+type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
+  author?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null
+}
+type Category = Database['public']['Tables']['category_news']['Row']
+
 const supabase = useSupabaseClient()
 const pageSize = 9
 
-// 1. Reactive Route Queries (State URL)
-const category = computed<string>({
-  get() {
-    const raw = route.query.category
-    return typeof raw === 'string' ? raw : 'all'
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || value === 'all' || value === 'semua') {
-      delete nextQuery.category
-    } else {
-      nextQuery.category = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+// 1. Reactive Route Queries (State URL) - Diadaptasi dari pola Admin
+const search = useRouteQuery<string | undefined>('search', undefined, { resetKeys: ['page'] })
+const category = useRouteQuery<string>('category', 'all', { resetKeys: ['page'] })
+const sortValue = useRouteQuery<string>('sort', 'created_at-desc', { resetKeys: ['page'] })
+const page = useRouteQuery<number>('page', 1)
 
-const search = computed<string | undefined>({
-  get() {
-    const raw = route.query.search
-    return typeof raw === 'string' && raw.trim() ? raw : undefined
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || !value.trim()) {
-      delete nextQuery.search
-    } else {
-      nextQuery.search = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+// ─── Data Kategori ────────────────────────────────────────────────────────────
+const { data: categories } = await useAsyncData('news-categories', async () => {
+  const { data } = await supabase
+    .from('category_news')
+    .select('*')
+    .is('deleted_at', null)
+    .order('name')
+  return (data ?? []) as Category[]
+}, { default: () => [] as Category[] })
 
-const sort = computed<string>({
-  get() {
-    const raw = route.query.sort
-    return typeof raw === 'string' ? raw : Enum.SortOptions[0].value
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    if (!value || value === Enum.SortOptions[0].value) {
-      delete nextQuery.sort
-    } else {
-      nextQuery.sort = value
-    }
-    router.replace({ query: nextQuery })
-  }
-})
+// 2. Computed Query Builder (Persis seperti newsQuery di Admin)
+const newsQuery = computed(() => {
+  const [field, dir] = sortValue.value.split('-') as [string, string]
+  const dbField = field === 'name' ? 'title' : field
 
-const page = computed<number>({
-  get() {
-    const raw = route.query.page
-    if (typeof raw !== 'string') return 1
-    const parsed = Number.parseInt(raw, 10)
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
-  },
-  set(value) {
-    const nextQuery = { ...route.query }
-    const normalizedPage = Number.isFinite(value) && value > 0 ? Math.floor(value) : 1
-
-    if (normalizedPage <= 1) {
-      delete nextQuery.page
-    } else {
-      nextQuery.page = String(normalizedPage)
-    }
-
-    router.replace({ query: nextQuery })
-  }
-})
-
-// 2. Computed Query
-const query = computed(() => {
   let q = supabase
     .from('news_updated')
     .select('id,slug,title,sub_title,content,category,created_at,cover_image,images,attachments', { count: 'exact' })
     .is('deleted_at', null)
     .eq('status_news', 'approved')
 
+  // Filter Kategori
   if (category.value && category.value !== 'all' && category.value !== 'semua') {
     q = q.eq('category', category.value)
   }
 
+  // Filter Pencarian
   if (search.value) {
     const term = search.value.trim()
     q = q.or(`title.ilike.%${term}%,sub_title.ilike.%${term}%`)
   }
 
-  const [rawColumn, direction] = sort.value.split('-')
-  const column = rawColumn === 'name' ? 'title' : rawColumn
-
-  return q.order(column, { ascending: direction === 'asc' })
+  return q.order(dbField, { ascending: dir === 'asc' })
 })
 
 // 3. Fetch Data secara Deklaratif
@@ -112,45 +62,27 @@ const { data, pending, error, refresh } = await useAsyncData('news-list', async 
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 
-  const { data: newsData, count, error: fetchError } = await query.value.range(from, to)
+  const { data: newsData, count, error: fetchError } = await newsQuery.value.range(from, to)
 
   if (fetchError) throw fetchError
 
   return {
-    items: (newsData as NewsUpdated[]) || [],
+    items: (newsData as any[]) || [],
     total: count || 0
   }
 }, {
   default: () => ({ items: [], total: 0 }),
-  watch: [sort, page, category] // Otomatis refresh jika state ini berubah
+  watch: [sortValue, page] // Otomatis refresh jika sort atau page berubah
 })
 
-// 4. Fetch Categories
-const { data: categories } = await useAsyncData('news-categories', async () => {
-  const { data, error: catError } = await supabase
-    .from('category_news')
-    .select('name')
-    .order('name', { ascending: true })
-
-  if (catError) throw catError
-  return (data ?? []).map(cat => ({ name: cat.name, value: cat.name }))
-}, {
-  default: () => []
-})
-
-// 5. Debounce Search & Reset Page Handler
-watchDebounced([search], async () => {
+// 4. Debounce Search & Category Handler
+watchDebounced([search, category], async () => {
   page.value = 1
   await refresh()
-}, { debounce: 500 })
+}, { debounce: 400, deep: true })
 
-// Reset page ke 1 setiap kali filter kategori atau sort berubah
-watch([category, sort], () => {
-  page.value = 1
-})
-
-// 6. Helper Computed & Functions
-const sortOptions: SortOption[] = Enum.SortOptions.map((option) => {
+// 5. Helper Computed & Functions
+const sortOptions = Enum.SortOptions.map((option) => {
   const [rawColumn, direction] = option.value.split('-')
   return {
     label: option.label,
@@ -180,7 +112,7 @@ const handleCategoryChange = (value: string) => {
 }
 
 const handleSortChange = (value: string) => {
-  sort.value = value
+  sortValue.value = value
 }
 
 const handlePageChange = (value: number) => {
@@ -231,7 +163,7 @@ const handlePageChange = (value: number) => {
         </div>
         <AppSortDropdown
           :sort-options="sortOptions"
-          :current-sort="sort"
+          :current-sort="sortValue"
           @update:sort="handleSortChange"
         />
       </div>

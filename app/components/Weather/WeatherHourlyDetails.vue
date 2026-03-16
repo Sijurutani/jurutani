@@ -33,7 +33,7 @@ const props = defineProps<{
                   :src="`https://openweathermap.org/img/wn/${hour.weather[0].icon}@2x.png`"
                   class="w-14 h-14 mx-auto transition-transform group-hover:scale-110"
                   :alt="hour.weather[0].description"
-                />
+                >
               </div>
               <p class="text-2xl font-bold text-gray-900 dark:text-white mb-2">{{ Math.round(hour.main.temp) }}°</p>
               <div class="rain-badge">

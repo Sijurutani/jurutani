@@ -21,7 +21,7 @@ const props = defineProps<Props>()
         :alt="product.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         loading="lazy"
-      />
+      >
       
       <!-- Stock Badge -->
       <div v-if="!compact" class="absolute top-3 right-3">
@@ -38,7 +38,8 @@ const props = defineProps<Props>()
 
     <!-- Content -->
     <div :class="compact ? 'p-4' : 'p-5'">
-      <h3 class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"
+      <h3
+class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors"
           :class="compact ? 'text-sm' : 'text-base'">
         {{ product.name }}
       </h3>
@@ -54,7 +55,8 @@ const props = defineProps<Props>()
 
       <div class="flex items-center justify-between">
         <div>
-          <div class="font-bold text-emerald-600 dark:text-emerald-400"
+          <div
+class="font-bold text-emerald-600 dark:text-emerald-400"
                :class="compact ? 'text-base' : 'text-lg'">
             {{ formatCurrency(product.price) }}
           </div>

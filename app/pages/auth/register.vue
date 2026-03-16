@@ -106,7 +106,9 @@ const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => 
       <div class="relative z-10 flex flex-col justify-between h-full p-12 text-white">
         <div>
           <div class="flex items-center space-x-3">
-            <TheLogo />
+            <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+              <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+            </NuxtLink>
           </div>
           <p class="mt-2 text-green-100">Bergabung untuk masa depan pertanian yang lebih baik</p>
         </div>
@@ -148,7 +150,9 @@ const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => 
     <div class="w-full lg:w-1/2 flex items-center justify-center p-6">
       <div class="w-full max-w-md">
         <div class="lg:hidden flex items-center justify-center space-x-3 mb-8">
-          <TheLogo />
+            <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
+              <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
+            </NuxtLink>
         </div>
         
         <div class="text-center mb-8">

@@ -126,7 +126,7 @@ const cardClasses = computed(() => {
         loading="lazy"
         @error="handleImageError"
         @load="handleImageLoad"
-      />
+      >
       
       <!-- Fallback -->
       <div 

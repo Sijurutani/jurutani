@@ -91,10 +91,8 @@ const startConversation = async () => {
       .single()
 
     if (existingConversation) {
-      // Redirect to existing conversation
-      router.push(`/room-chat/${existingConversation.id}`)
+      router.push(`/messages/${existingConversation.id}`)
     } else {
-      // Create new conversation
       const { data: newConversation, error: createError } = await supabase
         .from('conversations')
         .insert({
@@ -108,8 +106,7 @@ const startConversation = async () => {
         console.error('Error creating conversation:', createError)
         error.value = createError
       } else {
-        // Redirect to new conversation
-        router.push(`/room-chat/${newConversation.id}`)
+        router.push(`/messages/${newConversation.id}`)
       }
     }
   } catch (err) {

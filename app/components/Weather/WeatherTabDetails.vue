@@ -22,27 +22,27 @@ const props = defineProps({
   <div>
     <WeatherCurrentDetails
       v-if="activeTab === 'current'"
-      :isLoading="isLoading"
+      :is-loading="isLoading"
       :error="error"
-      :weatherData="weatherData"
-      :farmingConditions="farmingConditions"
-      :windDirection="windDirection"
-      :sunriseTime="sunriseTime"
-      :sunsetTime="sunsetTime"
+      :weather-data="weatherData"
+      :farming-conditions="farmingConditions"
+      :wind-direction="windDirection"
+      :sunrise-time="sunriseTime"
+      :sunset-time="sunsetTime"
     />
     <WeatherHourlyDetails
       v-else-if="activeTab === 'hourly'"
-      :isLoading="isHourlyLoading"
+      :is-loading="isHourlyLoading"
       :error="hourlyError"
-      :hourlyData="hourlyData"
-      :formatHour="formatHour"
+      :hourly-data="hourlyData"
+      :format-hour="formatHour"
     />
     <WeatherForecastDetails
       v-else-if="activeTab === 'forecast'"
-      :isLoading="isForecastLoading"
+      :is-loading="isForecastLoading"
       :error="forecastError"
-      :forecastData="forecastData"
-      :formatDateShort="formatDateShort"
+      :forecast-data="forecastData"
+      :format-date-short="formatDateShort"
     />
   </div>
 </template>

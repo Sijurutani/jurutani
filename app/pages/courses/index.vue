@@ -1,257 +1,127 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue'
- 
-import { useAsyncData } from '#app'
+  import type { Tables } from '~/types/database.types'
+  import { formatDateLong } from '~/utils/dateFormatter'
 
-definePageMeta({
-  layout: 'default',
-})
+  useSeoOptimized('courses')
 
-// SEO Optimization
-useSeoOptimized('courses')
+  const supabase = useSupabaseClient()
 
-// Types
-interface Announcement {
-  id: string
-  category: string
-  created_at: string
-  deleted_at?: string
-  archived_at?: string
-  title?: string
-  content?: string
-  image_url?: string
-  attachments?: string
-  organization?: string
-  link?: string
-  author_id?: string
-  fullImageUrl?: string
-  fullAttachmentUrls?: AttachmentFile[]
-}
+  type LearningCourse = Tables<'learning_courses'>
 
-interface AttachmentFile {
-  name: string  // Changed from 'filename' to 'name'
-  url: string
-  size?: number
-  type?: string
-}
+  const courses = ref<LearningCourse[]>([])
+  const loading = ref(true)
+  const error = ref<string | null>(null)
 
-interface Category {
-  id?: string
-  name: string
-  value?: string
-  icon?: string
-  color?: string
-}
-
-// Supabase client
-const supabase = useSupabaseClient()
-
-// Data utama
-const announcements = ref<Announcement[]>([])
-const error = ref<string | null>(null)
-const loading = ref(true)
-
-// Filter & pagination
-const currentCategory = ref('all')
-const currentPage = ref(1)
-const pageSize = 9 // Changed to 9 for better 3-column layout
-const totalPages = ref(1)
-const totalItems = ref(0)
-const categories = ref<Category[]>([])
-
-// Enhanced categories with icons and colors
-const { data: categoriesData } = await useAsyncData('meeting-categories', async () => {
-  try {
-    const enhancedCategories = [
-      { 
-        name: 'online', 
-        value: 'online',
-        icon: 'i-heroicons-computer-desktop',
-        color: 'text-blue-600'
-      },
-      { 
-        name: 'offline', 
-        value: 'offline',
-        icon: 'i-heroicons-map-pin',
-        color: 'text-emerald-600'
-      }
-    ]
-    
-    return enhancedCategories as Category[]
-  } catch (err) {
-    console.error('Error fetching meeting categories:', err)
-    return []
+  const getCoverUrl = (path: string | null) => {
+    if (!path) return null
+    if (path.startsWith('http')) return path
+    const { data } = supabase.storage.from('courses-images').getPublicUrl(path)
+    return data.publicUrl
   }
-})
 
-// Set categories setelah data dimuat
-if (categoriesData.value) {
-  categories.value = categoriesData.value
-}
+  onMounted(async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const { data, error: err } = await supabase
+        .from('learning_courses')
+        .select('*')
+        .eq('status', 'approved')
+        .is('deleted_at', null)
+        .is('archived_at', null)
+        .order('published_at', { ascending: false })
 
-// Fungsi untuk parse attachments JSON string - Updated to handle new format
-const parseAttachments = (attachmentsString?: string): AttachmentFile[] => {
-  if (!attachmentsString) return []
-  try {
-    const parsed = JSON.parse(attachmentsString)
-    if (Array.isArray(parsed)) {
-      // Handle new format with url, name, size, type
-      return parsed.map(attachment => ({
-        name: attachment.name || attachment.filename || 'Unknown file',
-        url: attachment.url,
-        size: attachment.size,
-        type: attachment.type
-      }))
+      if (err) throw err
+      courses.value = data ?? []
+    } catch (e: any) {
+      error.value = e?.message || 'Gagal memuat courses'
+    } finally {
+      loading.value = false
     }
-    return []
-  } catch (err) {
-    console.error('Error parsing attachments:', err)
-    return []
-  }
-}
-
-// Fungsi fetch data yang dioptimasi
-const fetchAnnouncements = async () => {
-  loading.value = true
-  error.value = null
-
-  try {
-    const baseQuery = supabase
-      .from('meetings')
-      .select('*', { count: 'exact' })
-      .is('deleted_at', null)
-      .is('archived_at', null)
-
-    const query = currentCategory.value !== 'all' && currentCategory.value !== 'semua'
-      ? baseQuery.eq('category', currentCategory.value)
-      : baseQuery
-
-    const { data, error: fetchError, count } = await query
-      .order('created_at', { ascending: false })
-      .range(
-        (currentPage.value - 1) * pageSize,
-        currentPage.value * pageSize - 1
-      )
-
-    if (fetchError) throw fetchError
-
-    const processedData = (data as Announcement[] || []).map(item => {
-      const attachmentsList = parseAttachments(item.attachments)
-      
-      return {
-        ...item,
-        fullImageUrl: item.image_url, // Use direct URL from database
-        fullAttachmentUrls: attachmentsList // Direct use of parsed attachments
-      }
-    })
-
-    announcements.value = processedData
-    totalItems.value = count || 0
-    totalPages.value = Math.ceil(totalItems.value / pageSize)
-  } catch (err: any) {
-    error.value = err.message || 'Terjadi kesalahan saat memuat data meeting'
-    console.error('Error fetching meetings:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-// Initial data fetch - remove SSR for now to avoid double loading
-const { refresh } = await useAsyncData('meetings', fetchAnnouncements, {
-  server: false // Client-side only untuk menghindari double loading
-})
-
-// Watch untuk perubahan category dan page
-watchEffect(async () => {
-  if (import.meta.client) {
-    await fetchAnnouncements()
-  }
-})
-
-// Computed untuk status
-const isLoading = computed(() => loading.value)
-const hasError = computed(() => !!error.value)
-const hasData = computed(() => announcements.value.length > 0)
-const showPagination = computed(() => !isLoading.value && hasData.value && totalPages.value > 1)
-
-// Statistics
-const totalOnline = computed(() => announcements.value.filter(item => item.category === 'online').length)
-const totalOffline = computed(() => announcements.value.filter(item => item.category === 'offline').length)
-
-// Handler untuk category change
-const handleCategoryChange = (category: string) => {
-  currentCategory.value = category
-  currentPage.value = 1
-}
-
-// Handler untuk pagination change
-const handlePageChange = (page: number) => {
-  currentPage.value = page
-}
+  })
 </script>
 
 <template>
-  <main class="announcement-page container mx-auto px-4 py-12">
-    <!-- Header Section -->
-    <header class="mx-auto mb-6 max-w-4xl text-center">
-      <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
-        <UIcon name="i-heroicons-users" class="w-5 h-5 text-green-600 dark:text-green-400" />
-        <span class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Pengembangan Kemampuan Pertanian</span>
+  <div class="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950">
+    <div class="max-w-6xl mx-auto px-4 pb-16 pt-6 lg:pt-4">
+      <header class="mb-10 mt-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+          <UIcon name="i-lucide-graduation-cap" class="w-4 h-4" />
+          Kursus Pertanian
+        </div>
+        <h1 class="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Belajar Pertanian bersama JuruTani
+        </h1>
+        <p class="mt-3 text-gray-600 dark:text-gray-300 max-w-2xl">
+          Kumpulan course pertanian terkurasi dari pakar dan penyuluh untuk meningkatkan keterampilanmu di lapangan.
+        </p>
+      </header>
+
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-500 dark:border-t-emerald-400" />
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat daftar course...</p>
       </div>
-      
-      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent py-2">
-        Pengumuman Course & Pelatihan
-      </h1>
-      
-      <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
-        Temukan berbagai kesempatan untuk mengembangkan kemampuan pertanian melalui
-        <span class="font-semibold text-emerald-600 dark:text-emerald-400">kursus bersertifikat</span>,
-        <span class="font-semibold text-teal-600 dark:text-teal-400">pelatihan praktis</span>, dan
-        <span class="font-semibold text-cyan-600 dark:text-cyan-400">workshop inovatif</span> yang diselenggarakan oleh JuruTani.
-      </p> 
-    </header>
 
-    <!-- Category Filter -->
-    <nav aria-label="Filter kategori kursus">
-    <AppCategoryFilter 
-      :categories="categories" 
-      :current-category="currentCategory"
-      :show-all-option="true"
-      all-option-text="Semua"
-      all-option-value="all"
-      @update:category="handleCategoryChange"
-      />
-    </nav>
-
-    <!-- Announcements Content -->
-    <section aria-labelledby="courses-list-heading" class="mt-8">
-      <h2 id="courses-list-heading" class="sr-only">Daftar Kursus dan Pelatihan</h2>
-      
-      <LoadingData v-if="isLoading" />      
-      <ErrorData v-else-if="hasError" :error="error" />
-      <NotFoundData v-else-if="!hasData" />
-
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnnouncementCardContent 
-          v-for="item in announcements" 
-          :key="item.id" 
-          :announcement="item" 
+      <div v-else-if="error" class="max-w-md mx-auto">
+        <UAlert
+          color="error"
+          icon="i-lucide-alert-triangle"
+          title="Gagal memuat data"
+          :description="error"
         />
       </div>
-    </section>
 
-    <!-- Pagination -->
-    <nav aria-label="Navigasi halaman kursus">
-    <AppPagination 
-      v-if="showPagination"
-      :current-page="currentPage" 
-      :total-pages="totalPages"
-      :total-items="totalItems"
-      :page-size="pageSize"
-      :show-page-info="true"
-      :show-first-last="true"
-      @update:page="handlePageChange"
-      />
-    </nav>
-  </main>
+      <div v-else-if="!courses.length" class="max-w-md mx-auto text-center py-16">
+        <UIcon name="i-lucide-book-open" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Belum ada course tersedia</h2>
+        <p class="text-gray-600 dark:text-gray-400">
+          Kursus pertanian akan segera hadir. Nantikan pembaruan dari JuruTani.
+        </p>
+      </div>
+
+      <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <NuxtLink
+          v-for="course in courses"
+          :key="course.id"
+          :to="`/courses/${course.slug || course.id}`"
+          class="group bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-sm hover:shadow-xl border border-emerald-100 dark:border-emerald-900 overflow-hidden flex flex-col transition-all duration-300"
+        >
+          <div class="relative h-40 bg-emerald-100 dark:bg-emerald-900/40">
+            <img
+              v-if="getCoverUrl(course.cover_image)"
+              :src="getCoverUrl(course.cover_image)"
+              :alt="course.title"
+              class="w-full h-full object-cover"
+            >
+            <div v-else class="flex items-center justify-center h-full text-emerald-500 dark:text-emerald-300">
+              <UIcon name="i-lucide-book-open" class="w-12 h-12 opacity-70" />
+            </div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+            <div class="absolute left-4 bottom-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/90 dark:bg-gray-900/90 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+              <UIcon name="i-lucide-graduation-cap" class="w-3.5 h-3.5" />
+              <span>Kursus</span>
+            </div>
+          </div>
+          <div class="flex-1 flex flex-col px-4 pt-4 pb-4">
+            <h2 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
+              {{ course.title }}
+            </h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              Diterbitkan {{ course.published_at ? formatDateLong(course.published_at) : formatDateLong(course.created_at) }}
+            </p>
+            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 flex-1">
+              {{ (course.description as any)?.summary || 'Pelajari materi pertanian yang terstruktur dan praktis dari para ahli.' }}
+            </p>
+            <div class="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <span class="inline-flex items-center gap-1">
+                <UIcon name="i-lucide-play-circle" class="w-4 h-4" />
+                <span>Mulai belajar</span>
+              </span>
+              <UIcon name="i-lucide-chevron-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </NuxtLink>
+      </div>
+    </div>
+  </div>
 </template>

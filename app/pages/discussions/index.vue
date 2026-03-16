@@ -1,49 +1,58 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
- 
+import { ref, reactive } from 'vue'
+import { useIntersectionObserver } from '@vueuse/core'
 import { discussionServices, discussionStatsFallback } from '~/data/discussion'
 
-definePageMeta({
-  layout: 'default',
-})
-
-// SEO Optimization
 useSeoOptimized('discussions')
 
 const supabase = useSupabaseClient()
 
-const profilesCount = ref(0)
-const instructorsCount = ref(0)
-const expertsCount = ref(0)
-const loading = ref(false)
-const error = ref<any>(null)
-
-const profilesDisplayCount = ref(0)
-const instructorsDisplayCount = ref(0)
-const expertsDisplayCount = ref(0)
+// ─── State ─────────────────────────────────────────────────────────────
+const statsRef = ref<HTMLElement | null>(null)
 const statsVisible = ref(false)
-
 const services = ref(discussionServices)
 
-let observer: IntersectionObserver | null = null
-const statsRef = ref<HTMLElement>()
+// Menggabungkan variabel yang berulang menjadi satu reactive object
+const displayCounts = reactive({
+  profiles: 0,
+  instructors: 0,
+  experts: 0
+})
 
-const animateCounter = (
-  from: number,
-  to: number,
-  displayRef: any,
-  duration: number = 2000
-) => {
-  const increment = (to - from) / (duration / 16)
-  let current = from
+// ─── Data Fetching (Nuxt 3 Idiomatic) ──────────────────────────────────
+const { data: counts, pending: loading } = await useAsyncData('discussion-stats', async () => {
+  const [profiles, instructors, experts] = await Promise.all([
+    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+    supabase.from('instructors').select('id', { count: 'exact', head: true }),
+    supabase.from('experts').select('id', { count: 'exact', head: true })
+  ])
+
+  if (profiles.error || instructors.error || experts.error) {
+    throw profiles.error || instructors.error || experts.error
+  }
+
+  return {
+    profiles: profiles.count || discussionStatsFallback.profiles,
+    instructors: instructors.count || discussionStatsFallback.instructors,
+    experts: experts.count || discussionStatsFallback.experts
+  }
+}, {
+  // Langsung set nilai fallback bawaan jika fetch gagal / sedang berjalan
+  default: () => ({ ...discussionStatsFallback })
+})
+
+// ─── Animation Logic ───────────────────────────────────────────────────
+const animateCounter = (key: keyof typeof displayCounts, to: number, duration = 2000) => {
+  let current = 0
+  const increment = to / (duration / 16)
   
   const updateCounter = () => {
     current += increment
     if (current < to) {
-      displayRef.value = Math.floor(current)
+      displayCounts[key] = Math.floor(current)
       requestAnimationFrame(updateCounter)
     } else {
-      displayRef.value = to
+      displayCounts[key] = to
     }
   }
   
@@ -51,87 +60,26 @@ const animateCounter = (
 }
 
 const startAnimations = () => {
-  if (statsVisible.value) return
-  
-  statsVisible.value = true
-  
-  const profilesTarget = profilesCount.value > 0 ? profilesCount.value : discussionStatsFallback.profiles
-  const instructorsTarget = instructorsCount.value > 0 ? instructorsCount.value : discussionStatsFallback.instructors
-  const expertsTarget = expertsCount.value > 0 ? expertsCount.value : discussionStatsFallback.experts
-  
-  setTimeout(() => animateCounter(0, profilesTarget, profilesDisplayCount), 100)
-  setTimeout(() => animateCounter(0, instructorsTarget, instructorsDisplayCount), 200)
-  setTimeout(() => animateCounter(0, expertsTarget, expertsDisplayCount), 300)
+  // Trigger animasi menggunakan data aktual yang didapat dari `counts.value`
+  setTimeout(() => animateCounter('profiles', counts.value.profiles), 100)
+  setTimeout(() => animateCounter('instructors', counts.value.instructors), 200)
+  setTimeout(() => animateCounter('experts', counts.value.experts), 300)
 }
 
-const fetchCounts = async () => {
-  loading.value = true
-  error.value = null
-
-  try {
-    const [profiles, instructors, experts] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('instructors').select('*', { count: 'exact', head: true }),
-      supabase.from('experts').select('*', { count: 'exact', head: true })
-    ])
-
-    if (profiles.error || instructors.error || experts.error) {
-      throw profiles.error || instructors.error || experts.error
-    }
-
-    profilesCount.value = profiles.count || 0
-    instructorsCount.value = instructors.count || 0
-    expertsCount.value = experts.count || 0
-    
-    if (statsVisible.value) {
-      statsVisible.value = false
-      startAnimations()
-    }
-  } catch (err) {
-    console.error('Error fetching counts:', err)
-    error.value = err
-    
-    profilesCount.value = 0
-    instructorsCount.value = 0
-    expertsCount.value = 0
-  } finally {
-    loading.value = false
+// ─── Intersection Observer (VueUse) ────────────────────────────────────
+useIntersectionObserver(statsRef, ([entry]) => {
+  if (entry.isIntersecting && !statsVisible.value) {
+    statsVisible.value = true
+    startAnimations()
   }
-}
+}, { threshold: 0.5 })
 
-// Bento grid variant logic
+// ─── UI Helpers ────────────────────────────────────────────────────────
 const getBentoVariant = (index: number) => {
   if (index === 0) return 'large'
   if (index === 3) return 'wide'
   return 'default'
 }
-
-onMounted(() => {
-  fetchCounts()
-  
-  observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && !statsVisible.value) {
-          startAnimations()
-        }
-      })
-    },
-    {
-      threshold: 0.5
-    }
-  )
-  
-  if (statsRef.value) {
-    observer.observe(statsRef.value)
-  }
-})
-
-onBeforeUnmount(() => {
-  if (observer) {
-    observer.disconnect()
-  }
-})
 </script>
 
 <template>
@@ -154,7 +102,6 @@ onBeforeUnmount(() => {
       </p> 
     </div>
 
-    <!-- Bento Grid Services -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto mb-16 auto-rows-auto">
       <DiscussionsServiceCard 
         v-for="(service, index) in services" 
@@ -165,7 +112,6 @@ onBeforeUnmount(() => {
       />
     </div>
 
-    <!-- Statistics Section -->
     <div class="mx-auto max-w-6xl">
       <div class="rounded-3xl bg-linear-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 border border-green-200 dark:border-green-700 p-8">
         <div class="text-center mb-8">
@@ -213,19 +159,19 @@ onBeforeUnmount(() => {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div class="stats-item">
               <div class="text-2xl font-bold text-green-600 dark:text-green-400 transition-all duration-300">
-                {{ profilesDisplayCount > 0 ? `${profilesDisplayCount}+` : '500+' }}
+                {{ displayCounts.profiles > 0 ? `${displayCounts.profiles}+` : '500+' }}
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400">Petani Bergabung</div>
             </div>
             <div class="stats-item">
               <div class="text-2xl font-bold text-green-600 dark:text-green-400 transition-all duration-300">
-                {{ instructorsDisplayCount > 0 ? `${instructorsDisplayCount}+` : '400+' }}
+                {{ displayCounts.instructors > 0 ? `${displayCounts.instructors}+` : '400+' }}
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400">Penyuluh Aktif</div>
             </div>
             <div class="stats-item">
               <div class="text-2xl font-bold text-green-600 dark:text-green-400 transition-all duration-300">
-                {{ expertsDisplayCount > 0 ? `${expertsDisplayCount}+` : '200+' }}
+                {{ displayCounts.experts > 0 ? `${displayCounts.experts}+` : '200+' }}
               </div>
               <div class="text-sm text-gray-600 dark:text-gray-400">Pakar Ahli</div>
             </div>

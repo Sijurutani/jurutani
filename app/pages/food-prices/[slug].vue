@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { FoodWithPrice, FoodPriceTrend } from '~/types'
+import type { Database } from '~/types/database.types'
+import { formatCurrency } from '~/utils/currency'
+import { Enum } from '~/utils/enum'
+import { useRoute, useRouter, useSupabaseClient } from '#imports'
 
 definePageMeta({
   layout: 'default',
@@ -9,138 +12,201 @@ const route = useRoute()
 const router = useRouter()
 const slug = route.params.slug as string
 
-const { 
-  getFoodBySlug, 
-  getPriceTrend, 
-  getSimilarFoods,
-  formatCurrency, 
-  formatDate,
-  getCategoryIcon,
-  getCategoryLabel 
-} = useFoodPrices()
 
-const { loadImageWithFallback, getFeatureImage } = useFoodImage()
+// --- Food Price Utilities ---
+const supabase = useSupabaseClient<Database>()
+type FoodRow = Database['public']['Tables']['foods']['Row'] & {
+  latest_price?: number
+  latest_price_date?: string
+  price_change?: number
+  price_change_percent?: number
+}
+type FoodPriceTrend = {
+  date: string
+  price: number
+  price_change?: number
+  price_change_percent?: number
+}
+type FoodWithPrice = FoodRow
 
-// State
-const food = ref<FoodWithPrice | null>(null)
-const priceTrend = ref<FoodPriceTrend[]>([])
-const similarFoods = ref<FoodWithPrice[]>([])
-const loading = ref(true)
-const error = ref<any>(null)
-const foodImage = ref<string>('')
-const imageLoading = ref(true)
-const imageError = ref(false)
-const similarFoodImages = ref<Record<string, { url: string; loading: boolean; error: boolean }>>({})
+const getFoodBySlug = async (slug: string) => {
+  // Ambil food by slug
+  const { data: foods, error: foodErr } = await supabase
+    .from('foods')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .eq('slug', slug)
+    .is('deleted_at', null)
+  if (foodErr) return { data: null, error: foodErr }
+  const food = foods?.[0]
+  if (!food) return { data: null, error: null }
 
-// Fetch food data
-const fetchFoodData = async () => {
-  loading.value = true
-  error.value = null
-
-  const { data, error: fetchError } = await getFoodBySlug(slug)
-  
-  if (fetchError || !data) {
-    error.value = fetchError || new Error('Food not found')
-    loading.value = false
-    
-    throw createError({
-      statusCode: 404,
-      message: 'Komoditas tidak ditemukan'
-    })
-    return
+  // Harga terbaru dan sebelumnya
+  const { data: prices, error: priceErr } = await supabase
+    .from('food_prices')
+    .select('price,date')
+    .eq('food_id', food.id)
+    .is('deleted_at', null)
+    .order('date', { ascending: false })
+  if (priceErr) return { data: null, error: priceErr }
+  const latest = prices?.[0]
+  const prev = prices?.[1]
+  let price_change = 0
+  let price_change_percent = 0
+  if (latest && prev) {
+    price_change = latest.price - prev.price
+    price_change_percent = prev.price ? (price_change / prev.price) * 100 : 0
   }
-
-  food.value = data
-  loading.value = false
-
-  // Load image with fallback
-  loadFoodImage(data.image_url, data.slug)
-
-  // Fetch price trend
-  if (data.id) {
-    const { data: trendData } = await getPriceTrend(data.id, 30)
-    if (trendData) {
-      priceTrend.value = trendData
-    }
-
-    // Fetch similar foods
-    const { data: similarData } = await getSimilarFoods(data.category, data.id, 4)
-    if (similarData) {
-      similarFoods.value = similarData
-      // Load images for similar foods
-      loadSimilarFoodImages(similarData)
-    }
+  return {
+    data: {
+      ...food,
+      latest_price: latest?.price ?? 0,
+      latest_price_date: latest?.date ?? food.updated_at ?? null,
+      price_change,
+      price_change_percent
+    },
+    error: null
   }
 }
 
-// Load food image with fallback
-const loadFoodImage = async (imageUrl: string | null | undefined, foodSlug: string) => {
-  imageLoading.value = true
-  imageError.value = false
-  
+const getPriceTrend = async (foodId: string, days: number) => {
+  // Ambil tren harga N hari terakhir
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const { data: prices, error } = await supabase
+    .from('food_prices')
+    .select('price,date')
+    .eq('food_id', foodId)
+    .is('deleted_at', null)
+    .gte('date', since.toISOString().slice(0, 10))
+    .order('date', { ascending: false })
+  if (error) return { data: [], error }
+  // Hitung perubahan harian
+  const trend: FoodPriceTrend[] = (prices || []).map((p, i, arr) => {
+    const prev = arr[i + 1]
+    let price_change = 0
+    let price_change_percent = 0
+    if (prev) {
+      price_change = p.price - prev.price
+      price_change_percent = prev.price ? (price_change / prev.price) * 100 : 0
+    }
+    return {
+      date: p.date,
+      price: p.price,
+      price_change,
+      price_change_percent
+    }
+  })
+  return { data: trend, error: null }
+}
+
+const getSimilarFoods = async (category: string, excludeId: string, limit: number) => {
+  // Ambil food lain di kategori sama
+  const { data: foods, error } = await supabase
+    .from('foods')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .eq('category', category)
+    .neq('id', excludeId)
+    .is('deleted_at', null)
+    .limit(limit)
+  if (error) return { data: [], error }
+  // Ambil harga terbaru untuk similar foods
+  const ids = (foods || []).map(f => f.id)
+  const { data: prices } = await supabase
+    .from('food_prices')
+    .select('food_id,price,date')
+    .in('food_id', ids)
+    .is('deleted_at', null)
+    .order('date', { ascending: false })
+  const foodsWithPrice: FoodWithPrice[] = (foods || []).map(food => {
+    const priceEntry = prices?.find(p => p.food_id === food.id)
+    return {
+      ...food,
+      latest_price: priceEntry?.price ?? 0,
+      latest_price_date: priceEntry?.date ?? food.updated_at ?? null
+    }
+  })
+  return { data: foodsWithPrice, error: null }
+}
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return ''
   try {
-    const finalImageUrl = await loadImageWithFallback(imageUrl, foodSlug)
-    foodImage.value = finalImageUrl
-  } catch (err) {
-    console.error('Error loading image:', err)
-    // Final fallback to feature image
-    foodImage.value = getFeatureImage(foodSlug)
-    imageError.value = true
-  } finally {
-    imageLoading.value = false
+    const date = new Date(dateStr)
+    return new Intl.DateTimeFormat('id-ID', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }).format(date)
+  } catch {
+    return ''
   }
 }
 
-// Handle image error
-const handleImageError = () => {
-  if (food.value && !imageError.value) {
-    imageError.value = true
-    foodImage.value = getFeatureImage(food.value.slug)
+const getCategoryIcon = (categoryValue: string) => {
+  const icons: Record<string, string> = {
+    'hortikultura': 'i-lucide-leaf',
+    'perkebunan': 'i-lucide-tree-deciduous',
+    'peternakan': 'i-lucide-beef',
+    'perikanan': 'i-lucide-fish',
   }
+  return icons[categoryValue] || 'i-lucide-package'
 }
 
-// Load similar food images with fallback
-const loadSimilarFoodImages = async (foods: FoodWithPrice[]) => {
-  for (const item of foods) {
-    // Initialize state for this food
-    similarFoodImages.value[item.id] = {
-      url: '',
-      loading: true,
-      error: false
-    }
+const getCategoryLabel = (categoryValue: string) => {
+  const found = Enum.FoodPriceCategories.find(cat => cat.value === categoryValue)
+  return found ? found.label : categoryValue
+}
+
+
+// Fallback image/icon logic
+const getFoodImage = (imageUrl: string | null | undefined, category: string) => {
+  if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '') {
+    return imageUrl
+  }
+  // fallback: return empty string, UI will show icon
+  return ''
+}
+
+const { data: routeData, pending: loading, error } = await useAsyncData(
+  `food_detail_${slug}`,
+  async () => {
+    const { data: foodData, error: fetchError } = await getFoodBySlug(slug)
     
-    try {
-      const finalImageUrl = await loadImageWithFallback(item.image_url, item.slug)
-      similarFoodImages.value[item.id] = {
-        url: finalImageUrl,
-        loading: false,
-        error: false
-      }
-    } catch (err) {
-      console.error(`Error loading image for ${item.name}:`, err)
-      similarFoodImages.value[item.id] = {
-        url: getFeatureImage(item.slug),
-        loading: false,
-        error: true
-      }
+    if (fetchError || !foodData) {
+      throw fetchError || new Error('Food not found')
     }
+
+    let trendData: FoodPriceTrend[] = []
+    let similarData: FoodWithPrice[] = []
+
+    if (foodData.id) {
+      const { data: trend } = await getPriceTrend(foodData.id, 30)
+      if (trend) trendData = trend
+
+      const { data: similar } = await getSimilarFoods(foodData.category, foodData.id, 4)
+      if (similar) similarData = similar
+    }
+
+    return { food: foodData, priceTrend: trendData, similarFoods: similarData }
   }
+)
+
+if (error.value || !routeData.value?.food) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Komoditas tidak ditemukan'
+  })
 }
 
-// Handle similar food image error
-const handleSimilarImageError = (foodId: string, slug: string) => {
-  if (similarFoodImages.value[foodId] && !similarFoodImages.value[foodId].error) {
-    similarFoodImages.value[foodId] = {
-      url: getFeatureImage(slug),
-      loading: false,
-      error: true
-    }
-  }
-}
+const food = computed(() => routeData.value?.food || null)
+const priceTrend = computed(() => routeData.value?.priceTrend || [])
+const similarFoods = computed(() => routeData.value?.similarFoods || [])
 
-// Get similar food image
-const getSimilarFoodImage = (foodId: string) => {
-  return similarFoodImages.value[foodId] || { url: '', loading: true, error: false }
+
+// UI State
+const foodImageError = ref(false)
+const handleImageError = () => {
+  foodImageError.value = true
 }
 
 // Price trend chart data (computed)
@@ -185,10 +251,8 @@ const priceChangeBadge = computed(() => {
   return { color: 'neutral' as const, label: 'Stabil', icon: 'i-lucide-minus' }
 })
 
-// Initial fetch
-onMounted(() => {
-  fetchFoodData()
-})
+// Load images on client side
+
 
 // SEO
 useSeoOptimized('food-prices')
@@ -209,7 +273,7 @@ useHead({
   <div class="food-price-detail-page container mx-auto px-4 py-12">
     <!-- Loading State -->
     <div v-if="loading" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"></div>
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"/>
       <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat data komoditas...</p>
     </div>
 
@@ -235,29 +299,16 @@ useHead({
           <div class="sticky top-24">
             <!-- Product Image -->
             <div class="relative rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square mb-6">
-              <!-- Loading placeholder -->
-              <div v-if="imageLoading" class="w-full h-full flex items-center justify-center">
-                <div class="text-center">
-                  <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400 mb-2"></div>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Memuat gambar...</p>
-                </div>
-              </div>
-              
-              <!-- Image -->
-              <img 
-                v-else-if="foodImage"
-                :src="foodImage" 
+              <img
+                v-if="!foodImageError.value && getFoodImage(food.image_url, food.category)"
+                :src="getFoodImage(food.image_url, food.category)"
                 :alt="food.name"
                 class="w-full h-full object-cover transition-opacity duration-300"
-                :class="{ 'opacity-0': imageLoading, 'opacity-100': !imageLoading }"
                 @error="handleImageError"
-              />
-              
-              <!-- Fallback icon if all fails -->
+              >
               <div v-else class="w-full h-full flex items-center justify-center">
                 <UIcon :name="getCategoryIcon(food.category)" class="w-24 h-24 text-gray-400" />
               </div>
-              
               <div class="absolute top-4 right-4">
                 <UBadge 
                   :color="priceChangeBadge.color" 
@@ -432,7 +483,8 @@ useHead({
                   <span class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(trend.date) }}</span>
                   <div class="flex items-center gap-3">
                     <span class="font-semibold text-gray-900 dark:text-white">{{ formatCurrency(trend.price) }}</span>
-                    <span v-if="trend.price_change" :class="[
+                    <span
+v-if="trend.price_change" :class="[
                       'text-xs font-medium',
                       trend.price_change > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                     ]">
@@ -469,27 +521,17 @@ useHead({
             class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300"
           >
             <div class="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
-              <!-- Loading placeholder -->
-              <div v-if="getSimilarFoodImage(item.id).loading" class="w-full h-full flex items-center justify-center">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"></div>
-              </div>
-              
-              <!-- Image -->
-              <img 
-                v-else-if="getSimilarFoodImage(item.id).url"
-                :src="getSimilarFoodImage(item.id).url" 
+              <img
+                v-if="getFoodImage(item.image_url, item.category)"
+                :src="getFoodImage(item.image_url, item.category)"
                 :alt="item.name"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
-                @error="handleSimilarImageError(item.id, item.slug)"
-              />
-              
-              <!-- Fallback icon -->
+                @error="(e) => { e.target.style.display = 'none' }"
+              >
               <div v-else class="w-full h-full flex items-center justify-center">
                 <UIcon :name="getCategoryIcon(item.category)" class="w-16 h-16 text-gray-400" />
               </div>
-              
-              <!-- Price change badge -->
               <div v-if="item.price_change" class="absolute top-2 right-2">
                 <UBadge 
                   :color="item.price_change > 0 ? 'error' : 'success'"

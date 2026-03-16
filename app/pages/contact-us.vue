@@ -165,8 +165,8 @@ const scrollToForm = () => {
                     Alamat Kantor
                   </h3>
                   <p class="text-green-700 dark:text-green-300 leading-relaxed">
-                    Jl. Kusumanegara No.2, Tahunan<br />
-                    Kec. Umbulharjo, Kota Yogyakarta<br />
+                    Jl. Kusumanegara No.2, Tahunan<br >
+                    Kec. Umbulharjo, Kota Yogyakarta<br >
                     Daerah Istimewa Yogyakarta 55167
                   </p>
                 </div>
@@ -181,7 +181,7 @@ const scrollToForm = () => {
                     Jam Operasional
                   </h3>
                   <p class="text-green-700 dark:text-green-300">
-                    Senin - Jumat: 09:00 - 17:00 WIB<br />
+                    Senin - Jumat: 09:00 - 17:00 WIB<br >
                     Sabtu - Minggu: Tutup
                   </p>
                 </div>
@@ -310,9 +310,9 @@ const scrollToForm = () => {
               </p>
               
               <UButton 
-                @click="scrollToForm"
                 size="lg"
                 class="bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                @click="scrollToForm"
               >
                 <UIcon name="i-heroicons-chat-bubble-left-right" class="mr-2" />
                 Hubungi Tim Kami

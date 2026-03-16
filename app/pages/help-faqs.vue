@@ -157,8 +157,8 @@ const scrollToFaqs = () => {
                     <UButton 
                       variant="solid" 
                       color="primary" 
-                      @click="searchQuery = ''"
                       size="lg"
+                      @click="searchQuery = ''"
                     >
                       <UIcon name="i-heroicons-arrow-path" class="mr-2" />
                       Hapus Pencarian

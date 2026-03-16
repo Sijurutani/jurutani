@@ -73,7 +73,7 @@ const clearSearch = () => {
         :placeholder="placeholder"
         class="w-full pl-12 pr-12 py-3.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-green-500 dark:focus:border-green-400 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
         @input="handleInput"
-      />
+      >
       
       <!-- Clear Button -->
       <button

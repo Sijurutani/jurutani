@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { ProductMarket } from '~/types/market'
-import { getImagePathUrl, formatPrice } from '~/composables/useProductMarketUtils'
+import type { Database } from '~/types/database.types'
+import { getMarketPublicUrl } from '~/utils/storage'
+
+
+type ProductMarket = Database['public']['Tables']['product_markets']['Row']
 
 interface Props {
   product: ProductMarket
@@ -16,43 +19,69 @@ const imageError = ref(false)
 const imageLoading = ref(true)
 
 // Get main image (thumbnail or first gallery image)
+
+function parseImages(images: any): string[] {
+  if (!images) return []
+  if (Array.isArray(images)) return images.filter((i) => typeof i === 'string')
+  if (typeof images === 'string') {
+    try {
+      const arr = JSON.parse(images)
+      return Array.isArray(arr) ? arr.filter((i) => typeof i === 'string') : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 const mainImage = computed(() => {
   const imagePath = props.product.thumbnail_url || 
-    (props.product.images && props.product.images.length > 0 ? props.product.images[0] : null)
-  
+    (parseImages(props.product.images).length > 0 ? parseImages(props.product.images)[0] : null)
   if (!imagePath) return '/product.png'
-  return getImagePathUrl(imagePath)
+  const url = getMarketPublicUrl(imagePath)
+  return url || '/product.png'
 })
 
-// Format price
+// Format price (simple, IDR)
 const formattedPrice = computed(() => {
-  return formatPrice(props.product.price)
+  if (props.product.price == null) return '-'
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(props.product.price)
 })
 
 // Get excerpt
 const excerpt = computed(() => {
   if (props.product.excerpt) return props.product.excerpt
-  
-  // Extract from content if no excerpt
+  // Extract from content (assume JSONContent or string)
   let text = ''
   function extractText(node: any) {
-    if (node.text) text += node.text
-    if (node.content && Array.isArray(node.content)) {
-      node.content.forEach((child: any) => extractText(child))
+    if (!node) return
+    if (typeof node === 'string') text += node
+    if (typeof node === 'object') {
+      if (node.text) text += node.text
+      if (node.content && Array.isArray(node.content)) {
+        node.content.forEach((child: any) => extractText(child))
+      }
     }
   }
-  
   if (props.product.content) {
-    extractText(props.product.content)
+    if (typeof props.product.content === 'string') {
+      try {
+        const parsed = JSON.parse(props.product.content)
+        extractText(parsed)
+      } catch {
+        extractText(props.product.content)
+      }
+    } else {
+      extractText(props.product.content)
+    }
   }
-  
   text = text.trim()
   const maxLength = props.variant === 'large' ? 180 : 100
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 })
 
 const formattedCategory = computed(() => {
-  return props.product.category.charAt(0).toUpperCase() + props.product.category.slice(1)
+  return props.product.category ? props.product.category.charAt(0).toUpperCase() + props.product.category.slice(1) : ''
 })
 
 const handleImageError = () => {
@@ -100,21 +129,35 @@ const contentClasses = computed(() => {
 const totalImages = computed(() => {
   let count = 0
   if (props.product.thumbnail_url) count++
-  if (props.product.images) count += props.product.images.length
+  count += parseImages(props.product.images).length
   return count
 })
 
 // Count attachments
 const totalAttachments = computed(() => {
-  return props.product.attachments?.length || 0
+  // attachments: Json (array of {name, url, ...})
+  let arr: any[] = []
+  if (Array.isArray(props.product.attachments)) arr = props.product.attachments
+  else if (typeof props.product.attachments === 'string') {
+    try {
+      arr = JSON.parse(props.product.attachments)
+    } catch {}
+  }
+  return arr.length
 })
 
 // Check marketplace links
 const hasMarketplaceLinks = computed(() => {
-  if (!props.product.links || props.product.links.length === 0) return false
-  return props.product.links.some(link => 
-    link.shopee_link || link.tokopedia_link || link.tiktok_link
-  )
+  // links: Json (array of {shopee_link, tokopedia_link, tiktok_link})
+  let arr: any[] = []
+  if (Array.isArray(props.product.links)) arr = props.product.links
+  else if (typeof props.product.links === 'string') {
+    try {
+      arr = JSON.parse(props.product.links)
+    } catch {}
+  }
+  if (!arr || arr.length === 0) return false
+  return arr.some(link => link.shopee_link || link.tokopedia_link || link.tiktok_link)
 })
 </script>
 

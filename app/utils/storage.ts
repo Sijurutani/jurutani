@@ -69,16 +69,21 @@ export async function deleteNewsFile(urlOrPath: string): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Markets Storage (bucket: markets) [LEGACY]
+// Markets Storage  (bucket: markets)
 //   thumbnail  → [marketId]/filename
 //   gallery    → [marketId]/gallery/filename
-//   attachment → [marketId]/attachments/filename
+//   attachments→ [marketId]/attachments/filename
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BUCKET_MARKETS = 'markets'
 
+/**
+ * Upload a file to Supabase Storage (markets bucket)
+ * folder: 'thumbnail' (cover), 'gallery', 'attachments'
+ * Returns the public URL of the uploaded file.
+ */
 export async function uploadMarketFile(
-  folder: MarketFolder,
+  folder: 'thumbnail' | 'gallery' | 'attachments',
   marketId: string,
   file: File
 ): Promise<string> {
@@ -101,6 +106,9 @@ export async function uploadMarketFile(
   return data.publicUrl
 }
 
+/**
+ * Get public URL from a stored path (handles both full URLs and relative paths)
+ */
 export function getMarketPublicUrl(path: string | null): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
@@ -109,8 +117,12 @@ export function getMarketPublicUrl(path: string | null): string | null {
   return data.publicUrl
 }
 
+/**
+ * Delete a file from Supabase Storage by its full public URL or storage path
+ */
 export async function deleteMarketFile(urlOrPath: string): Promise<void> {
   const supabase = useSupabaseClient()
+  // Extract path from full URL if needed
   const storagePrefix = `/storage/v1/object/public/${BUCKET_MARKETS}/`
   const path = urlOrPath.includes(storagePrefix)
     ? urlOrPath.split(storagePrefix)[1]!
@@ -172,7 +184,7 @@ export async function uploadProductMarketAttachment(
   if (error) throw new Error(error.message)
 
   const { data } = supabase.storage.from(BUCKET_PRODUCT_MARKETS_ATTACHMENTS).getPublicUrl(path)
-  
+
   return {
     url: data.publicUrl,
     name: file.name,
@@ -317,3 +329,4 @@ export function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file)
   })
 }
+
