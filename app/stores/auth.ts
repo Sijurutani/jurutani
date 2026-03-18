@@ -53,7 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
     const computedProfile = computed(() => {
         if (!user.value && !profile.value) return null
         return {
-            id: user.value?.id ?? profile.value?.id ?? '',
+            id: user.value?.sub ?? profile.value?.id ?? '',
             email: user.value?.email ?? profile.value?.email ?? '',
             displayName: displayName.value,
             fullName: profile.value?.full_name ?? user.value?.user_metadata?.full_name ?? '',
@@ -185,10 +185,14 @@ export const useAuthStore = defineStore('auth', () => {
         loading.value = true
         error.value = null
         try {
-            const baseUrl = import.meta.client ? window.location.origin : 'http://localhost:3000'
+            const baseUrl = import.meta.client ? window.location.origin : 'https://jurutani.com'
             const { data, error: authError } = await client.auth.signInWithOAuth({
                 provider,
-                options: { redirectTo: `${baseUrl}/auth/callback` },
+                options: {
+                    redirectTo: `${baseUrl}/auth/callback`,
+                    skipBrowserRedirect: false, // pastikan false
+                },
+
             })
             if (authError) {
                 error.value = authError.message
@@ -210,7 +214,7 @@ export const useAuthStore = defineStore('auth', () => {
         loading.value = true
         error.value = null
         try {
-            const baseUrl = import.meta.client ? window.location.origin : 'http://localhost:3000'
+            const baseUrl = import.meta.client ? window.location.origin : 'https://jurutani.com'
             const { error: authError } = await client.auth.resetPasswordForEmail(email, {
                 redirectTo: `${baseUrl}/auth/reset-password`,
             })

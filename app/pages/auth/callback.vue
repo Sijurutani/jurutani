@@ -1,68 +1,65 @@
 <script setup lang="ts">
 import { toastStore } from '~/composables/useJuruTaniToast'
-import type { Database } from '~/types/database.types'
 
 definePageMeta({
-  layout: 'default',
-  middleware: ['guest']
+  layout: 'blank',
+  middleware: ['guest'],
+  ssr: false,
 })
 
-const client = useSupabaseClient<Database>()
 const authStore = useAuthStore()
-const route = useRoute()
-
 const loading = ref(true)
+const statusMessage = ref('Memproses login...')
 
 onMounted(async () => {
-  if (!import.meta.client) return
   try {
-    // @ts-ignore
-    const existingSession = authStore.session
-    // @ts-ignore
-    if (existingSession?.user) {
-      // @ts-ignore
-      await authStore.fetchProfile(existingSession.user.id)
-      await navigateTo('/')
-      return
-    }
+    // Beri waktu @nuxtjs/supabase menyelesaikan pertukaran session secara internal
+    // Module ini sudah handle PKCE + exchangeCodeForSession otomatis di background
+    let attempts = 0
+    const maxAttempts = 20 // maksimal 10 detik (20 x 500ms)
 
-    const authCode = route.query.code as string
+    const waitForSession = () =>
+      new Promise<void>((resolve) => {
+        const check = async () => {
+          attempts++
+          const user = authStore.user
 
-    if (!authCode) {
-      toastStore.error('Login gagal: kode otorisasi tidak ditemukan.', 5000)
-      await navigateTo('/auth/login?error=missing_code')
-      return
-    }
+          if (user) {
+            resolve()
+            return
+          }
 
-    const { data, error: authError } = await client.auth.exchangeCodeForSession(authCode)
+          if (attempts >= maxAttempts) {
+            resolve() // resolve agar tidak hang, user akan null → redirect ke login
+            return
+          }
 
-    if (authError) {
-      if (authError.message?.toLowerCase().includes('pkce code verifier not found')) {
-        toastStore.error('Login sosial kedaluwarsa. Silakan ulangi login Google dari halaman login.', 6000)
-        await navigateTo('/auth/login?error=pkce_verifier_missing')
-        return
-      }
+          setTimeout(check, 500)
+        }
+        check()
+      })
 
-      toastStore.error('Login gagal: ' + authError.message, 5000)
+    statusMessage.value = 'Memverifikasi akun...'
+    await waitForSession()
+
+    const user = authStore.user
+
+    if (!user) {
+      toastStore.error('Login gagal atau sesi tidak ditemukan. Silakan coba lagi.', 5000)
       await navigateTo('/auth/login?error=oauth_failed')
       return
     }
 
-    if (data.session) {
-      // Pinia store akan otomatis mendeteksi user via useSupabaseUser watcher
-      // Tapi kita tetap eksplisit fetch profil agar data langsung tersedia
-      await authStore.fetchProfile(data.session.user.id)
-      toastStore.success('Login berhasil! Mengarahkan...', 1500)
-      setTimeout(() => {
-        loading.value = false
-        navigateTo('/', { external: true })
-      }, 1500)
-    } else {
-      toastStore.warning('Sesi login tidak ditemukan. Silakan coba lagi.', 3000)
-      await navigateTo('/auth/login')
-    }
+    statusMessage.value = 'Memuat profil...'
+    await authStore.fetchProfile(user.sub ?? user.id)
+
+    const fullName = authStore.displayName || user.email?.split('@')[0] || 'Petani Hebat'
+    toastStore.success(`Selamat datang, ${fullName}!`, 3000)
+
+    statusMessage.value = 'Mengarahkan...'
+    await navigateTo('/')
   } catch (err: any) {
-    toastStore.error('Terjadi kesalahan: ' + (err.message || 'Error tidak diketahui'), 5000)
+    toastStore.error('Terjadi kesalahan: ' + (err?.message || 'Error tidak diketahui'), 5000)
     await navigateTo('/auth/login?error=callback_failed')
   } finally {
     loading.value = false
@@ -75,9 +72,8 @@ onMounted(async () => {
   <div v-if="loading" class="min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full space-y-8 p-8">
       <div class="text-center">
-
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Memproses Login...</h2>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ statusMessage }}</h2>
         <p class="text-gray-500 dark:text-gray-400">Mohon tunggu sebentar</p>
       </div>
     </div>
