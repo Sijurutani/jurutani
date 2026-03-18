@@ -1,77 +1,69 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
 interface Props {
-  disabled: boolean
+  disabled?: boolean
   placeholder?: string
 }
+
+defineProps<Props>()
 
 const emit = defineEmits<{
   submit: [message: string]
 }>()
 
-defineProps<Props>()
+const input = ref('')
+const inputRef = ref<HTMLElement | null>(null)
 
-const inputMessage = ref('')
-const inputRef = ref(null)
-
-const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    handleSubmit()
-  }
+function handleSubmit() {
+  const text = input.value.trim()
+  if (!text) return
+  input.value = ''
+  emit('submit', text)
 }
 
-const handleSubmit = () => {
-  if (!inputMessage.value.trim()) return
-  
-  const message = inputMessage.value
-  inputMessage.value = ''
-  emit('submit', message)
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault()
+    handleSubmit()
+  }
 }
 
 defineExpose({
   focus: () => {
     const el = inputRef.value as any
     if (!el) return
-    // If the ref is a component instance that exposes a focus method
-    if (typeof el.focus === 'function') {
-      el.focus()
-      return
-    }
-    // If the ref is a native HTMLElement
-    if (el instanceof HTMLElement && typeof el.focus === 'function') {
-      el.focus()
-      return
-    }
-    // Fallback: try to find an input/textarea inside the component root
+    if (typeof el.focus === 'function') { el.focus(); return }
     const root = el.$el ?? el
-    const input = root?.querySelector?.('input, textarea') as HTMLElement | null
-    input?.focus?.()
-  }
+    const inner = root?.querySelector?.('input, textarea') as HTMLElement | null
+    inner?.focus?.()
+  },
 })
 </script>
 
 <template>
-  <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white z-20 dark:bg-gray-900 dark:border-gray-700">
-    <form class="flex space-x-2" @submit.prevent="handleSubmit">
-      <UInput
+  <div class="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 z-20">
+    <div class="flex gap-2 items-end">
+      <UTextarea
         ref="inputRef"
-        v-model="inputMessage"
-        :placeholder="placeholder || 'Tanya tentang pertanian...'"
+        v-model="input"
+        :placeholder="placeholder ?? 'Tanya tentang pertanian...'"
         :disabled="disabled"
+        :rows="1"
+        autoresize
         size="sm"
-        class="flex-1"
+        class="flex-1 resize-none"
         @keydown="handleKeydown"
       />
       <UButton
-        type="submit"
-        :disabled="!inputMessage.trim() || disabled"
+        :disabled="!input.trim() || disabled"
         icon="i-heroicons-paper-airplane"
         color="success"
         size="sm"
-        class="transition-all duration-200 hover:scale-105"
+        class="shrink-0 transition-all duration-200 hover:scale-105 mb-0.5"
+        @click="handleSubmit"
       />
-    </form>
+    </div>
+    <p class="text-[10px] text-gray-400 dark:text-gray-600 mt-1 text-center">
+      Enter kirim · Shift+Enter baris baru
+    </p>
   </div>
 </template>

@@ -16,7 +16,13 @@ export default defineNuxtConfig({
     // Private keys are only available on the server
     groqApiKey: process.env.GROQ_API_KEY,
     openrouterApiKey: process.env.OPENROUTER_API_KEY,
-    geminiApiKey: process.env.GEMINI_API_KEY
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    public: {
+      // Public keys that are also exposed to the client
+      groqApiKey: process.env.GROQ_API_KEY,
+      openrouterApiKey: process.env.OPENROUTER_API_KEY,
+      geminiApiKey: process.env.GEMINI_API_KEY
+    }
   },
 
   app: {
@@ -59,6 +65,7 @@ export default defineNuxtConfig({
   },
 
   modules: [
+    '@nuxtjs/mdc',
     '@pinia/nuxt',
     '@vueuse/nuxt',
     '@nuxt/image',

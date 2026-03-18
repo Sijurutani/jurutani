@@ -1,52 +1,46 @@
 <script setup lang="ts">
-defineProps<{
-  onStart: () => void
-}>()
+defineEmits<{ start: [] }>()
 </script>
 
 <template>
-  <UCard 
+  <UCard
     class="w-80 border-2 border-green-400 shadow-2xl dark:border-green-400 dark:bg-gray-900"
-    :ui="{ 
-      base: 'transform transition-all duration-500',
-      body: { padding: 'p-6' }
-    }"
+    :ui="{ body: { padding: 'p-6' } }"
   >
     <div class="text-center space-y-4">
-      <!-- Logo -->
-      <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center shadow-lg dark:bg-green-900">
-        <NuxtImg
-          src="/jurutani.png" 
-          alt="Chatbot" 
-          class="w-10 h-10 text-green-600 dark:text-green-300"
-      />
+      <div class="mx-auto w-20 h-20 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center shadow-lg ring-4 ring-green-200 dark:ring-green-800">
+        <NuxtImg src="/jurutani.png" alt="JuruTani AI" class="w-12 h-12" />
       </div>
-      
-      <!-- Title -->
+
       <div>
-        <h1 class="text-xl font-bold text-green-700 mb-2 dark:text-green-300">
-          JuruTani AI
-        </h1>
-        <p class="text-gray-600 text-sm dark:text-gray-300">
-          Asisten Penyuluh JuruTani
-        </p>
+        <h1 class="text-xl font-bold text-green-700 dark:text-green-300">JuruTani AI</h1>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Asisten Penyuluh Pertanian</p>
       </div>
 
-      <!-- Description -->
-      <p class="text-gray-700 text-sm leading-relaxed dark:text-gray-300">
-        Konsultasi pertanian, peternakan, dan pembangunan. 
-        Mari mulai percakapan untuk solusi terbaik!
-      </p>
+      <div class="grid grid-cols-2 gap-2 text-left">
+        <div
+          v-for="item in [
+            { icon: 'i-heroicons-sun', text: 'Budidaya & tanaman' },
+            { icon: 'i-heroicons-bug-ant', text: 'Hama & penyakit' },
+            { icon: 'i-heroicons-beaker', text: 'Pupuk & nutrisi' },
+            { icon: 'i-heroicons-chart-bar', text: 'Pemasaran hasil' },
+          ]"
+          :key="item.text"
+          class="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 rounded-lg p-2"
+        >
+          <UIcon :name="item.icon" class="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
+          <span class="text-xs text-gray-600 dark:text-gray-300">{{ item.text }}</span>
+        </div>
+      </div>
 
-      <!-- Start Button -->
       <UButton
         color="success"
         size="lg"
         block
-        class="hover:bg-green-700 transition-colors duration-200"
-        @click="onStart"
+        class="transition-all duration-200 hover:scale-[1.02]"
+        @click="$emit('start')"
       >
-        Mulai Konsultasi
+        🌱 Mulai Konsultasi
       </UButton>
     </div>
   </UCard>
