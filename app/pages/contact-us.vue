@@ -157,7 +157,7 @@ const scrollToForm = () => {
             <!-- Location Info Card -->
             <div class="bg-linear-to-br from-green-50 via-emerald-50 to-green-50 dark:from-green-900/20 dark:via-emerald-900/10 dark:to-green-900/20 rounded-2xl p-8 border border-green-200 dark:border-green-800/50">
               <div class="flex items-start gap-4 mb-6">
-                <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                <div class="shrink-0 w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
                   <UIcon name="i-heroicons-map-pin" class="text-2xl text-green-600 dark:text-green-400" />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ const scrollToForm = () => {
               </div>
 
               <div class="flex items-start gap-4 mb-6">
-                <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
+                <div class="shrink-0 w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
                   <UIcon name="i-heroicons-clock" class="text-2xl text-green-600 dark:text-green-400" />
                 </div>
                 <div>

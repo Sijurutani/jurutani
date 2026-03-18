@@ -238,7 +238,7 @@ const columns = [
     cell: ({ row }: any) => {
       return h('div', { class: 'flex items-center gap-3 min-w-[200px]' }, [
         h('div', {
-          class: 'flex-shrink-0 w-10 h-10 rounded-lg bg-linear-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center'
+          class: 'shrink-0 w-10 h-10 rounded-lg bg-linear-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center'
         }, [
           h(UIcon, {
             name: getCategoryIcon(row.original.category),
@@ -500,7 +500,7 @@ useHead({
     <!-- Info Footer -->
     <aside class="mt-8 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl" aria-label="Catatan penting">
       <div class="flex items-start gap-3">
-        <UIcon name="i-lucide-info" class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+        <UIcon name="i-lucide-info" class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
         <div class="text-sm text-amber-800 dark:text-amber-200">
           <p class="font-semibold mb-1">Catatan Penting:</p>
           <ul class="list-disc list-inside space-y-1 text-amber-700 dark:text-amber-300">

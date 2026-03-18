@@ -45,7 +45,7 @@ class="font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover
       </h3>
       
       <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
-        <UIcon name="i-lucide-users" class="w-4 h-4 flex-shrink-0" />
+        <UIcon name="i-lucide-users" class="w-4 h-4 shrink-0" />
         <span class="truncate">{{ product.producer }}</span>
       </div>
 

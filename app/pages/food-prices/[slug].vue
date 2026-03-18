@@ -282,11 +282,11 @@ useHead({
       <!-- Breadcrumb -->
       <nav class="mb-8 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
         <NuxtLink to="/" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-          Beranda
+          <UIcon name="i-lucide-home" class="w-4 h-4" />
         </NuxtLink>
         <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
         <NuxtLink to="/food-prices" class="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
-          Harga Pangan
+          <UIcon name="i-lucide-bar-chart-2" class="w-4 h-4" />
         </NuxtLink>
         <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
         <span class="text-gray-900 dark:text-white font-medium">{{ food.name }}</span>
@@ -353,7 +353,7 @@ useHead({
             <!-- Info Notice -->
             <div class="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
               <div class="flex gap-3">
-                <UIcon name="i-lucide-info" class="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <UIcon name="i-lucide-info" class="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div class="text-sm text-amber-800 dark:text-amber-300">
                   <strong>Catatan:</strong> Harga di atas adalah harga rata-rata pasar. Untuk informasi lebih detail, silakan hubungi dinas terkait.
                 </div>

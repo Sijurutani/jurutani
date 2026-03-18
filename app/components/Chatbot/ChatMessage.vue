@@ -50,7 +50,7 @@ const shouldShowExpandButton = (message: Message) => {
       ]"
     >
       <div class="flex items-start space-x-2">
-        <div v-if="message.type === 'bot'" class="flex-shrink-0 mt-0.5">
+        <div v-if="message.type === 'bot'" class="shrink-0 mt-0.5">
           <div class="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center border border-green-200 dark:bg-green-900 dark:border-green-800">
             <NuxtImg 
               src="/jurutani.png" 
@@ -83,7 +83,7 @@ const shouldShowExpandButton = (message: Message) => {
             {{ formatTime(message.timestamp) }}
           </p>
         </div>
-        <div v-if="message.type === 'user'" class="flex-shrink-0 mt-0.5">
+        <div v-if="message.type === 'user'" class="shrink-0 mt-0.5">
           <div class="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center border border-white/30">
             <UIcon name="i-heroicons-user" class="w-3 h-3 text-white" />
           </div>

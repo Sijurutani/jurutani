@@ -46,7 +46,7 @@ const isOpen = (index: number) => openItems.value.includes(index)
       >
         <!-- Icon Indicator -->
         <div 
-          class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300"
+          class="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300"
           :class="isOpen(index) 
             ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400 rotate-90' 
             : 'bg-gray-100 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400'"
@@ -72,7 +72,7 @@ const isOpen = (index: number) => openItems.value.includes(index)
         <!-- Badge for New/Popular (optional) -->
         <div 
           v-if="index === 0"
-          class="flex-shrink-0 px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-xs font-medium text-green-700 dark:text-green-400"
+          class="shrink-0 px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-xs font-medium text-green-700 dark:text-green-400"
         >
           Popular
         </div>

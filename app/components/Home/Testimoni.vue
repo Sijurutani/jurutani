@@ -92,7 +92,7 @@ const testimonials = [...testimonialsBase, ...testimonialsBase, ...testimonialsB
             <div class="relative z-10">
               <!-- Header dengan Avatar -->
               <div class="flex items-start gap-4 mb-4">
-                <div class="relative flex-shrink-0">
+                <div class="relative shrink-0">
                   <div class="absolute inset-0 bg-linear-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
                   <img
                     :src="testimonial.avatar"
@@ -137,7 +137,7 @@ const testimonials = [...testimonialsBase, ...testimonialsBase, ...testimonialsB
 
               <!-- Email with Icon -->
               <div class="flex items-center gap-2 pt-4 border-t border-green-100/50 dark:border-green-800/50">
-                <UIcon name="i-heroicons-envelope" class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <UIcon name="i-heroicons-envelope" class="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
                 <p class="text-xs text-gray-600 dark:text-gray-400 truncate">
                   {{ testimonial.email }}
                 </p>

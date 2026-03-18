@@ -70,7 +70,7 @@ const renderContent = (content: string | string[], type?: string) => {
 
           <!-- Section Content -->
           <div class="flex items-start">
-            <span class="inline-flex mr-2 mt-1 flex-shrink-0">
+            <span class="inline-flex mr-2 mt-1 shrink-0">
               <UIcon :name="section.icon" class="h-5 w-5 text-green-500 dark:text-green-400" />
             </span>
 
@@ -84,7 +84,7 @@ const renderContent = (content: string | string[], type?: string) => {
                 :key="i"
                 class="flex items-start"
               >
-                <span class="inline-flex mr-2 mt-1 flex-shrink-0">
+                <span class="inline-flex mr-2 mt-1 shrink-0">
                   <UIcon name="i-lucide-check-circle" class="h-5 w-5 text-green-500 dark:text-green-400" />
                 </span>
                 <span v-html="item" />

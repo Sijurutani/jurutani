@@ -47,7 +47,7 @@ const totalKCL = computed(() => (luasLahan.value || 0) * kclPerHa)
         <!-- Info Card -->
         <div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
           <div class="flex gap-2">
-            <UIcon name="i-lucide-info" class="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <UIcon name="i-lucide-info" class="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
             <div class="text-xs text-blue-700 dark:text-blue-300">
               <p class="font-semibold mb-1">Standar Pupuk/Ha:</p>
               <ul class="space-y-0.5">

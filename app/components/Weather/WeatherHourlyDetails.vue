@@ -88,7 +88,7 @@ const props = defineProps<{
 
 /* Hourly Card */
 .hourly-card {
-  @apply flex-shrink-0 text-center;
+  @apply shrink-0 text-center;
   @apply relative overflow-hidden;
   @apply rounded-2xl p-4 min-w-[130px];
   @apply bg-white/60 dark:bg-gray-700/60;

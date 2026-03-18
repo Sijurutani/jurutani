@@ -83,7 +83,7 @@ const changeTab = (tabId: string) => {
           <div class="flex items-start gap-4">
             <!-- Icon -->
             <div 
-              class="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
+              class="shrink-0 w-14 h-14 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110"
               :class="[
                 activeTab === tool.id
                   ? 'bg-linear-to-br shadow-lg ' + tool.gradient
@@ -121,7 +121,7 @@ const changeTab = (tabId: string) => {
             <!-- Active Indicator -->
             <div 
               v-if="activeTab === tool.id"
-              class="flex-shrink-0"
+              class="shrink-0"
             >
               <div class="w-8 h-8 rounded-full bg-emerald-500 dark:bg-emerald-400 flex items-center justify-center shadow-lg">
                 <UIcon name="i-lucide-check" class="w-5 h-5 text-white" />

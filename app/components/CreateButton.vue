@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { toastStore } from '~/composables/useJuruTaniToast'
 
 const isDropdownOpen = ref(false)
-const showProductModal = ref(false)
 
 const toggleDropdown = () => (isDropdownOpen.value = !isDropdownOpen.value)
 const closeDropdown = () => (isDropdownOpen.value = false)
@@ -26,9 +25,8 @@ const openNews = () => {
 }
 
 const openProduct = () => {
-  showProductModal.value = true
   closeDropdown()
-  toastStore.info('Silakan isi form produk baru')
+  navigateTo('/markets/create')
 }
 </script>
 
@@ -84,9 +82,6 @@ const openProduct = () => {
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
     </button>
-
-    <!-- Modal Components -->
-    <ProductModalForm v-model="showProductModal" />
   </div>
 </template>
 

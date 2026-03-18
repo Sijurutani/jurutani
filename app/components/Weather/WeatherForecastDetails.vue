@@ -84,7 +84,7 @@ const getWeatherIconClass = (weatherMain: string) => {
               <!-- Left Section (Mobile & Desktop) -->
               <div class="flex items-center gap-3 sm:gap-4 flex-1 sm:flex-initial">
                 <!-- Weather Icon -->
-                <div class="weather-icon-wrapper flex-shrink-0">
+                <div class="weather-icon-wrapper shrink-0">
                   <img
                     :src="`https://openweathermap.org/img/wn/${day.main_weather.icon}@2x.png`"
                     :alt="day.main_weather.description"
@@ -111,7 +111,7 @@ const getWeatherIconClass = (weatherMain: string) => {
               </div>
 
               <!-- Temperature (Mobile Only) -->
-              <div class="text-right sm:hidden flex-shrink-0">
+              <div class="text-right sm:hidden shrink-0">
                 <p class="text-2xl font-bold text-white drop-shadow-lg leading-tight">
                   {{ Math.round(day.temp_max) }}°
                 </p>
@@ -121,7 +121,7 @@ const getWeatherIconClass = (weatherMain: string) => {
               </div>
 
                 <!-- Stats Section (Desktop Only) -->
-                <div class="hidden sm:flex items-center gap-3 flex-shrink-0 ml-auto">
+                <div class="hidden sm:flex items-center gap-3 shrink-0 ml-auto">
                 <!-- Temperature -->
                 <div class="text-center min-w-[90px]">
                   <p class="text-3xl font-bold text-white drop-shadow-lg mb-1">
@@ -230,7 +230,7 @@ const getWeatherIconClass = (weatherMain: string) => {
 
 /* Weather Icon Wrapper */
 .weather-icon-wrapper {
-  @apply relative flex-shrink-0;
+  @apply relative shrink-0;
   @apply p-2 rounded-2xl;
   @apply bg-linear-to-br from-white/50 to-white/20;
   @apply dark:from-gray-600/50 dark:to-gray-700/30;

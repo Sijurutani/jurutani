@@ -3,6 +3,7 @@ export interface EmbedItem {
     platform: string
     url: string
     order: number
+    caption?: string  // Deskripsi/caption postingan, diisi manual di Supabase
 }
 
 /**

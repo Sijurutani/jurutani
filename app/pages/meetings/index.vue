@@ -1,109 +1,171 @@
 <script setup lang="ts">
-  import type { Tables } from '~/types/database.types'
-  import { formatDateLong } from '~/utils/dateFormatter'
+import { watchDebounced } from '@vueuse/core'
+import { Enum } from '~/utils/enum'
+import type { Database } from '~/types/database.types'
+import { parseEmbeds } from '~/utils/embed'
 
-  definePageMeta({
-    layout: 'default',
-  })
+useSeoMeta({
+  title: 'Meetings & Webinar',
+  description: 'Jadwal kegiatan online dan offline seputar pertanian dari JuruTani'
+})
 
-  const supabase = useSupabaseClient()
+type MeetingRow = Database['public']['Tables']['meeting_schedules']['Row']
 
-  type MeetingSchedule = Tables<'meeting_schedules'>
+const supabase = useSupabaseClient()
+const pageSize = 9
 
-  const meetings = ref<MeetingSchedule[]>([])
-  const loading = ref(true)
-  const error = ref<string | null>(null)
+// 1. Reactive Route Queries
+const search = useRouteQuery<string | undefined>('search', undefined)
+const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
+const page = useRouteQuery<number>('page', 1)
 
-  onMounted(async () => {
-    loading.value = true
-    error.value = null
-    try {
-      const { data, error: err } = await supabase
-        .from('meeting_schedules')
-        .select('*')
-        .is('deleted_at', null)
-        .is('archived_at', null)
-        .order('created_at', { ascending: false })
+// 2. Computed Query Builder
+const meetingsQuery = computed(() => {
+  const [field, dir] = sortValue.value.split('-') as [string, string]
+  const dbField = field === 'name' ? 'title' : field
 
-      if (err) throw err
-      meetings.value = data ?? []
-    } catch (e: any) {
-      error.value = e?.message || 'Gagal memuat meetings'
-    } finally {
-      loading.value = false
-    }
-  })
+  let q = supabase
+    .from('meeting_schedules')
+    .select('id,title,content,embeds,created_at,updated_at', { count: 'exact' })
+    .is('deleted_at', null)
+    .is('archived_at', null)
+
+  if (search.value) {
+    const term = search.value.trim()
+    q = q.or(`title.ilike.%${term}%,content.ilike.%${term}%`)
+  }
+
+  return q.order(dbField, { ascending: dir === 'asc' })
+})
+
+// 3. Fetch Data
+const { data, pending, error, refresh } = await useAsyncData('meetings-list', async () => {
+  const from = (page.value - 1) * pageSize
+  const to = page.value * pageSize - 1
+
+  const { data: meetingsData, count, error: fetchError } = await meetingsQuery.value.range(from, to)
+
+  if (fetchError) throw fetchError
+
+  return {
+    items: (meetingsData as any[]) || [],
+    total: count || 0
+  }
+}, {
+  default: () => ({ items: [], total: 0 }),
+  watch: [sortValue, page]
+})
+
+// 4. Debounce Search
+watchDebounced([search], async () => {
+  page.value = 1
+  await refresh()
+}, { debounce: 400, deep: true })
+
+// 5. Helper Computed & Functions
+const sortOptions = Enum.SortOptions.map((option) => {
+  const [rawColumn, direction] = option.value.split('-')
+  return {
+    label: option.label,
+    value: option.value,
+    column: rawColumn === 'name' ? 'title' : rawColumn,
+    ascending: direction === 'asc'
+  }
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(data.value.total / pageSize)))
+const hasData = computed(() => data.value.items.length > 0)
+const showPagination = computed(() => !pending.value && hasData.value && totalPages.value > 1)
+
+const getBentoVariant = (index: number, total: number): 'default' | 'large' | 'wide' => {
+  const remainder = total % 3
+  if (remainder === 2 && index === total - 2) return 'wide'
+  if (remainder === 2 && index === total - 1) return 'default'
+  if (remainder === 1 && index === total - 1) return 'wide'
+  if (index === 0) return 'large'
+  const pattern = (index - 1) % 5
+  if (pattern === 3 || pattern === 4) return 'wide'
+  return 'default'
+}
+
+const handleSortChange = (value: string) => {
+  sortValue.value = value
+}
+
+const handlePageChange = (value: number) => {
+  page.value = value
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950">
-    <div class="max-w-5xl mx-auto px-4 pb-16 pt-4 lg:pt-0">
-      <header class="mb-10 mt-4">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-          <UIcon name="i-lucide-calendar-range" class="w-4 h-4" />
-          Jadwal Kegiatan
-        </div>
-        <h1 class="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Meetings & Webinar JuruTani
-        </h1>
-        <p class="mt-3 text-gray-600 dark:text-gray-300 max-w-2xl">
-          Ikuti berbagai kegiatan online dan offline seputar pertanian, penyuluhan, dan pelatihan yang diselenggarakan JuruTani.
-        </p>
-      </header>
-
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-500 dark:border-t-emerald-400" />
-        <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat daftar meetings...</p>
+  <main class="meetings-page container mx-auto px-4 py-12">
+    <header class="mx-auto mb-8 max-w-4xl text-center">
+      <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
+        <UIcon name="i-lucide-calendar-range" class="w-5 h-5 text-green-600 dark:text-green-400" />
+        <span class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Jadwal Kegiatan JuruTani</span>
       </div>
 
-      <div v-else-if="error" class="max-w-md mx-auto">
-        <UAlert
-          color="error"
-          icon="i-lucide-alert-triangle"
-          title="Gagal memuat data"
-          :description="error"
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent py-2">
+        Meetings & Webinar
+      </h1>
+
+      <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
+        Ikuti berbagai kegiatan
+        <span class="font-semibold text-emerald-600 dark:text-emerald-400">online dan offline</span>
+        seputar pertanian, penyuluhan, dan
+        <span class="font-semibold text-teal-600 dark:text-teal-400">pelatihan</span>
+        yang diselenggarakan JuruTani.
+      </p>
+    </header>
+
+    <aside class="flex flex-col gap-4 mb-8" aria-label="Filter dan pencarian meetings">
+      <AppSearchBar
+        v-model="search"
+        placeholder="Cari meeting, webinar, atau kegiatan pertanian..."
+      />
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div v-if="!pending && hasData" class="text-sm text-gray-600 dark:text-gray-400">
+          Menampilkan <span class="font-semibold text-green-600 dark:text-green-400">{{ data.items.length }}</span> dari <span class="font-semibold">{{ data.total }}</span> kegiatan
+        </div>
+        <AppSortDropdown
+          :sort-options="sortOptions"
+          :current-sort="sortValue"
+          @update:sort="handleSortChange"
         />
       </div>
+    </aside>
 
-      <div v-else-if="!meetings.length" class="max-w-md mx-auto text-center py-16">
-        <UIcon name="i-lucide-calendar-x" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-2">Belum ada jadwal meetings</h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Nantikan jadwal kegiatan dan webinar terbaru dari JuruTani di halaman ini.
-        </p>
-      </div>
+    <section aria-labelledby="meetings-list-heading" class="mt-8">
+      <h2 id="meetings-list-heading" class="sr-only">Daftar Meetings & Webinar JuruTani</h2>
 
-      <div v-else class="grid gap-6 md:grid-cols-2">
-        <article
-          v-for="item in meetings"
-          :key="item.id"
-          class="group relative rounded-2xl border border-emerald-100/80 dark:border-emerald-900/60 bg-white/80 dark:bg-emerald-950/40 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
-        >
-          <NuxtLink :to="`/meetings/${item.id}`" class="flex flex-col h-full">
-            <div class="px-5 pt-5 pb-4 flex-1 flex flex-col">
-              <div class="flex items-center justify-between gap-3 mb-3">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
-                  <UIcon name="i-lucide-calendar-clock" class="w-3.5 h-3.5" />
-                  {{ formatDateLong(item.created_at) }}
-                </span>
-              </div>
-              <h2 class="text-base md:text-lg font-semibold text-gray-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 line-clamp-2 mb-2">
-                {{ item.title }}
-              </h2>
-              <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 flex-1">
-                {{ item.content || 'Kegiatan seputar pelatihan, webinar, atau pertemuan komunitas JuruTani.' }}
-              </p>
-            </div>
-            <div class="px-5 pb-4 flex items-center justify-between border-t border-emerald-100/80 dark:border-emerald-900/60 bg-emerald-50/60 dark:bg-emerald-950/60">
-              <span class="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                <UIcon name="i-lucide-eye" class="w-3.5 h-3.5" />
-                Lihat detail
-              </span>
-              <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </NuxtLink>
-        </article>
+      <LoadingData v-if="pending" />
+      <ErrorData v-else-if="error" :error="error.message" />
+      <NotFoundData v-else-if="!hasData" />
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto grid-flow-row-dense">
+        <MeetingContentCard
+          v-for="(meeting, index) in data.items"
+          :key="meeting.id"
+          :meeting="meeting"
+          :variant="getBentoVariant(index, data.items.length)"
+        />
       </div>
-    </div>
-  </div>
+    </section>
+
+    <nav aria-label="Navigasi halaman meetings">
+      <AppPagination
+        v-if="showPagination"
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="data.total"
+        :page-size="pageSize"
+        :show-page-info="true"
+        :show-first-last="true"
+        @update:page="handlePageChange"
+      />
+    </nav>
+
+    <CreateButton />
+  </main>
 </template>

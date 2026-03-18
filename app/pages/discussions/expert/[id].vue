@@ -197,7 +197,7 @@ watch(() => expert.value, (newVal) => {
         <div class="pb-8">
           <div class="flex flex-col lg:flex-row items-start lg:items-end gap-6 -mt-16 px-6">
             <!-- Avatar -->
-            <div class="relative flex-shrink-0">
+            <div class="relative shrink-0">
               <NuxtImg
                 :src="expert.profiles?.avatar_url || '/profile.png'"
                 :alt="expert.profiles?.full_name"
@@ -306,7 +306,7 @@ watch(() => expert.value, (newVal) => {
 
             <div class="space-y-4">
               <div v-if="expert.profiles?.phone" class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-phone" class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <UIcon name="i-lucide-phone" class="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
                 <div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Telepon</p>
                   <p class="text-sm text-gray-800 dark:text-gray-200 font-medium">{{ expert.profiles.phone }}</p>
@@ -314,7 +314,7 @@ watch(() => expert.value, (newVal) => {
               </div>
 
               <div v-if="expert.profiles?.website" class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <UIcon name="i-lucide-globe" class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <UIcon name="i-lucide-globe" class="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
                 <div class="min-w-0 flex-1">
                   <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Website</p>
                   <NuxtLink
@@ -328,7 +328,7 @@ watch(() => expert.value, (newVal) => {
               </div>
 
               <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <UIcon name="i-lucide-at-sign" class="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+                <UIcon name="i-lucide-at-sign" class="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0" />
                 <div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Username</p>
                   <p class="text-sm text-gray-800 dark:text-gray-200 font-medium">@{{ expert.profiles?.username }}</p>

@@ -1,127 +1,205 @@
 <script setup lang="ts">
-  import type { Tables } from '~/types/database.types'
-  import { formatDateLong } from '~/utils/dateFormatter'
+import { watchDebounced } from '@vueuse/core'
+import { Enum } from '~/utils/enum'
+import type { Database } from '~/types/database.types'
 
-  useSeoOptimized('courses')
+useSeoMeta({
+  title: 'Kursus Pertanian',
+  description: 'Kumpulan course pertanian terkurasi dari pakar dan penyuluh JuruTani'
+})
 
-  const supabase = useSupabaseClient()
+type LearningCourse = Database['public']['Tables']['learning_courses']['Row']
+type Category = { id: string; name: string; slug?: string }
 
-  type LearningCourse = Tables<'learning_courses'>
+const supabase = useSupabaseClient()
+const pageSize = 9
 
-  const courses = ref<LearningCourse[]>([])
-  const loading = ref(true)
-  const error = ref<string | null>(null)
+// 1. Reactive Route Queries
+const search = useRouteQuery<string | undefined>('search', undefined)
+const category = useRouteQuery<string>('category', 'all')
+const sortValue = useRouteQuery<string>('sort', 'published_at-desc')
+const page = useRouteQuery<number>('page', 1)
 
-  const getCoverUrl = (path: string | null) => {
-    if (!path) return null
-    if (path.startsWith('http')) return path
-    const { data } = supabase.storage.from('courses-images').getPublicUrl(path)
-    return data.publicUrl
+// ─── Kategori unik dari data yang ada ────────────────────────────────────────
+const { data: categories } = await useAsyncData('courses-categories', async () => {
+  const { data } = await supabase
+    .from('learning_courses')
+    .select('category')
+    .eq('status', 'approved')
+    .is('deleted_at', null)
+    .is('archived_at', null)
+    .not('category', 'is', null)
+
+  // Dedupe dan bentuk ke format Category
+  const unique = [...new Set((data ?? []).map((r: any) => r.category).filter(Boolean))]
+  return unique.map((name: string, i: number) => ({
+    id: String(i),
+    name: name.charAt(0).toUpperCase() + name.slice(1),
+    slug: name,
+  })) as Category[]
+}, { default: () => [] as Category[] })
+
+// 2. Computed Query Builder
+const coursesQuery = computed(() => {
+  const [field, dir] = sortValue.value.split('-') as [string, string]
+  const dbField = field === 'name' ? 'title' : field
+
+  let q = supabase
+    .from('learning_courses')
+    .select('id,slug,title,description,cover_image,category,status,published_at,created_at,updated_at', { count: 'exact' })
+    .eq('status', 'approved')
+    .is('deleted_at', null)
+    .is('archived_at', null)
+
+  if (category.value && category.value !== 'all' && category.value !== 'semua') {
+    q = q.eq('category', category.value)
   }
 
-  onMounted(async () => {
-    loading.value = true
-    error.value = null
-    try {
-      const { data, error: err } = await supabase
-        .from('learning_courses')
-        .select('*')
-        .eq('status', 'approved')
-        .is('deleted_at', null)
-        .is('archived_at', null)
-        .order('published_at', { ascending: false })
+  if (search.value) {
+    const term = search.value.trim()
+    q = q.ilike('title', `%${term}%`)
+  }
 
-      if (err) throw err
-      courses.value = data ?? []
-    } catch (e: any) {
-      error.value = e?.message || 'Gagal memuat courses'
-    } finally {
-      loading.value = false
-    }
-  })
+  return q.order(dbField, { ascending: dir === 'asc' })
+})
+
+// 3. Fetch Data
+const { data, pending, error, refresh } = await useAsyncData('courses-list', async () => {
+  const from = (page.value - 1) * pageSize
+  const to = page.value * pageSize - 1
+
+  const { data: coursesData, count, error: fetchError } = await coursesQuery.value.range(from, to)
+
+  if (fetchError) throw fetchError
+
+  return {
+    items: (coursesData as any[]) || [],
+    total: count || 0,
+  }
+}, {
+  default: () => ({ items: [], total: 0 }),
+  watch: [sortValue, page],
+})
+
+// 4. Debounce Search & Category
+watchDebounced([search, category], async () => {
+  page.value = 1
+  await refresh()
+}, { debounce: 400, deep: true })
+
+// 5. Helper Computed & Functions
+const sortOptions = Enum.SortOptions.map((option) => {
+  const [rawColumn, direction] = option.value.split('-')
+  return {
+    label: option.label,
+    value: option.value,
+    column: rawColumn === 'name' ? 'title' : rawColumn,
+    ascending: direction === 'asc',
+  }
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(data.value.total / pageSize)))
+const hasData = computed(() => data.value.items.length > 0)
+const showPagination = computed(() => !pending.value && hasData.value && totalPages.value > 1)
+
+const getBentoVariant = (index: number, total: number): 'default' | 'large' | 'wide' => {
+  const remainder = total % 3
+  if (remainder === 2 && index === total - 2) return 'wide'
+  if (remainder === 2 && index === total - 1) return 'default'
+  if (remainder === 1 && index === total - 1) return 'wide'
+  if (index === 0) return 'large'
+  const pattern = (index - 1) % 5
+  if (pattern === 3 || pattern === 4) return 'wide'
+  return 'default'
+}
+
+const handleCategoryChange = (value: string) => { category.value = value }
+const handleSortChange = (value: string) => { sortValue.value = value }
+const handlePageChange = (value: number) => { page.value = value }
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950">
-    <div class="max-w-6xl mx-auto px-4 pb-16 pt-6 lg:pt-4">
-      <header class="mb-10 mt-2">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100/80 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
-          <UIcon name="i-lucide-graduation-cap" class="w-4 h-4" />
-          Kursus Pertanian
-        </div>
-        <h1 class="mt-4 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Belajar Pertanian bersama JuruTani
-        </h1>
-        <p class="mt-3 text-gray-600 dark:text-gray-300 max-w-2xl">
-          Kumpulan course pertanian terkurasi dari pakar dan penyuluh untuk meningkatkan keterampilanmu di lapangan.
-        </p>
-      </header>
-
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20">
-        <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 dark:border-emerald-800 border-t-emerald-500 dark:border-t-emerald-400" />
-        <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat daftar course...</p>
+  <main class="courses-page container mx-auto px-4 py-12">
+    <header class="mx-auto mb-8 max-w-4xl text-center">
+      <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-amber-100 to-emerald-100 dark:from-amber-900/20 dark:to-emerald-900/20 rounded-full">
+        <UIcon name="i-lucide-graduation-cap" class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+        <span class="text-sm font-medium text-amber-700 dark:text-amber-300">Kursus JuruTani</span>
       </div>
 
-      <div v-else-if="error" class="max-w-md mx-auto">
-        <UAlert
-          color="error"
-          icon="i-lucide-alert-triangle"
-          title="Gagal memuat data"
-          :description="error"
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-amber-700 via-emerald-600 to-teal-600 bg-clip-text text-transparent">
+        Belajar Pertanian bersama JuruTani
+      </h1>
+
+      <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto mb-8">
+        Kumpulan course pertanian terkurasi dari
+        <span class="font-semibold text-amber-600 dark:text-amber-400">pakar dan penyuluh</span>
+        untuk meningkatkan
+        <span class="font-semibold text-emerald-600 dark:text-emerald-400">keterampilan</span>
+        dan
+        <span class="font-semibold text-teal-600 dark:text-teal-400">hasil panenmu</span>.
+      </p>
+
+      <!-- Category filter — pakai AppCategoryFilter dengan data kategori dinamis -->
+      <nav aria-label="Filter kategori kursus">
+        <AppCategoryFilter
+          :categories="categories"
+          :current-category="category"
+          :show-all-option="true"
+          all-option-text="Semua"
+          all-option-value="all"
+          @update:category="handleCategoryChange"
+        />
+      </nav>
+    </header>
+
+    <aside class="flex flex-col gap-4 mb-8" aria-label="Filter dan pencarian kursus">
+      <AppSearchBar
+        v-model="search"
+        placeholder="Cari kursus, topik, atau keahlian pertanian..."
+      />
+
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div v-if="!pending && hasData" class="text-sm text-gray-600 dark:text-gray-400">
+          Menampilkan <span class="font-semibold text-amber-600 dark:text-amber-400">{{ data.items.length }}</span> dari <span class="font-semibold">{{ data.total }}</span> kursus
+        </div>
+        <AppSortDropdown
+          :sort-options="sortOptions"
+          :current-sort="sortValue"
+          @update:sort="handleSortChange"
         />
       </div>
+    </aside>
 
-      <div v-else-if="!courses.length" class="max-w-md mx-auto text-center py-16">
-        <UIcon name="i-lucide-book-open" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-700 mb-4" />
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Belum ada course tersedia</h2>
-        <p class="text-gray-600 dark:text-gray-400">
-          Kursus pertanian akan segera hadir. Nantikan pembaruan dari JuruTani.
-        </p>
-      </div>
+    <section aria-labelledby="courses-list-heading" class="mt-8">
+      <h2 id="courses-list-heading" class="sr-only">Daftar Kursus Pertanian JuruTani</h2>
 
-      <div v-else class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <NuxtLink
-          v-for="course in courses"
+      <LoadingData v-if="pending" />
+      <ErrorData v-else-if="error" :error="error.message" />
+      <NotFoundData v-else-if="!hasData" />
+
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 auto-rows-auto grid-flow-row-dense">
+        <CourseLessonCard
+          v-for="(course, index) in data.items"
           :key="course.id"
-          :to="`/courses/${course.slug || course.id}`"
-          class="group bg-white/90 dark:bg-gray-900/90 rounded-2xl shadow-sm hover:shadow-xl border border-emerald-100 dark:border-emerald-900 overflow-hidden flex flex-col transition-all duration-300"
-        >
-          <div class="relative h-40 bg-emerald-100 dark:bg-emerald-900/40">
-            <img
-              v-if="getCoverUrl(course.cover_image)"
-              :src="getCoverUrl(course.cover_image)"
-              :alt="course.title"
-              class="w-full h-full object-cover"
-            >
-            <div v-else class="flex items-center justify-center h-full text-emerald-500 dark:text-emerald-300">
-              <UIcon name="i-lucide-book-open" class="w-12 h-12 opacity-70" />
-            </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-            <div class="absolute left-4 bottom-3 inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/90 dark:bg-gray-900/90 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-              <UIcon name="i-lucide-graduation-cap" class="w-3.5 h-3.5" />
-              <span>Kursus</span>
-            </div>
-          </div>
-          <div class="flex-1 flex flex-col px-4 pt-4 pb-4">
-            <h2 class="text-base font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1">
-              {{ course.title }}
-            </h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-              Diterbitkan {{ course.published_at ? formatDateLong(course.published_at) : formatDateLong(course.created_at) }}
-            </p>
-            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 flex-1">
-              {{ (course.description as any)?.summary || 'Pelajari materi pertanian yang terstruktur dan praktis dari para ahli.' }}
-            </p>
-            <div class="mt-4 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-              <span class="inline-flex items-center gap-1">
-                <UIcon name="i-lucide-play-circle" class="w-4 h-4" />
-                <span>Mulai belajar</span>
-              </span>
-              <UIcon name="i-lucide-chevron-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-        </NuxtLink>
+          :course="course"
+          :variant="getBentoVariant(index, data.items.length)"
+        />
       </div>
-    </div>
-  </div>
+    </section>
+
+    <nav aria-label="Navigasi halaman kursus">
+      <AppPagination
+        v-if="showPagination"
+        :current-page="page"
+        :total-pages="totalPages"
+        :total-items="data.total"
+        :page-size="pageSize"
+        :show-page-info="true"
+        :show-first-last="true"
+        @update:page="handlePageChange"
+      />
+    </nav>
+
+    <CreateButton />
+  </main>
 </template>

@@ -155,7 +155,7 @@ onMounted(() => {
             <!-- Password Strength Info -->
             <div class="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-blue-400 dark:border-blue-600 transition-colors duration-200">
               <div class="flex items-start">
-                <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-400 dark:text-blue-500 mt-0.5 mr-2 flex-shrink-0" />
+                <UIcon name="i-heroicons-information-circle" class="w-5 h-5 text-blue-400 dark:text-blue-500 mt-0.5 mr-2 shrink-0" />
                 <div>
                   <p class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">Tips Password Kuat</p>
                   <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">

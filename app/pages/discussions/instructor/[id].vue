@@ -181,7 +181,7 @@ watch(() => instructor.value, (newVal) => {
           <div class="bg-linear-to-r from-green-500 to-emerald-600 dark:from-green-700 dark:to-emerald-700 px-6 py-10 md:p-8 -m-6 mb-6 rounded-t-lg">
             <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
               <!-- Profile Picture -->
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <NuxtImg
                   :src="instructor.profiles?.avatar_url || '/profile.png'"
                   :alt="instructor.profiles?.full_name"
@@ -217,7 +217,7 @@ watch(() => instructor.value, (newVal) => {
               </div>
 
               <!-- Chat Button -->
-              <div class="flex-shrink-0">
+              <div class="shrink-0">
                 <UButton
                   :loading="creatingConversation"
                   :disabled="creatingConversation"
@@ -257,12 +257,12 @@ watch(() => instructor.value, (newVal) => {
               <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Informasi Kontak</h3>
               <div class="space-y-3">
                 <div v-if="instructor.profiles?.phone" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all duration-200 hover:bg-green-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700">
-                  <UIcon name="i-lucide-phone" class="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <UIcon name="i-lucide-phone" class="w-5 h-5 text-green-500 shrink-0" />
                   <span class="text-sm text-gray-700 dark:text-gray-300">{{ instructor.profiles.phone }}</span>
                 </div>
 
                 <div v-if="instructor.profiles?.website" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all duration-200 hover:bg-green-50 dark:hover:bg-gray-700 border border-gray-100 dark:border-gray-700">
-                  <UIcon name="i-lucide-globe" class="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <UIcon name="i-lucide-globe" class="w-5 h-5 text-green-500 shrink-0" />
                   <NuxtLink 
                     :to="instructor.profiles.website" 
                     target="_blank"

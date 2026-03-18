@@ -147,7 +147,7 @@ const getPriceColor = (categoryValue: string) => {
             :class="[
               'rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden',
               'hover:shadow-xl transition-all duration-300',
-              'bg-linear-to-br min-w-[280px] flex-shrink-0',
+              'bg-linear-to-br min-w-[280px] shrink-0',
               getCategoryColor(categoryGroup.category.value)
             ]"
           >

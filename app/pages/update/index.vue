@@ -17,9 +17,9 @@ const supabase = useSupabaseClient()
 const pageSize = 9
 
 // 1. Reactive Route Queries (State URL) - Diadaptasi dari pola Admin
-const search = useRouteQuery<string | undefined>('search', undefined, { resetKeys: ['page'] })
-const category = useRouteQuery<string>('category', 'all', { resetKeys: ['page'] })
-const sortValue = useRouteQuery<string>('sort', 'created_at-desc', { resetKeys: ['page'] })
+const search = useRouteQuery<string | undefined>('search', undefined)
+const category = useRouteQuery<string>('category', 'all')
+const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
 const page = useRouteQuery<number>('page', 1)
 
 // ─── Data Kategori ────────────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ const handlePageChange = (value: number) => {
 </script>
 
 <template>
-  <main class="update-page container mx-auto px-4 py-12">
+  <div class="update-page container mx-auto px-4 py-12">
     <header class="mx-auto mb-8 max-w-4xl text-center">
       <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
         <UIcon name="i-heroicons-newspaper" class="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -200,5 +200,5 @@ const handlePageChange = (value: number) => {
     </nav>
 
     <CreateButton />
-  </main>
+  </div>
 </template>

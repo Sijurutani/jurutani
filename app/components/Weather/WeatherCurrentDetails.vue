@@ -136,7 +136,7 @@ const props = defineProps<{
             :key="index"
             class="recommendation-card"
           >
-            <div class="icon-wrapper-small bg-green-500/20 dark:bg-green-500/10 flex-shrink-0">
+            <div class="icon-wrapper-small bg-green-500/20 dark:bg-green-500/10 shrink-0">
               <UIcon name="i-ic-baseline-check" class="w-4 h-4 text-green-600 dark:text-green-300" />
             </div>
             <span class="text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-medium">{{ rec }}</span>
