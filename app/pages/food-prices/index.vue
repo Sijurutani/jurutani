@@ -177,7 +177,7 @@ const currentPage = computed<number>({
 const itemsPerPage = 15
 
 // 3. Fetch Data secara Deklaratif
-const { data: rawFoods, pending: loading, error, refresh } = await useAsyncData('food-prices-list', async () => {
+const { data: rawFoods, pending: loading, error, refresh } = await useAsyncData('food-prices-public-list', async () => {
   const { data, error: fetchError } = await getFoodsWithLatestPrices(
     selectedCategory.value,
     searchQuery.value

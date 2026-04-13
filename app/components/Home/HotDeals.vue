@@ -42,7 +42,7 @@ const category = useRouteQuery<string>('category', 'all')
 const page = useRouteQuery<number>('page', 1, { transform: Number })
 
 // ─── Fetch Kategori ────────────────────────────────────────────────────────────
-const { data: categoriesData } = await useAsyncData('market-categories', async () => {
+const { data: categoriesData } = await useAsyncData('market-home-categories', async () => {
   const { data } = await supabase
     .from('category_markets')
     .select('name')
@@ -55,7 +55,7 @@ const categories = computed(() =>
 )
 
 // ─── Fetch Data Utama ──────────────────────────────────────────────────────────
-const { data, pending, error, refresh } = await useAsyncData('markets-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('markets-home-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

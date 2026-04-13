@@ -39,7 +39,7 @@ const meetingsQuery = computed(() => {
 })
 
 // 3. Fetch Data
-const { data, pending, error, refresh } = await useAsyncData('meetings-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('meetings-public-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

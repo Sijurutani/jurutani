@@ -23,7 +23,7 @@ const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
 const page = useRouteQuery<number>('page', 1)
 
 // ─── Data Kategori ────────────────────────────────────────────────────────────
-const { data: categories } = await useAsyncData('news-categories', async () => {
+const { data: categories } = await useAsyncData('news-public-categories', async () => {
   const { data } = await supabase
     .from('category_news')
     .select('*')
@@ -58,7 +58,7 @@ const newsQuery = computed(() => {
 })
 
 // 3. Fetch Data secara Deklaratif
-const { data, pending, error, refresh } = await useAsyncData('news-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('news-public-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

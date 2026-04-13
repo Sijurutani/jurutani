@@ -85,7 +85,7 @@ const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
 const page = useRouteQuery<number>('page', 1, { transform: Number })
 
 // ─── Data Kategori ─────────────────────────────────────────────────────────────
-const { data: categoriesData } = await useAsyncData('market-categories', async () => {
+const { data: categoriesData } = await useAsyncData('market-public-categories', async () => {
   const { data } = await supabase
     .from('category_markets')
     .select('*')
@@ -121,7 +121,7 @@ const marketQuery = computed(() => {
 })
 
 // ─── Fetch Data ────────────────────────────────────────────────────────────────
-const { data, pending, error, refresh } = await useAsyncData('markets-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('markets-public-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

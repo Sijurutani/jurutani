@@ -21,7 +21,7 @@ const sortValue = useRouteQuery<string>('sort', 'published_at-desc')
 const page = useRouteQuery<number>('page', 1)
 
 // ─── Kategori unik dari data yang ada ────────────────────────────────────────
-const { data: categories } = await useAsyncData('courses-categories', async () => {
+const { data: categories } = await useAsyncData('courses-public-categories', async () => {
   const { data } = await supabase
     .from('learning_courses')
     .select('category')
@@ -64,7 +64,7 @@ const coursesQuery = computed(() => {
 })
 
 // 3. Fetch Data
-const { data, pending, error, refresh } = await useAsyncData('courses-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('courses-public-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

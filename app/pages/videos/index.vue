@@ -25,7 +25,7 @@ const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
 const page = useRouteQuery<number>('page', 1, { transform: Number })
 
 // ─── Data Kategori ─────────────────────────────────────────────────────────────
-const { data: categories } = await useAsyncData('video-categories', async () => {
+const { data: categories } = await useAsyncData('videos-public-categories', async () => {
   const { data } = await supabase
     .from('category')
     .select('*')
@@ -56,7 +56,7 @@ const videoQuery = computed(() => {
 })
 
 // ─── Fetch Data ────────────────────────────────────────────────────────────────
-const { data, pending, error, refresh } = await useAsyncData('video-list', async () => {
+const { data, pending, error, refresh } = await useAsyncData('videos-public-list', async () => {
   const from = (page.value - 1) * pageSize
   const to = page.value * pageSize - 1
 

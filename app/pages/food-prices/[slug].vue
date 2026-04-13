@@ -168,7 +168,7 @@ const getFoodImage = (imageUrl: string | null | undefined, category: string) => 
 }
 
 const { data: routeData, pending: loading, error } = await useAsyncData(
-  `food_detail_${slug}`,
+  `food-public-detail-${slug}`,
   async () => {
     const { data: foodData, error: fetchError } = await getFoodBySlug(slug)
     
