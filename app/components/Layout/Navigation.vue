@@ -197,7 +197,7 @@ const handleImageError = (event: Event) => {
               >
                 <div
                   v-if="isProfileOpen"
-                  class="absolute right-0 top-full mt-2 w-72 bg-white/95 dark:bg-green-950/95 backdrop-blur-xl border border-green-200/60 dark:border-green-800/60 rounded-2xl shadow-2xl shadow-green-900/20 z-70 overflow-hidden"
+                  class="absolute right-0 top-full mt-4 w-72 bg-white/95 dark:bg-green-950/95 backdrop-blur-xl border border-green-200/60 dark:border-green-800/60 rounded-2xl shadow-2xl shadow-green-900/20 z-70 overflow-hidden"
                 >
                   <div class="p-4 border-b border-green-100 dark:border-green-800/50">
                     <div v-if="authStore.isAuthenticated && authStore.computedProfile" class="flex items-center gap-3">
@@ -348,8 +348,7 @@ const handleImageError = (event: Event) => {
                     @click="isProfileOpen = false"
                   />
                   <div
-                    class="pointer-events-auto absolute left-1/2 w-[calc(100vw-2rem)] max-w-[320px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-green-200/60 bg-white/95 shadow-2xl shadow-green-900/20 backdrop-blur-xl dark:border-green-800/60 dark:bg-green-950/95 md:absolute md:right-0 md:left-auto md:top-full md:mt-2 md:w-72 md:max-w-none md:translate-x-0 md:translate-y-0"
-                    style="top: 42%;"
+                    class="pointer-events-auto absolute top-[calc(env(safe-area-inset-top)+5.5rem)] left-1/2 w-[calc(100vw-2rem)] max-w-[320px] -translate-x-1/2 overflow-hidden rounded-2xl border border-green-200/60 bg-white/95 shadow-2xl shadow-green-900/20 backdrop-blur-xl dark:border-green-800/60 dark:bg-green-950/95 md:absolute md:right-0 md:left-auto md:top-full md:mt-2 md:w-72 md:max-w-none md:translate-x-0 md:translate-y-0"
                   >
                   <div class="p-4 border-b border-green-100 dark:border-green-800/50">
                     <div v-if="authStore.isAuthenticated && authStore.computedProfile" class="flex items-center gap-3">

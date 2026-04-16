@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChatMessage } from '~/composables/useClientChatbot'
+import type { ChatMessage } from '~/composables/useAI'
 
 interface Props {
   messages: ChatMessage[]
@@ -51,7 +51,7 @@ defineExpose({ scrollToBottom })
 <template>
   <div
     ref="container"
-    class="absolute top-[68px] bottom-[72px] left-0 right-0 overflow-y-auto px-3 py-3 space-y-3 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 scroll-smooth"
+    class="absolute top-17 bottom-18 left-0 right-0 overflow-y-auto px-3 py-3 space-y-3 bg-linear-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 scroll-smooth"
   >
     <!-- Empty state -->
     <div
@@ -97,13 +97,13 @@ defineExpose({ scrollToBottom })
           <div
             class="px-3 py-2 rounded-2xl text-sm leading-relaxed shadow-sm"
             :class="msg.role === 'user'
-              ? 'bg-gradient-to-br from-green-600 to-green-500 text-white rounded-br-sm'
+              ? 'bg-linear-to-br from-green-600 to-green-500 text-white rounded-br-sm'
               : msg.error
                 ? 'bg-red-50 dark:bg-red-900/20 border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 rounded-bl-sm w-full'
                 : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100 rounded-bl-sm w-full'"
           >
             <!-- User: plain text -->
-            <p v-if="msg.role === 'user'" class="whitespace-pre-wrap break-words">
+            <p v-if="msg.role === 'user'" class="whitespace-pre-wrap wrap-break-word">
               {{ msg.content }}
             </p>
 

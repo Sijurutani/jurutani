@@ -56,5 +56,6 @@ useJsonLdSchemas(schemas)
       </h2>
       <HomeTestimoni />
     </section>
+
   </main>
 </template>

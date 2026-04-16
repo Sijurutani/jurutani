@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const route = useRoute()
+const showHomeChatbot = computed(() => route.path === '/')
+</script>
+
 <template>
   <!-- Root: NO overflow-hidden — it clips fixed elements (navbar) and creates
        a broken stacking context that intercepts pointer events on fixed children -->
@@ -35,5 +40,7 @@
         <LayoutFooter />
       </div>
     </div>
+
+    <ChatbotJurutani v-if="showHomeChatbot" />
   </div>
 </template>

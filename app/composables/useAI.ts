@@ -2,11 +2,11 @@
 // State management chatbot client-side:
 //   - Riwayat sesi (localStorage)
 //   - Profil user dari Pinia auth store
-//   - Kirim pesan ke AI dengan fallback provider
+//   - Kirim pesan ke server API chatbot
 
-import { callAI, type AIMessage, type AIProvider } from '~/utils/ai'
+import { type AIProvider } from '~/utils/ai'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// --- Types -------------------------------------------------------------------
 
 export interface ChatMessage {
     id: string
@@ -21,17 +21,28 @@ export interface ChatMessage {
 export interface ChatSession {
     id: string
     title: string
-    date: string           // ISO string
+    date: string // ISO string
     messages: ChatMessage[]
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+interface ServerChatResponse {
+    reply: string
+    model: string
+    provider: AIProvider
+    usage?: {
+        prompt_tokens: number
+        completion_tokens: number
+        total_tokens: number
+    }
+}
+
+// --- Constants ---------------------------------------------------------------
 
 const STORAGE_KEY = 'jurutani_chat_sessions'
 const MAX_SESSIONS = 30
 const MAX_MESSAGES_PER_SESSION = 100
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// --- System prompt -----------------------------------------------------------
 
 function buildSystemPrompt(userName: string, userRole: string, userLocation: string): string {
     const now = new Date().toLocaleDateString('id-ID', {
@@ -53,24 +64,24 @@ function buildSystemPrompt(userName: string, userRole: string, userLocation: str
 
 ## Kemampuan Anda
 Anda dapat membantu dengan:
-1. **Teknik budidaya** — tanaman pangan, hortikultura, perkebunan
-2. **Peternakan** — sapi, kambing, ayam, ikan, lebah, dll
-3. **Pengendalian hama & penyakit** — identifikasi, pencegahan, penanganan organik/kimia
-4. **Pupuk & nutrisi** — rekomendasi jenis, dosis, waktu pemupukan
-5. **Irigasi & pengelolaan air** — teknik irigasi tetes, pompa, embung
-6. **Teknologi pertanian** — alat mesin pertanian, precision farming, IoT
-7. **Pasca panen & pemasaran** — pengolahan, pengemasan, akses pasar digital
-8. **Program pemerintah** — KUR, subsidi pupuk, asuransi pertanian, AUTP
-9. **Pembangunan pedesaan** — infrastruktur, BUMDes, ketahanan pangan
-10. **Analisis lahan** — jenis tanah, pH, kesesuaian komoditas
+1. **Teknik budidaya** - tanaman pangan, hortikultura, perkebunan
+2. **Peternakan** - sapi, kambing, ayam, ikan, lebah, dll
+3. **Pengendalian hama & penyakit** - identifikasi, pencegahan, penanganan organik/kimia
+4. **Pupuk & nutrisi** - rekomendasi jenis, dosis, waktu pemupukan
+5. **Irigasi & pengelolaan air** - teknik irigasi tetes, pompa, embung
+6. **Teknologi pertanian** - alat mesin pertanian, precision farming, IoT
+7. **Pasca panen & pemasaran** - pengolahan, pengemasan, akses pasar digital
+8. **Program pemerintah** - KUR, subsidi pupuk, asuransi pertanian, AUTP
+9. **Pembangunan pedesaan** - infrastruktur, BUMDes, ketahanan pangan
+10. **Analisis lahan** - jenis tanah, pH, kesesuaian komoditas
 
 ## Panduan Menjawab
 - Sapa pengguna dengan namanya jika relevan: "${userName}"
 - Berikan jawaban **terstruktur** dengan heading, bullet, tabel jika diperlukan
 - Sertakan **sumber atau referensi** di akhir jawaban bila memungkinkan (contoh: Kementan RI, Balitbangtan, FAO, BPTP, dll)
-- Format sumber: > 📚 **Sumber:** [nama sumber] — [judul/topik singkat]
+- Format sumber: > 📚 **Sumber:** [nama sumber] - [judul/topik singkat]
 - Jika tidak tahu, katakan dengan jujur dan sarankan ke penyuluh lapangan atau Dinas Pertanian setempat
-- Gunakan **emoji** secukupnya agar lebih menarik dan ramah
+- Gunakan emoji secukupnya agar lebih menarik dan ramah
 - Untuk pertanyaan di luar pertanian/peternakan/pembangunan, tetap bantu tapi ingatkan fokus utama Anda
 
 ## Format Markdown
@@ -83,7 +94,7 @@ Gunakan markdown penuh:
 - --- untuk pemisah bagian`
 }
 
-// ─── localStorage helpers ─────────────────────────────────────────────────────
+// --- localStorage helpers ----------------------------------------------------
 
 function loadSessions(): ChatSession[] {
     if (!import.meta.client) return []
@@ -91,7 +102,6 @@ function loadSessions(): ChatSession[] {
         const raw = localStorage.getItem(STORAGE_KEY)
         if (!raw) return []
         const parsed = JSON.parse(raw) as ChatSession[]
-        // Restore Date objects
         return parsed.map(s => ({
             ...s,
             messages: s.messages.map(m => ({
@@ -108,7 +118,6 @@ function loadSessions(): ChatSession[] {
 function saveSessions(sessions: ChatSession[]): void {
     if (!import.meta.client) return
     try {
-        // Batasi jumlah sesi
         const toSave = sessions.slice(0, MAX_SESSIONS)
         localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
     }
@@ -127,22 +136,19 @@ function buildSessionTitle(messages: ChatMessage[]): string {
     return first.content.slice(0, 50) + (first.content.length > 50 ? '...' : '')
 }
 
-// ─── Composable ───────────────────────────────────────────────────────────────
+// --- Composable --------------------------------------------------------------
 
 export const useClientChatbot = () => {
     const authStore = useAuthStore()
 
-    // ── UI state ────────────────────────────────────────────────────────────────
     const isOpen = ref(false)
     const isLoading = ref(false)
     const isExpanded = ref(false)
     const hasSeenSplash = ref(false)
     const showSplash = computed(() => isOpen.value && !hasSeenSplash.value)
 
-    // ── Provider ────────────────────────────────────────────────────────────────
     const provider = ref<AIProvider>('gemini')
 
-    // ── Sessions & messages ─────────────────────────────────────────────────────
     const sessions = ref<ChatSession[]>(loadSessions())
     const activeSessionId = ref<string | null>(null)
 
@@ -154,7 +160,6 @@ export const useClientChatbot = () => {
         () => activeSession.value?.messages ?? [],
     )
 
-    // ── User profile dari auth store ────────────────────────────────────────────
     const userProfile = computed(() => ({
         name: authStore.displayName ?? 'Petani',
         role: authStore.roleLabel ?? 'Pengguna',
@@ -162,8 +167,6 @@ export const useClientChatbot = () => {
         avatar: authStore.avatarUrl ?? '/profile.png',
         isAuthenticated: authStore.isAuthenticated,
     }))
-
-    // ─── Session management ───────────────────────────────────────────────────
 
     function newChat(): void {
         const session: ChatSession = {
@@ -196,8 +199,6 @@ export const useClientChatbot = () => {
         if (import.meta.client) localStorage.removeItem(STORAGE_KEY)
     }
 
-    // ─── Internal: update session messages ────────────────────────────────────
-
     function pushMessage(msg: ChatMessage): void {
         const idx = sessions.value.findIndex(s => s.id === activeSessionId.value)
         if (idx === -1) return
@@ -218,30 +219,18 @@ export const useClientChatbot = () => {
         saveSessions(sessions.value)
     }
 
-    function buildAIHistory(): AIMessage[] {
-        const { name, role, location } = userProfile.value
-        const systemMsg: AIMessage = {
-            role: 'system',
-            content: buildSystemPrompt(name, role, location),
-        }
-
-        const history: AIMessage[] = messages.value.map(m => ({
+    function buildAIHistory() {
+        return messages.value.map(m => ({
             role: m.role,
             content: m.content,
         }))
-
-        return [systemMsg, ...history]
     }
-
-    // ─── Send message ─────────────────────────────────────────────────────────
 
     async function sendMessage(text: string): Promise<void> {
         if (!text.trim() || isLoading.value) return
 
-        // Buat sesi baru jika belum ada
         if (!activeSessionId.value) newChat()
 
-        // Push pesan user
         const userMsg: ChatMessage = {
             id: generateId(),
             role: 'user',
@@ -253,12 +242,23 @@ export const useClientChatbot = () => {
 
         try {
             const history = buildAIHistory()
-            const response = await callAI(history, provider.value)
+            const { name, role, location } = userProfile.value
+            const response = await $fetch<ServerChatResponse>('/api/chatbot/chat', {
+                method: 'POST',
+                body: {
+                    messages: history,
+                    provider: provider.value,
+                    userName: name,
+                    userRole: role,
+                    userLocation: location,
+                    localSystemPrompt: buildSystemPrompt(name, role, location),
+                },
+            })
 
             const botMsg: ChatMessage = {
                 id: generateId(),
                 role: 'assistant',
-                content: response.content,
+                content: response.reply,
                 timestamp: new Date(),
                 provider: response.provider,
                 model: response.model,
@@ -280,8 +280,6 @@ export const useClientChatbot = () => {
         }
     }
 
-    // ─── UI helpers ───────────────────────────────────────────────────────────
-
     function open(): void {
         isOpen.value = true
     }
@@ -299,7 +297,6 @@ export const useClientChatbot = () => {
         isExpanded.value = !isExpanded.value
     }
 
-    // ─── Auto-init: buat sesi pertama jika localStorage kosong ────────────────
     if (import.meta.client && sessions.value.length === 0) {
         newChat()
     }
@@ -308,33 +305,27 @@ export const useClientChatbot = () => {
     }
 
     return {
-        // UI state
         isOpen,
         isLoading,
         isExpanded,
         showSplash,
         hasSeenSplash,
 
-        // Provider
         provider,
 
-        // Data
         sessions,
         messages,
         activeSession,
         activeSessionId,
         userProfile,
 
-        // Session actions
         newChat,
         loadSession,
         deleteSession,
         clearAllSessions,
 
-        // Chat actions
         sendMessage,
 
-        // UI actions
         open,
         close,
         startChat,
