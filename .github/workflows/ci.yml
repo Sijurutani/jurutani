@@ -19,4 +19,4 @@ jobs:
             git pull origin main
             pnpm install
             pnpm build
-            PORT=3001 pm2 restart jurutani || PORT=3001 pm2 start .output/server/index.mjs --name jurutani
+            pm2 restart jurutani
