@@ -64,7 +64,7 @@ defineExpose({
             id="first-visit-description"
             class="text-base md:text-lg text-gray-700 dark:text-gray-300"
           >
-            Terima kasih telah mengunjungi website kami.
+            Sijurutani adalah aplikasi penyuluhan pertanian yang dirancang untuk meningkatkan produktivitas dan kesejahteraan petani di seluruh Indonesia.
           </p>
         </div>
 

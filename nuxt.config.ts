@@ -39,29 +39,7 @@ export default defineNuxtConfig({
   },
 
   nitro: {
-    preset: 'netlify-static',
-    prerender: {
-      crawlLinks: true,
-      routes: [
-        '/',
-        '/about-us',
-        '/contact-us',
-        '/update',
-        '/tools',
-        '/videos',
-        '/courses',
-        '/help-faqs',
-        '/privacy-policy',
-        '/food-prices',
-        '/markets',
-        '/markets/create',
-        '/educations',
-        '/terms',
-      ],
-      ignore: [
-        '/messages',
-      ]
-    },
+    preset: 'node-server',
   },
 
   modules: [

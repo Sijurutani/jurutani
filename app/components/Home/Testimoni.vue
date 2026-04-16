@@ -43,216 +43,363 @@ const testimonialsBase = [
   },
 ]
 
-// Duplicate data untuk seamless infinite scroll
-const testimonials = [...testimonialsBase, ...testimonialsBase, ...testimonialsBase]
+const trackRef = ref<HTMLElement | null>(null)
+const currentIndex = ref(0)
+const perPage = ref(1)
+
+const updatePerPage = () => {
+  if (!trackRef.value || !testimonialsBase.length) return
+  const card = trackRef.value.children[0] as HTMLElement
+  if (!card) return
+  perPage.value = Math.max(1, Math.round(trackRef.value.clientWidth / card.offsetWidth))
+}
+
+const dotCount = computed(() =>
+  Math.max(1, Math.ceil(testimonialsBase.length / perPage.value))
+)
+
+const handleScroll = () => {
+  if (!trackRef.value) return
+  const { scrollLeft, clientWidth } = trackRef.value
+  currentIndex.value = Math.round(scrollLeft / clientWidth)
+}
+
+const scrollTo = (index: number) => {
+  if (!trackRef.value) return
+  trackRef.value.scrollTo({ left: trackRef.value.clientWidth * index, behavior: 'smooth' })
+  currentIndex.value = index
+}
+
+onMounted(() => {
+  nextTick(() => updatePerPage())
+  window.addEventListener('resize', updatePerPage, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updatePerPage)
+})
 </script>
 
 <template>
-  <div class="relative py-20 overflow-hidden bg-linear-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/30 dark:to-emerald-950/30">
-    <!-- Decorative Elements -->
-    <div class="absolute -top-24 -right-24 w-96 h-96 bg-green-300/20 dark:bg-green-500/10 rounded-full blur-3xl" />
-    <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-emerald-200/30 dark:bg-emerald-600/10 rounded-full blur-3xl" />
-    
-    <UContainer class="relative z-10">
-      <!-- Section Header -->
-      <div class="mx-auto mb-12 max-w-4xl text-center">
-        <div class="inline-flex items-center gap-2 mb-6 px-4 py-2 bg-linear-to-r from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-full">
-          <UIcon name="i-lucide-message-square-quote" class="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span class="text-sm font-medium text-emerald-700 dark:text-emerald-300">Testimoni Pengguna</span>
-        </div>
-
-        <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent py-1">
-          Kata Mereka Tentang JuruTani
-        </h2>
-
-        <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
-          Bergabunglah dengan ribuan petani yang telah merasakan manfaat 
-          <span class="font-semibold text-emerald-600 dark:text-emerald-400">aplikasi JuruTani</span> dalam meningkatkan 
-          <span class="font-semibold text-teal-600 dark:text-teal-400">produktivitas</span> dan 
-          <span class="font-semibold text-cyan-600 dark:text-cyan-400">efisiensi</span> pertanian mereka.
-        </p>
-      </div>
-
-      <!-- Testimonials Horizontal Scroll -->
-      <div class="testimonials-wrapper">
-        <div class="testimonials-grid">
-          <!-- Testimonial Card -->
-          <div 
-            v-for="(testimonial, index) in testimonials" 
-            :key="`${testimonial.id}-${index}`" 
-            class="testimonial-card group animate-slide-up"
-            :style="`animation-delay: ${(index % testimonialsBase.length) * 100}ms`"
-          >
-            <!-- Card Background with Gradient -->
-            <div class="absolute inset-0 bg-linear-to-br from-white via-green-50/30 to-emerald-50/30 dark:from-green-900/80 dark:via-green-800/60 dark:to-emerald-900/80 rounded-2xl backdrop-blur-sm" />
-            
-            <!-- Border Glow Effect -->
-            <div class="absolute inset-0 rounded-2xl bg-linear-to-br from-green-200/50 via-emerald-200/30 to-green-200/50 dark:from-green-700/50 dark:via-emerald-700/30 dark:to-green-700/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-            
-            <div class="relative z-10">
-              <!-- Header dengan Avatar -->
-              <div class="flex items-start gap-4 mb-4">
-                <div class="relative shrink-0">
-                  <div class="absolute inset-0 bg-linear-to-br from-green-400/20 to-emerald-400/20 rounded-full blur-md group-hover:blur-lg transition-all duration-300" />
-                  <img
-                    :src="testimonial.avatar"
-                    :alt="testimonial.name"
-                    class="relative w-14 h-14 rounded-full object-cover border-2 border-white/50 dark:border-green-700/50 shadow-lg"
-                    loading="lazy"
-                  >
-                </div>
-                
-                <div class="flex-1 min-w-0">
-                  <h3 class="text-base font-bold text-gray-900 dark:text-white truncate">
-                    {{ testimonial.name }}
-                  </h3>
-                  <p class="text-sm text-green-600 dark:text-green-400 truncate">
-                    {{ testimonial.role }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Rating Stars -->
-              <div class="flex gap-1 mb-4">
-                <UIcon 
-                  v-for="star in testimonial.rating" 
-                  :key="star"
-                  name="i-lucide-star"
-                  class="w-4 h-4 text-amber-400 fill-amber-400"
-                />
-              </div>
-
-              <!-- Quote Icon -->
-              <div class="mb-3">
-                <UIcon 
-                  name="i-heroicons-chat-bubble-left-right" 
-                  class="w-8 h-8 text-green-500/40 dark:text-green-400/40"
-                />
-              </div>
-
-              <!-- Testimonial Text -->
-              <p class="text-gray-700 dark:text-gray-300 leading-relaxed text-sm line-clamp-4 mb-4">
-                "{{ testimonial.description }}"
-              </p>
-
-              <!-- Email with Icon -->
-              <div class="flex items-center gap-2 pt-4 border-t border-green-100/50 dark:border-green-800/50">
-                <UIcon name="i-heroicons-envelope" class="w-4 h-4 text-green-600 dark:text-green-400 shrink-0" />
-                <p class="text-xs text-gray-600 dark:text-gray-400 truncate">
-                  {{ testimonial.email }}
-                </p>
-              </div>
-            </div>
+  <div class="tm-root">
+    <div class="tm-block">
+      <div class="tm-block__head qa-topic-head">
+        <div class="qa-topic-head__main">
+          <div class="tm-block__icon-wrap">
+            <UIcon name="i-lucide-message-square-quote" class="w-4 h-4" />
+          </div>
+          <div class="qa-topic-head__text">
+            <h2 class="qa-block__heading">Testimoni Pengguna</h2>
+            <p class="qa-block__desc">Cerita petani dan pelaku usaha yang sudah merasakan manfaat JuruTani.</p>
           </div>
         </div>
       </div>
-    </UContainer>
+
+      <div ref="trackRef" class="tm-scroll" @scroll.passive="handleScroll">
+        <article
+          v-for="testimonial in testimonialsBase"
+          :key="testimonial.id"
+          class="tm-card"
+        >
+          <div class="tm-card__head">
+            <div class="tm-card__avatar-wrap">
+              <img
+                :src="testimonial.avatar"
+                :alt="testimonial.name"
+                class="tm-card__avatar"
+                loading="lazy"
+              >
+            </div>
+
+            <div class="tm-card__identity">
+              <h3 class="tm-card__name">{{ testimonial.name }}</h3>
+              <p class="tm-card__role">{{ testimonial.role }}</p>
+              <p class="tm-card__email">{{ testimonial.email }}</p>
+              <div class="tm-card__rating">
+                <UIcon
+                  v-for="star in testimonial.rating"
+                  :key="star"
+                  name="i-lucide-star"
+                  class="w-3.5 h-3.5 text-amber-400 fill-amber-400"
+                />
+              </div>
+            </div>
+          </div>
+
+          <p class="tm-card__quote">"{{ testimonial.description }}"</p>
+        </article>
+      </div>
+
+      <div v-if="dotCount > 1" class="tm-carousel-foot">
+        <div class="tm-dots tm-dots--left">
+          <button
+            v-for="(_, i) in dotCount"
+            :key="i"
+            class="tm-dot"
+            :class="{ 'tm-dot--active': i === currentIndex }"
+            :aria-label="`Halaman testimoni ${i + 1}`"
+            @click="scrollTo(i)"
+          />
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-/* Animation */
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slide-up 0.6s ease-out both;
-}
-
-/* Testimonials Wrapper */
-.testimonials-wrapper {
-  overflow: hidden;
-  width: 100%;
-  position: relative;
-  padding: 2rem 0;
-}
-
-.testimonials-grid {
+/* ══ Root ══ */
+.tm-root {
   display: flex;
-  gap: 1.5rem;
-  animation: slideRightInfinite 60s linear infinite;
-  width: max-content;
+  flex-direction: column;
+  gap: 2.5rem;
+  padding-inline: 1.5rem;
 }
 
-@keyframes slideRightInfinite {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(calc(-33.333% - 1.5rem));
+@media (min-width: 768px) {
+  .tm-root {
+    padding-inline: 2.5rem;
   }
 }
 
-.testimonials-grid:hover {
-  animation-play-state: paused;
+@media (min-width: 1280px) {
+  .tm-root {
+    padding-inline: 3rem;
+  }
 }
 
-/* Testimonial Card - Matching QuickHelp Style */
-.testimonial-card {
-  position: relative;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.tm-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tm-block__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.qa-topic-head {
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.qa-topic-head__main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.qa-topic-head__text {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .qa-topic-head {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+}
+
+.tm-block__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #16a34a;
   flex-shrink: 0;
-  min-width: 360px;
-  width: 360px;
-  border: 1px solid rgba(34, 197, 94, 0.1);
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    0 0 0 1px rgba(34, 197, 94, 0.05);
+  margin-top: 0.125rem;
 }
 
-.testimonial-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    0 0 0 1px rgba(34, 197, 94, 0.1);
+.qa-block__heading {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-base, #111827);
+  line-height: 1.3;
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.01em;
 }
 
-/* Dark mode adjustments */
-:global(.dark) .testimonial-card {
-  border-color: rgba(34, 197, 94, 0.2);
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.3),
-    0 2px 4px -1px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(34, 197, 94, 0.1);
-}
-
-:global(.dark) .testimonial-card:hover {
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.4),
-    0 10px 10px -5px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(34, 197, 94, 0.2);
-}
-
-/* Responsiveness */
-@media (max-width: 768px) {
-  .testimonials-grid {
-    gap: 1rem;
-  }
-
-  .testimonial-card {
-    min-width: 300px;
-    width: 300px;
-    padding: 1.25rem;
+@media (min-width: 768px) {
+  .qa-block__heading {
+    font-size: 1.2rem;
   }
 }
 
-@media (max-width: 640px) {
-  .testimonial-card {
-    min-width: 280px;
-    width: 280px;
-    padding: 1rem;
+.qa-block__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ══ Testimonial carousel ══ */
+.tm-scroll {
+  display: flex;
+  gap: 0.625rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 0.25rem;
+}
+
+.tm-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tm-card {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--border-light, rgba(209,213,219,0.6));
+  background: var(--bg-surface, #fff);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .tm-card {
+    flex: 0 0 calc(50% - 0.3125rem);
   }
+}
+
+.tm-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.tm-card__avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tm-card__avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(220,252,231,0.9);
+}
+
+.tm-card__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.tm-card__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-base, #111827);
+  line-height: 1.35;
+  margin: 0;
+}
+
+.tm-card__role {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #16a34a;
+  margin: 0;
+}
+
+.tm-card__email {
+  font-size: 0.7rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tm-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+}
+
+.tm-card__quote {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-muted, #374151);
+}
+
+.tm-carousel-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.tm-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.tm-dots--left {
+  justify-content: flex-start;
+  flex: 1;
+}
+
+.tm-dot {
+  height: 0.3125rem;
+  width: 0.375rem;
+  border-radius: 9999px;
+  background: rgba(156, 163, 175, 0.45);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tm-dot--active {
+  width: 1.5rem;
+  background: #16a34a;
+}
+
+.tm-dot:not(.tm-dot--active):hover {
+  background: #4ade80;
+  transform: scaleY(1.25);
+}
+
+/* ══ Dark mode ══ */
+:root.dark .qa-block__heading {
+  color: #f9fafb;
+}
+
+:root.dark .tm-block__icon-wrap {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+}
+
+:root.dark .tm-card {
+  border-color: rgba(75,85,99,0.5);
+  background: rgba(17,24,39,0.5);
+}
+
+:root.dark .tm-card__name {
+  color: #f3f4f6;
+}
+
+:root.dark .tm-card__email,
+:root.dark .tm-card__quote {
+  color: #9ca3af;
 }
 </style>

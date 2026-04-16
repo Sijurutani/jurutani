@@ -1,313 +1,544 @@
 <script setup lang="ts">
-import { Enum } from '~/utils/enum'
 import { formatCurrency } from '~/utils/currency'
 import type { Database } from '~/types/database.types'
+import { getFoodPublicUrl } from '~/utils/storage'
 
 const supabase = useSupabaseClient<Database>()
 
-const getCategoryIcon = (categoryValue: string) => {
-  const icons: Record<string, string> = {
-    'hortikultura': 'i-lucide-leaf',
-    'perkebunan': 'i-lucide-tree-deciduous',
-    'peternakan': 'i-lucide-beef',
-  }
-  return icons[categoryValue] || 'i-lucide-package'
-}
-
-// Filter kategori utama (4 kategori, exclude 'all')
-const mainCategories = Enum.FoodPriceCategories
-  .filter(cat => cat.value !== 'all')
-  .slice(0, 4)
-
-// --- Fetch Data Manual dari Supabase ---
 type FoodRow = Database['public']['Tables']['foods']['Row'] & {
   latest_price?: number
   latest_price_date?: string
 }
 
-const { data: categorizedData, pending, error } = await useAsyncData('latest-food-prices', async () => {
-  // Ambil semua food utama
-  const { data: foods, error: foodErr } = await supabase
-    .from('foods')
-    .select('id,name,category,satuan,slug,updated_at')
-    .is('deleted_at', null)
-  if (foodErr) throw foodErr
-  if (!foods) return []
+const getCategoryTheme = (val: string) => ({
+  'hortikultura': { bg: 'rgba(209,250,229,0.7)', color: '#059669', icon: 'i-lucide-leaf' },
+  'perkebunan':   { bg: 'rgba(220,252,231,0.7)', color: '#16a34a', icon: 'i-lucide-tree-deciduous' },
+  'peternakan':   { bg: 'rgba(254,243,199,0.7)', color: '#d97706', icon: 'i-lucide-beef' },
+}[val] || { bg: 'rgba(243,244,246,0.7)', color: '#6b7280', icon: 'i-lucide-package' })
 
-  // Ambil harga terbaru untuk semua food
-  const { data: prices, error: priceErr } = await supabase
+const formatShortDate = (d?: string) => {
+  if (!d) return ''
+  try {
+    return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d))
+  } catch { return '' }
+}
+
+const getFoodImage = (imagePath: string | null | undefined) => {
+  if (!imagePath) return null
+  return getFoodPublicUrl(imagePath)
+}
+
+// ── Fetch: langsung ambil data terbaru lintas semua kategori ──────────────────
+const { data: items, pending } = await useAsyncData<FoodRow[]>('fp-home-latest', async () => {
+  const { data: foods } = await supabase
+    .from('foods')
+    .select('id,name,category,satuan,slug,updated_at,image_url')
+    .is('deleted_at', null)
+
+  const { data: prices } = await supabase
     .from('food_prices')
     .select('food_id,price,date')
     .is('deleted_at', null)
     .order('date', { ascending: false })
-  if (priceErr) throw priceErr
 
-  // Gabungkan harga terbaru ke setiap food
-  const foodsWithPrice: FoodRow[] = foods.map(food => {
-    const priceEntry = prices.find(p => p.food_id === food.id)
+  const merged = (foods || []).map(food => {
+    const p = (prices || []).find(x => x.food_id === food.id)
     return {
       ...food,
-      latest_price: priceEntry?.price ?? 0,
-      latest_price_date: priceEntry?.date ?? food.updated_at ?? null
-    }
+      latest_price: p?.price ?? 0,
+      latest_price_date: p?.date ?? food.updated_at ?? undefined,
+    } as FoodRow
   })
 
-  // Kelompokkan per kategori utama
-  return mainCategories.map(category => {
-    const items = foodsWithPrice
-      .filter(food => food.category === category.value)
-      .sort((a, b) => {
-        const dateA = new Date(a.latest_price_date || a.updated_at || '').getTime()
-        const dateB = new Date(b.latest_price_date || b.updated_at || '').getTime()
-        return dateB - dateA
-      })
-      .slice(0, 5)
-    return { category, items }
-  })
+  // Sort by latest price date desc, ambil 12 terbaru
+  return merged
+    .filter(f => f.latest_price && f.latest_price > 0)
+    .sort((a, b) =>
+      new Date(b.latest_price_date || '').getTime() -
+      new Date(a.latest_price_date || '').getTime()
+    )
+    .slice(0, 12)
 })
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-// Format date in short format
-const formatShortDate = (dateStr?: string) => {
-  if (!dateStr) return ''
-  try {
-    const date = new Date(dateStr)
-    return new Intl.DateTimeFormat('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(date)
-  } catch {
-    return ''
-  }
+// ── Carousel (page-based dots, sama dengan PromotionSection) ─────────────────
+const trackRef = ref<HTMLElement | null>(null)
+const dotIndex = ref(0)
+const perPage = ref(2) // card visible per halaman, diupdate setelah mount
+
+const updatePerPage = () => {
+  if (!trackRef.value || !items.value?.length) return
+  const card = trackRef.value.children[0] as HTMLElement
+  if (!card) return
+  const cardW = card.offsetWidth
+  const trackW = trackRef.value.clientWidth
+  perPage.value = Math.max(1, Math.round(trackW / cardW))
 }
 
-// Get category color
-const getCategoryColor = (categoryValue: string) => {
-  const colors: Record<string, string> = {
-    'hortikultura': 'from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30',
-    'perkebunan': 'from-green-50 to-lime-50 dark:from-green-950/30 dark:to-lime-950/30',
-    'peternakan': 'from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30',
-  }
-  return colors[categoryValue] || 'from-gray-50 to-slate-50 dark:from-gray-950/30 dark:to-slate-950/30'
+const dotCount = computed(() =>
+  Math.max(1, Math.ceil((items.value?.length ?? 0) / perPage.value))
+)
+
+const handleScroll = () => {
+  if (!trackRef.value) return
+  const { scrollLeft, clientWidth } = trackRef.value
+  dotIndex.value = Math.round(scrollLeft / clientWidth)
 }
 
-// Get category icon color
-const getCategoryIconColor = (categoryValue: string) => {
-  const colors: Record<string, string> = {
-    'hortikultura': 'text-emerald-600 dark:text-emerald-400',
-    'perkebunan': 'text-green-600 dark:text-green-400',
-    'peternakan': 'text-orange-600 dark:text-orange-400',
-  }
-  return colors[categoryValue] || 'text-gray-600 dark:text-gray-400'
+const scrollTo = (i: number) => {
+  if (!trackRef.value) return
+  trackRef.value.scrollTo({ left: trackRef.value.clientWidth * i, behavior: 'smooth' })
+  dotIndex.value = i
 }
 
-// Get price color
-const getPriceColor = (categoryValue: string) => {
-  // Disamakan dengan getCategoryIconColor sesuai kode aslimu
-  return getCategoryIconColor(categoryValue)
-}
+const latestDate = computed(() => items.value?.[0]?.latest_price_date)
+
+onMounted(() => {
+  nextTick(() => updatePerPage())
+  window.addEventListener('resize', updatePerPage, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updatePerPage)
+})
 </script>
 
 <template>
-  <div class="food-price-section container max-w-6xl mx-auto px-4 py-12">
-    <div class="mx-auto mb-12 max-w-4xl text-center">
-      <UBadge color="success" variant="subtle" size="lg" class="mb-6">
-        <template #leading>
-          <UIcon name="i-lucide-trending-down" class="w-4 h-4" />
-        </template>
-        Harga Pangan Terupdate
-      </UBadge>
-      
-      <h2 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-linear-to-r from-emerald-700 via-teal-600 to-cyan-600 bg-clip-text text-transparent py-2">
-        Pantau Harga Pangan DIY
-      </h2>
-      
-      <p class="text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-3xl mx-auto">
-        Informasi harga komoditas pertanian terkini dari berbagai produsen lokal Daerah Istimewa Yogyakarta. 
-        <span class="font-semibold text-green-600 dark:text-green-400">Update harian</span> untuk kebutuhan Anda.
-      </p>
-    </div>
+  <div class="fp-root">
 
-    <div v-if="error" class="text-center py-12 text-red-500">
-      Terjadi kesalahan saat memuat data harga pangan.
-    </div>
-
-    <div v-else-if="pending" class="text-center py-12">
-      <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-emerald-200 border-t-emerald-600 dark:border-emerald-800 dark:border-t-emerald-400"/>
-      <p class="mt-4 text-gray-600 dark:text-gray-400">Memuat data harga pangan...</p>
-    </div>
-
-    <div v-else class="mb-8">
-      <div class="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-        <div class="flex gap-4 pb-4">
-          <div 
-            v-for="categoryGroup in categorizedData" 
-            :key="categoryGroup.category.value"
-            :class="[
-              'rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden',
-              'hover:shadow-xl transition-all duration-300',
-              'bg-linear-to-br min-w-[280px] shrink-0',
-              getCategoryColor(categoryGroup.category.value)
-            ]"
-          >
-            <div class="p-4 pb-3 border-b border-gray-200 dark:border-gray-700/50">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="p-2 rounded-lg bg-white/60 dark:bg-gray-900/60">
-                  <UIcon 
-                    :name="getCategoryIcon(categoryGroup.category.value)" 
-                    :class="['w-5 h-5', getCategoryIconColor(categoryGroup.category.value)]"
-                  />
-                </div>
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-                  {{ categoryGroup.category.label }}
-                </h3>
-              </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">
-                <span v-if="categoryGroup.items.length > 0">
-                  Harga per {{ formatShortDate(categoryGroup.items[0]?.latest_price_date) }}
-                </span>
-                <span v-else>Belum ada data</span>
-              </p>
-            </div>
-
-            <div class="p-4">
-              <ul v-if="categoryGroup.items.length > 0" class="space-y-2">
-                <li 
-                  v-for="item in categoryGroup.items" 
-                  :key="item.id"
-                  class="py-2 border-b border-gray-200 dark:border-gray-700 last:border-0"
-                >
-                  <div class="text-gray-900 dark:text-white font-medium text-sm mb-1 truncate">{{ item.name }}</div>
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-gray-600 dark:text-gray-400 text-xs truncate">{{ item.satuan }}</span>
-                    <span :class="['font-bold text-sm whitespace-nowrap', getPriceColor(categoryGroup.category.value)]">
-                      {{ formatCurrency(item.latest_price || 0) }}
-                    </span>
-                  </div>
-                </li>
-              </ul>
-
-              <div v-else class="text-center py-6">
-                <UIcon name="i-lucide-package-x" class="w-10 h-10 mx-auto text-gray-400 dark:text-gray-600 mb-2" />
-                <p class="text-xs text-gray-600 dark:text-gray-400">
-                  Belum ada data tersedia
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <!-- ── Top bar ── -->
+    <div class="fp-topbar">
+      <div class="fp-title-icon">
+        <UIcon name="i-lucide-trending-up" class="w-4 h-4" />
       </div>
+      <div class="fp-title-text">
+        <h2 class="fp-heading">Harga Pangan Terkini</h2>
+        <p class="fp-desc">
+          Data komoditas pertanian DIY
+          <span v-if="latestDate"> — update {{ formatShortDate(latestDate) }}</span>
+        </p>
+      </div>
+    </div>
 
-      <div class="hidden md:grid md:grid-cols-2 gap-6">
-        <div 
-          v-for="categoryGroup in categorizedData" 
-          :key="categoryGroup.category.value"
-          :class="[
-            'rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden',
-            'hover:shadow-xl transition-all duration-300',
-            'bg-linear-to-br',
-            getCategoryColor(categoryGroup.category.value)
-          ]"
+    <!-- ── Loading ── -->
+    <div v-if="pending" class="fp-track">
+      <div v-for="i in 6" :key="i" class="fp-skeleton" />
+    </div>
+
+    <!-- ── Carousel ── -->
+    <template v-else-if="items && items.length > 0">
+      <div ref="trackRef" class="fp-track" @scroll.passive="handleScroll">
+        <NuxtLink
+          v-for="item in items"
+          :key="item.id"
+          :to="`/food-prices/${item.slug || item.id}`"
+          class="fp-card"
         >
-          <div class="p-6 pb-4 border-b border-gray-200 dark:border-gray-700/50">
-            <div class="flex items-center gap-3 mb-2">
-              <div class="p-2 rounded-lg bg-white/60 dark:bg-gray-900/60">
-                <UIcon 
-                  :name="getCategoryIcon(categoryGroup.category.value)" 
-                  :class="['w-6 h-6', getCategoryIconColor(categoryGroup.category.value)]"
-                />
-              </div>
-              <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-                {{ categoryGroup.category.label }}
-              </h3>
-            </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
-              <span v-if="categoryGroup.items.length > 0">
-                Harga per {{ formatShortDate(categoryGroup.items[0]?.latest_price_date) }}
-              </span>
-              <span v-else>Belum ada data</span>
-            </p>
+          <div v-if="getFoodImage(item.image_url)" class="fp-card__image-wrap">
+            <img
+              :src="getFoodImage(item.image_url) || ''"
+              :alt="item.name"
+              class="fp-card__image"
+              loading="lazy"
+            >
           </div>
-
-          <div class="p-6">
-            <ul v-if="categoryGroup.items.length > 0" class="space-y-3">
-              <li 
-                v-for="item in categoryGroup.items" 
-                :key="item.id"
-                class="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700 last:border-0"
-              >
-                <div class="flex-1 min-w-0">
-                  <span class="text-gray-900 dark:text-white font-medium block truncate">{{ item.name }}</span>
-                  <span class="text-gray-600 dark:text-gray-400 text-sm">per {{ item.satuan }}</span>
-                </div>
-                <div :class="['font-bold whitespace-nowrap ml-4', getPriceColor(categoryGroup.category.value)]">
-                  {{ formatCurrency(item.latest_price || 0) }}
-                </div>
-              </li>
-            </ul>
-
-            <div v-else class="text-center py-8">
-              <UIcon name="i-lucide-package-x" class="w-12 h-12 mx-auto text-gray-400 dark:text-gray-600 mb-2" />
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                Belum ada data tersedia
+          <div v-else class="fp-card__icon-bg" :style="{ background: getCategoryTheme(item.category || '').bg }">
+            <UIcon
+              :name="getCategoryTheme(item.category || '').icon"
+              class="w-5 h-5"
+              :style="{ color: getCategoryTheme(item.category || '').color }"
+            />
+          </div>
+          <div class="fp-card__body">
+            <p class="fp-card__name">{{ item.name }}</p>
+            <div class="fp-card__meta">
+              <p class="fp-card__price" :style="{ color: getCategoryTheme(item.category || '').color }">
+                {{ formatCurrency(item.latest_price || 0) }}
               </p>
+              <p class="fp-card__satuan">/ {{ item.satuan }}</p>
             </div>
+            <button class="fp-card__cta">Cek Sekarang</button>
           </div>
-        </div>
+        </NuxtLink>
       </div>
+
+      <div class="fp-carousel-foot">
+        <!-- Dots per halaman (bukan per item) -->
+        <div v-if="dotCount > 1" class="fp-dots fp-dots--left">
+          <button
+            v-for="(_, i) in dotCount"
+            :key="i"
+            class="fp-dot"
+            :class="{ 'fp-dot--active': i === dotIndex }"
+            :aria-label="`Halaman ${i + 1}`"
+            @click="scrollTo(i)"
+          />
+        </div>
+
+        <!-- Bottom see more -->
+        <NuxtLink to="/food-prices" class="fp-see-more fp-see-more--inline">
+          Selengkapnya
+          <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
+        </NuxtLink>
+      </div>
+    </template>
+
+    <!-- Empty -->
+    <div v-else class="fp-empty">
+      <UIcon name="i-lucide-package-open" class="w-8 h-8 text-gray-300" />
+      <p class="text-sm text-gray-400 mt-2">Belum ada data harga pangan</p>
     </div>
 
-    <div v-if="!pending && !error" class="text-center">
-      <UButton 
-        to="/food-prices"
-        color="success"
-        size="xl"
-        class="shadow-lg hover:shadow-xl"
-      >
-        <template #leading>
-          <span class="text-lg">Lihat Semua Harga Pangan</span>
-        </template>
-        <template #trailing>
-          <UIcon name="i-lucide-arrow-right" class="w-5 h-5" />
-        </template>
-      </UButton>
-      <p class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        Temukan ribuan komoditas pertanian dengan harga terbaik
-      </p>
-    </div>
   </div>
 </template>
 
 <style scoped>
-/* Smooth transitions */
-.food-price-section {
-  animation: fadeIn 0.6s ease-in-out;
+/* ══ Root ══ */
+.fp-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding-inline: 1.5rem;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@media (min-width: 768px) {
+  .fp-root { padding-inline: 2.5rem; }
 }
 
-/* Hover effects */
-.group:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+@media (min-width: 1280px) {
+  .fp-root { padding-inline: 3rem; }
 }
 
-/* Hide scrollbar but keep functionality */
-.scrollbar-hide {
-  -ms-overflow-style: none;
+/* ══ Top bar ══ */
+.fp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.fp-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.fp-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.fp-heading {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-base, #111827);
+  line-height: 1.3;
+  margin: 0 0 0.15rem;
+  letter-spacing: -0.01em;
+}
+
+@media (min-width: 768px) {
+  .fp-heading { font-size: 1.2rem; }
+}
+
+.fp-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.fp-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #059669;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: gap 0.2s ease;
+}
+
+.fp-see-all:hover { gap: 0.5rem; }
+
+/* ══ Track ══ */
+.fp-track {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+.fp-track::-webkit-scrollbar { display: none; }
+
+/* ── Card ── */
+.fp-card {
+  flex: 0 0 calc(50% - 0.375rem);
+  scroll-snap-align: start;
+  border-radius: 0.875rem;
+  border: 1px solid var(--border-light, rgba(209,213,219,0.6));
+  background: var(--bg-surface, #fff);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .fp-card { flex: 0 0 calc(33.333% - 0.5rem); }
+}
+
+@media (min-width: 1024px) {
+  .fp-card { flex: 0 0 calc(25% - 0.5625rem); }
+}
+
+.fp-card:hover {
+  box-shadow: 0 4px 20px -4px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.fp-card__icon-bg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 1.25rem;
+  transition: background 0.3s;
+}
+
+.fp-card__image-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+.fp-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.fp-card:hover .fp-card__image {
+  transform: scale(1.05);
+}
+
+.fp-card__body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.fp-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.fp-card__name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-base, #111827);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.fp-card__satuan {
+  font-size: 0.7rem;
+  color: var(--text-muted, #6b7280);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.fp-card__price {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  margin: 0.125rem 0 0;
+}
+
+.fp-card__cta {
+  margin-top: auto;
+  padding-top: 0.625rem;
+  width: 100%;
+  padding-block: 0.45rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #16a34a;
+  border: 1.5px solid #16a34a;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fp-card__cta:hover {
+  background: #16a34a;
+  color: #fff;
+}
+
+/* ── Skeleton ── */
+.fp-skeleton {
+  flex: 0 0 calc(50% - 0.375rem);
+  aspect-ratio: 3 / 4;
+  border-radius: 0.875rem;
+  background: rgba(209,213,219,0.35);
+  animation: fp-pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+  .fp-skeleton { flex: 0 0 calc(33.333% - 0.5rem); }
+}
+
+@media (min-width: 1024px) {
+  .fp-skeleton { flex: 0 0 calc(25% - 0.5625rem); }
+}
+
+@keyframes fp-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* ── Dots ── */
+.fp-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+.fp-carousel-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.fp-dots--left {
+  justify-content: flex-start;
+  flex: 1;
+}
+
+.fp-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: rgba(156,163,175,0.5);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fp-dot--active {
+  width: 1.5rem;
+  background: #059669;
+}
+
+/* ── Bottom link ── */
+.fp-bottom-link { display: flex; }
+
+.fp-see-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.fp-see-more--inline {
+  margin-left: auto;
+  align-self: center;
+  margin-top: 0;
+}
+
+.fp-see-more:hover {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: rgba(22, 163, 74, 0.4);
+  transform: translateX(2px);
+}
+
+/* ── Empty ── */
+.fp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  border: 1px dashed rgba(209,213,219,0.6);
+  border-radius: 1rem;
+}
+
+/* ══ Dark mode ══ */
+:root.dark .fp-heading { color: #f9fafb; }
+
+:root.dark .fp-title-icon {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+}
+
+:root.dark .fp-card {
+  border-color: rgba(75,85,99,0.5);
+  background: rgba(17,24,39,0.6);
+}
+
+:root.dark .fp-card__image-wrap {
+  background: rgba(31,41,55,0.8);
+}
+
+:root.dark .fp-card__name { color: #f3f4f6; }
+
+:root.dark .fp-see-more {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+:root.dark .fp-see-more:hover {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+:root.dark .fp-card__cta {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+:root.dark .fp-card__cta:hover {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
 }
 </style>

@@ -4,6 +4,213 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+@layer base {
+  :root {
+    --scrollbar-size: 10px;
+    --scrollbar-track: var(--color-primary-100);
+    --scrollbar-thumb: var(--color-primary-400);
+    --scrollbar-thumb-hover: var(--color-primary-600);
+
+    /* ── CSS Variables untuk warna teks — solusi paling reliable ── */
+    /* Ini mengalir ke semua elemen child tanpa bergantung selector specificity */
+    --text-base: #111827;
+    --text-muted: #6b7280;
+    --text-subtle: #9ca3af;
+    --text-accent: #16a34a;
+    --text-accent-light: #86efac;
+    --bg-badge: rgba(240, 253, 244, 1);
+    --border-badge: rgba(187, 247, 208, 1);
+    --text-badge: #15803d;
+  }
+
+  .dark {
+    --scrollbar-track: var(--color-primary-900);
+    --scrollbar-thumb: var(--color-primary-600);
+    --scrollbar-thumb-hover: var(--color-primary-400);
+
+    /* ── Dark mode overrides via CSS variables ── */
+    --text-base: #f8fafc;
+    --text-muted: #d1d5db;
+    --text-subtle: #cbd5e1;
+    --text-accent: #86efac;
+    --text-accent-light: #5eead4;
+    --bg-badge: rgba(6, 78, 59, 0.45);
+    --border-badge: rgba(110, 231, 183, 0.45);
+    --text-badge: #a7f3d0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+  }
+
+  /* ── Global dark mode text rendering fix ── */
+  /* Mencegah teks blur akibat konflik antara backdrop-filter (glass navbar)
+     dengan elemen teks di bawahnya. Ini adalah masalah browser rendering. */
+  html.dark {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Fix teks tidak terlihat di dark mode — pastikan semua teks dapat override default */
+  .dark body,
+  .dark [class*='hero-'],
+  .dark [class*='stat-'],
+  .dark [class*='slide-'] {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border: 2px solid var(--scrollbar-track);
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  :is(a, button, [role='button'], [type='button'], [type='submit']) {
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 220ms ease;
+  }
+
+  :is(
+    a,
+    button,
+    [role='button'],
+    [type='button'],
+    [type='submit']
+  ):focus-visible {
+    outline: 2px solid var(--color-primary-400);
+    outline-offset: 2px;
+  }
+
+  /* ── Fix: Teks blur di dark mode akibat backdrop-filter stacking context ── */
+  /* Elemen dengan background-clip: text dapat blur ketika ada backdrop-filter
+     di elemen lain (glass navbar). Fix dengan GPU layer terpisah. */
+  [class*='bg-clip-text'],
+  [class*='text-transparent'] {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+}
+
+
+@layer components {
+  .app-reveal {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+    animation: app-reveal 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .app-reveal--2 {
+    animation-delay: 120ms;
+  }
+
+  .app-reveal--3 {
+    animation-delay: 220ms;
+  }
+
+  .ambient-orb {
+    pointer-events: none;
+    animation: ambient-float 16s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  .ambient-orb--slow {
+    animation-duration: 21s;
+  }
+
+  .ambient-orb--reverse {
+    animation-direction: reverse;
+  }
+
+  .interactive-surface {
+    transition:
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 240ms ease,
+      border-color 240ms ease;
+    will-change: transform;
+  }
+
+  .interactive-surface:is(:hover, :focus-visible) {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 30px -24px rgb(22 163 74 / 80%);
+  }
+
+  .interactive-link {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1px;
+    transition: background-size 220ms ease;
+  }
+
+  .interactive-link:is(:hover, :focus-visible) {
+    background-size: 100% 1px;
+  }
+}
+
+@keyframes app-reveal {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ambient-float {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.15;
+  }
+
+  50% {
+    transform: translate3d(0, -20px, 0) scale(1.04);
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .app-reveal,
+  .ambient-orb,
+  .interactive-surface,
+  .interactive-link {
+    animation: none !important;
+    transition-duration: 0ms !important;
+    transform: none !important;
+  }
+}
+
 /* Custom utilities untuk agricultural theme */
 @layer utilities {
   .text-balance {

@@ -18,4 +18,5 @@ jobs:
             cd /var/www/jurutani.com
             git pull origin main
             pnpm install
-            pnpm generate
+            pnpm build
+            pm2 restart jurutani || pm2 start .output/server/index.mjs --name jurutani

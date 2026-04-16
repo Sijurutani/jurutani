@@ -5,6 +5,7 @@ import { watchDebounced } from '@vueuse/core'
 
 import { Enum } from '~/utils/enum'
 import { formatCurrency } from '~/utils/currency'
+import { getFoodPublicUrl } from '~/utils/storage'
 import type { Database } from '~/types/database.types'
 import { useRoute, useRouter, useSupabaseClient } from '#imports'
 
@@ -33,7 +34,7 @@ const getFoodsWithLatestPrices = async (category?: string, search?: string) => {
   // Ambil semua food utama
   let foodQuery = supabase
     .from('foods')
-    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at,image_url')
     .is('deleted_at', null)
   if (category && category !== 'all') {
     foodQuery = foodQuery.eq('category', category)
@@ -236,14 +237,23 @@ const columns = [
     accessorKey: 'name',
     header: 'Nama Komoditas',
     cell: ({ row }: any) => {
+      const imageUrl = getFoodPublicUrl(row.original.image_url)
+
       return h('div', { class: 'flex items-center gap-3 min-w-[200px]' }, [
         h('div', {
-          class: 'shrink-0 w-10 h-10 rounded-lg bg-linear-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center'
+          class: 'shrink-0 w-10 h-10 rounded-lg overflow-hidden bg-linear-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/30 dark:to-teal-900/30 flex items-center justify-center'
         }, [
-          h(UIcon, {
-            name: getCategoryIcon(row.original.category),
-            class: 'w-5 h-5 text-emerald-600 dark:text-emerald-400'
-          })
+          imageUrl
+            ? h('img', {
+                src: imageUrl,
+                alt: row.original.name,
+                class: 'w-full h-full object-cover',
+                loading: 'lazy'
+              })
+            : h(UIcon, {
+                name: getCategoryIcon(row.original.category),
+                class: 'w-5 h-5 text-emerald-600 dark:text-emerald-400'
+              })
         ]),
         h('div', { class: 'flex-1 min-w-0' }, [
           h('div', { class: 'font-semibold text-gray-900 dark:text-white truncate' }, row.original.name),

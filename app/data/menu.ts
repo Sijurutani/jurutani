@@ -10,6 +10,7 @@ export const navs = {
                 { title: 'Diskusi', to: '/discussions', icon: 'i-lucide-messages-square' },
                 { title: 'Messages', to: '/messages', icon: 'i-lucide-message-square' },
                 { title: 'Marketplace', to: '/markets', icon: 'i-lucide-shopping-bag' },
+                { title: 'Cuaca', to: '/weathers', icon: 'i-lucide-cloud-sun' },
                 { title: 'Harga Pangan', to: '/food-prices', icon: 'i-lucide-bar-chart-2' }
             ]
         },

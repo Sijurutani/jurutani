@@ -203,6 +203,12 @@ const getBentoVariant = (index: number) => {
 .bg-clip-text {
   -webkit-background-clip: text;
   background-clip: text;
+  /* Fix: mencegah blur akibat konflik stacking context dengan backdrop-filter */
+  isolation: isolate;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 @keyframes slideInUp {

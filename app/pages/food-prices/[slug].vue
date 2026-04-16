@@ -2,6 +2,7 @@
 import type { Database } from '~/types/database.types'
 import { formatCurrency } from '~/utils/currency'
 import { Enum } from '~/utils/enum'
+import { getFoodPublicUrl } from '~/utils/storage'
 import { useRoute, useRouter, useSupabaseClient } from '#imports'
 
 definePageMeta({
@@ -33,7 +34,7 @@ const getFoodBySlug = async (slug: string) => {
   // Ambil food by slug
   const { data: foods, error: foodErr } = await supabase
     .from('foods')
-    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at,image_url')
     .eq('slug', slug)
     .is('deleted_at', null)
   if (foodErr) return { data: null, error: foodErr }
@@ -103,7 +104,7 @@ const getSimilarFoods = async (category: string, excludeId: string, limit: numbe
   // Ambil food lain di kategori sama
   const { data: foods, error } = await supabase
     .from('foods')
-    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at')
+    .select('id,name,category,satuan,slug,description,specifications,tags,updated_at,image_url')
     .eq('category', category)
     .neq('id', excludeId)
     .is('deleted_at', null)
@@ -159,12 +160,9 @@ const getCategoryLabel = (categoryValue: string) => {
 
 
 // Fallback image/icon logic
-const getFoodImage = (imageUrl: string | null | undefined, category: string) => {
-  if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '') {
-    return imageUrl
-  }
-  // fallback: return empty string, UI will show icon
-  return ''
+const getFoodImage = (imageUrl: string | null | undefined) => {
+  if (!imageUrl || imageUrl.trim() === '') return ''
+  return getFoodPublicUrl(imageUrl) || ''
 }
 
 const { data: routeData, pending: loading, error } = await useAsyncData(
@@ -300,8 +298,8 @@ useHead({
             <!-- Product Image -->
             <div class="relative rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 aspect-square mb-6">
               <img
-                v-if="!foodImageError.value && getFoodImage(food.image_url, food.category)"
-                :src="getFoodImage(food.image_url, food.category)"
+                v-if="!foodImageError && getFoodImage(food.image_url)"
+                :src="getFoodImage(food.image_url)"
                 :alt="food.name"
                 class="w-full h-full object-cover transition-opacity duration-300"
                 @error="handleImageError"
@@ -522,8 +520,8 @@ v-if="trend.price_change" :class="[
           >
             <div class="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden">
               <img
-                v-if="getFoodImage(item.image_url, item.category)"
-                :src="getFoodImage(item.image_url, item.category)"
+                v-if="getFoodImage(item.image_url)"
+                :src="getFoodImage(item.image_url)"
                 :alt="item.name"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"

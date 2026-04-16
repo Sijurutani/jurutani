@@ -1,38 +1,39 @@
-<script setup lang="ts">
-// All navigation logic has been moved to LayoutNavigation component
-</script>
-
 <template>
-  <div class="relative overflow-hidden">
+  <!-- Root: NO overflow-hidden — it clips fixed elements (navbar) and creates
+       a broken stacking context that intercepts pointer events on fixed children -->
+  <div class="relative">
     <!-- Background gradient -->
     <div
-      class="absolute inset-0 z-0 bg-linear-to-b from-green-50 via-green-100 to-blue-50 dark:from-green-950 dark:via-green-800 dark:to-green-950"
+      class="fixed inset-0 z-0 bg-linear-to-b from-green-50 via-green-100 to-blue-50 dark:from-green-950 dark:via-green-800 dark:to-green-950 pointer-events-none"
     />
 
     <!-- Decorative blur circles -->
-    <div class="absolute top-20 left-10 w-72 h-72 bg-green-200 dark:bg-green-800 rounded-full opacity-20 blur-3xl" />
-    <div class="absolute bottom-20 right-10 w-96 h-96 bg-blue-200 dark:bg-blue-800 rounded-full opacity-20 blur-3xl" />
-    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-green-100 dark:bg-green-700 rounded-full opacity-10 blur-2xl" />
+    <div
+      class="ambient-orb pointer-events-none fixed top-20 left-10 h-72 w-72 rounded-full bg-green-200 opacity-20 blur-3xl dark:bg-green-800"
+    />
+    <div
+      class="ambient-orb ambient-orb--slow pointer-events-none fixed right-10 bottom-20 h-96 w-96 rounded-full bg-blue-200 opacity-20 blur-3xl dark:bg-blue-800"
+    />
+    <div
+      class="ambient-orb ambient-orb--reverse pointer-events-none fixed top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-green-100 opacity-10 blur-2xl dark:bg-green-700"
+    />
 
-    <BackgroundRipple class="opacity-30" />
+    <BackgroundRipple class="opacity-30 pointer-events-none" />
 
-    <div class="relative z-10 min-h-screen flex flex-col bg-transparent text-green-900 dark:text-green-100">
+    <div
+      class="relative z-10 min-h-screen flex flex-col bg-transparent text-green-900 dark:text-green-100"
+    >
+      <!-- Nav is NOT wrapped in app-reveal so it's never opacity:0 or scaled
+           during page load (both break pointer events on fixed elements) -->
       <LayoutNavigation />
 
-      <UMain>
+      <UMain class="app-reveal">
         <slot />
       </UMain>
-      <LayoutFooter />
+
+      <div class="app-reveal app-reveal--2">
+        <LayoutFooter />
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-body {
-  transition: background-color 0.5s, color 0.5s;
-}
-
-:global(html) {
-  scroll-padding-top: 100px;
-}
-</style>

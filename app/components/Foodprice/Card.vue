@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatCurrency, type FoodPrice } from '~/data/food-prices'
+import { getFoodPublicUrl } from '~/utils/storage'
 
 interface Props {
   product: FoodPrice
@@ -7,6 +8,11 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const productImage = computed(() => {
+  if (!props.product.image) return ''
+  return getFoodPublicUrl(props.product.image) || props.product.image
+})
 </script>
 
 <template>
@@ -17,7 +23,7 @@ const props = defineProps<Props>()
     <!-- Image -->
     <div class="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-800">
       <img 
-        :src="product.image" 
+        :src="productImage" 
         :alt="product.name"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         loading="lazy"

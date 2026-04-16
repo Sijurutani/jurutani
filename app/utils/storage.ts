@@ -238,6 +238,74 @@ export async function deleteProductMarketFile(
 
 const BUCKET_COURSES = 'courses-images'
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Food Prices Storage (bucket: food-images)
+//   [foodId]/filename
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BUCKET_FOOD_IMAGES = 'food-images'
+
+function normalizeFoodImagePath(urlOrPath: string): string {
+  const storagePrefix = `/storage/v1/object/public/${BUCKET_FOOD_IMAGES}/`
+  const withoutPublicPrefix = urlOrPath.includes(storagePrefix)
+    ? urlOrPath.split(storagePrefix)[1]!
+    : urlOrPath
+
+  return withoutPublicPrefix
+    .replace(/^\/+/, '')
+    .replace(new RegExp(`^${BUCKET_FOOD_IMAGES}/`), '')
+}
+
+/**
+ * Upload a food image to Supabase Storage (food-images bucket)
+ * Path format: [foodId]/[filename]
+ */
+export async function uploadFoodImage(
+  foodId: string,
+  file: File
+): Promise<string> {
+  const supabase = useSupabaseClient()
+  const ext = file.name.split('.').pop() ?? 'bin'
+  const timestamp = Date.now()
+  const random = Math.random().toString(36).substring(2, 11)
+  const path = `${foodId}/${timestamp}_${random}.${ext}`
+
+  const { error } = await supabase.storage
+    .from(BUCKET_FOOD_IMAGES)
+    .upload(path, file, { upsert: true, contentType: file.type })
+
+  if (error) throw new Error(error.message)
+
+  const { data } = supabase.storage.from(BUCKET_FOOD_IMAGES).getPublicUrl(path)
+  return data.publicUrl
+}
+
+/**
+ * Get public URL for a food image path.
+ * Accepts:
+ * - full URL
+ * - storage path with bucket prefix (food-images/[foodId]/filename)
+ * - storage path without bucket prefix ([foodId]/filename)
+ */
+export function getFoodPublicUrl(path: string | null): string | null {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+
+  const supabase = useSupabaseClient()
+  const normalizedPath = normalizeFoodImagePath(path)
+  const { data } = supabase.storage.from(BUCKET_FOOD_IMAGES).getPublicUrl(normalizedPath)
+  return data.publicUrl
+}
+
+/**
+ * Delete a food image from Supabase Storage by URL or path.
+ */
+export async function deleteFoodImage(urlOrPath: string): Promise<void> {
+  const supabase = useSupabaseClient()
+  const path = normalizeFoodImagePath(urlOrPath)
+  await supabase.storage.from(BUCKET_FOOD_IMAGES).remove([path])
+}
+
 export async function uploadCourseFile(
   folder: CourseFolder,
   courseId: string,
