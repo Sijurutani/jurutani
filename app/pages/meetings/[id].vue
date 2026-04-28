@@ -77,7 +77,15 @@ onMounted(async () => {
           title: data.title,
           description: data.content || 'Jadwal kegiatan dan meeting JuruTani.',
           url: `https://jurutani.com/meetings/${id}`,
-          type: 'article'
+          type: 'article',
+          ogImageComponent: 'OgImageMeeting',
+          ogImageProps: {
+            title: data.title,
+            date: data.created_at
+              ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(data.created_at))
+              : '',
+            description: typeof data.content === 'string' ? data.content.slice(0, 160) : '',
+          },
         })
       }
     }

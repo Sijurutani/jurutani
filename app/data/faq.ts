@@ -18,7 +18,7 @@ export const faqData: FaqData = {
     general: [
         {
             question: 'Apa itu JuruTani?',
-            answer: 'JuruTani adalah platform ekosistem pertanian digital yang dirancang untuk memberdayakan petani Indonesia. Kami menyediakan solusi menyeluruh mulai dari pendampingan budidaya, diagnosa penyakit tanaman berbasis AI, akses ke ahli pertanian, hingga marketplace untuk menjual hasil panen dengan harga terbaik. Misi kami adalah memodernisasi pertanian melalui teknologi yang mudah digunakan.'
+            answer: 'JuruTani adalah platform ekosistem penyuluhan pertanian digital yang dirancang untuk memberdayakan petani Indonesia. Kami menyediakan solusi menyeluruh mulai dari pendampingan budidaya, diagnosa penyakit tanaman berbasis AI, akses ke ahli pertanian, hingga marketplace untuk menjual hasil panen dengan harga terbaik. Misi kami adalah memodernisasi pertanian melalui teknologi yang mudah digunakan.'
         },
         {
             question: 'Siapa saja yang bisa menggunakan JuruTani?',

@@ -154,6 +154,16 @@ onMounted(async () => {
       image: getCoverUrl(courseData.cover_image) || '/jurutani.png',
       url: `https://jurutani.com/courses/${slug}`,
       type: 'article',
+      ogImageComponent: 'OgImageCourse',
+      ogImageProps: {
+        title: courseData.title,
+        category: courseData.category
+          ? courseData.category.charAt(0).toUpperCase() + courseData.category.slice(1)
+          : 'Pertanian',
+        lessons: lessons.value.length,
+        rating: avgRating.value,
+        image: getCoverUrl(courseData.cover_image) || '',
+      },
     })
   } catch (e: any) {
     error.value = e?.message || 'Terjadi kesalahan'

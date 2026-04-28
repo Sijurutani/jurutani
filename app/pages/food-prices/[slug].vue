@@ -253,14 +253,28 @@ const priceChangeBadge = computed(() => {
 
 
 // SEO
-useSeoOptimized('food-prices')
+const { formatCurrency: fmt } = { formatCurrency }
+useSeoDetail({
+  title: food.value?.name || 'Komoditas',
+  description: food.value?.description || `Harga ${food.value?.name} terkini per ${food.value?.satuan} di DIY.`,
+  image: getFoodImage(food.value?.image_url) || undefined,
+  type: 'article',
+  ogImageComponent: 'OgImageFoodPrice',
+  ogImageProps: {
+    title: food.value?.name || '',
+    category: getCategoryLabel(food.value?.category || ''),
+    price: formatCurrency(food.value?.latest_price || 0),
+    unit: food.value?.satuan || 'kg',
+    image: getFoodImage(food.value?.image_url) || '',
+  },
+})
 useHead({
   title: computed(() => food.value ? `${food.value.name} - Harga Pangan DIY` : 'Memuat...'),
   meta: computed(() => [
-    { 
-      name: 'description', 
-      content: food.value 
-        ? `Harga ${food.value.name} terkini: ${formatCurrency(food.value.latest_price || 0)} per ${food.value.satuan}. ${food.value.description || ''}` 
+    {
+      name: 'description',
+      content: food.value
+        ? `Harga ${food.value.name} terkini: ${formatCurrency(food.value.latest_price || 0)} per ${food.value.satuan}. ${food.value.description || ''}`
         : 'Informasi harga pangan DIY'
     }
   ])

@@ -100,9 +100,9 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
 export const getPageSeoMeta = (pageType: 'home' | 'news' | 'courses' | 'discussions' | 'educations' | 'markets' | 'tools' | 'food-prices' | 'about' | 'contact' | 'help' | 'terms' | 'privacy' | 'security' | 'profile' | 'history' | 'setting' | 'videos' | 'chat') => {
     const pageMetaConfig: Record<string, SEOMetaOptions> = {
         home: {
-            title: 'Solusi Pertanian Digital',
-            description: 'Platform pertanian digital dari Polbangtan Yogyakarta-Magelang untuk mendukung petani lokal menuju era pertanian modern.',
-            keywords: ['JuruTani', 'pertanian digital', 'inovasi pertanian', 'polbangtan yogyakarta', 'petani indonesia', 'teknologi pertanian', 'penyuluhan digital'],
+            title: 'Solusi Penyuluhan Pertanian Digital',
+            description: 'Platform penyuluhan digital dari Polbangtan Yogyakarta-Magelang untuk mendukung petani lokal menuju era pertanian modern.',
+            keywords: ['JuruTani', 'penyuluhan digital', 'inovasi pertanian', 'polbangtan yogyakarta', 'petani indonesia', 'teknologi pertanian', 'penyuluhan digital'],
             ogType: 'website',
         },
         news: {
@@ -150,7 +150,7 @@ export const getPageSeoMeta = (pageType: 'home' | 'news' | 'courses' | 'discussi
         about: {
             title: 'Tentang JuruTani',
             description: 'JuruTani: inovasi digital Polbangtan untuk mengembangkan pertanian Indonesia menuju era digital.',
-            keywords: ['tentang JuruTani', 'visi misi JuruTani', 'polbangtan yogyakarta', 'polbangtan magelang', 'tentang pertanian digital'],
+            keywords: ['tentang JuruTani', 'visi misi JuruTani', 'polbangtan yogyakarta', 'polbangtan magelang', 'tentang penyuluhan digital'],
             ogType: 'website',
         },
         contact: {
@@ -266,6 +266,28 @@ export const useSeoOptimized = (pageType: 'home' | 'news' | 'courses' | 'discuss
         twitterImageAlt: seoMeta.twitterImageAlt,
     })
 
+    // Eksekusi Dynamic OG Image untuk semua halaman statis
+    defineOgImageComponent('OgImageHome', {
+        title: seoMeta.title,
+        description: seoMeta.description,
+    })
+
+    // Eksekusi Global Schema (Organization/WebSite) khusus untuk Home
+    if (pageType === 'home') {
+        useSchemaOrg([
+            defineWebSite({
+                name: siteMeta.title,
+                url: siteMeta.url,
+                description: siteMeta.description,
+            }),
+            defineOrganization({
+                name: 'Polbangtan Yogyakarta-Magelang',
+                logo: '/LOGO02.png',
+                url: siteMeta.url,
+            })
+        ])
+    }
+
     return seoMeta
 }
 
@@ -280,6 +302,14 @@ export const useSeoDetail = (options: {
     image?: string
     url?: string
     type?: OgType
+    // Dukungan untuk dynamic OG Image
+    ogImageComponent?: string
+    ogImageProps?: Record<string, any>
+    // Dukungan untuk Schema.org (GEO)
+    schema?: {
+        type: 'Article' | 'Product'
+        data: Record<string, any>
+    }
 }) => {
     const {
         title: pageTitle,
@@ -288,6 +318,9 @@ export const useSeoDetail = (options: {
         image,
         url,
         type = 'article',
+        ogImageComponent,
+        ogImageProps,
+        schema,
     } = options
 
     const { titleSeparator, title: siteTitle } = siteMeta
@@ -334,6 +367,40 @@ export const useSeoDetail = (options: {
         twitterImageAlt: fullTitle,
     })
 
+    // Eksekusi Dynamic OG Image jika komponen diberikan
+    if (ogImageComponent) {
+        // Auto-inject title & description jika belum ada di props
+        const props = {
+            title: pageTitle,
+            description: pageDescription,
+            ...ogImageProps,
+        }
+        defineOgImageComponent(ogImageComponent, props)
+    }
+
+    // Eksekusi Schema.org (GEO) jika ada definisi
+    if (schema) {
+        if (schema.type === 'Article') {
+            useSchemaOrg([
+                defineArticle({
+                    headline: pageTitle,
+                    description: pageDescription,
+                    image: finalOgImage,
+                    ...schema.data
+                })
+            ])
+        } else if (schema.type === 'Product') {
+            useSchemaOrg([
+                defineProduct({
+                    name: pageTitle,
+                    description: pageDescription,
+                    image: finalOgImage,
+                    ...schema.data
+                })
+            ])
+        }
+    }
+
     return {
         title: fullTitle,
         description: fullDescription,
@@ -348,7 +415,7 @@ export const getAuthPageSeoMeta = (pageType: 'login' | 'register' | 'forgot-pass
     const pageMetaConfig: Record<string, SEOMetaOptions> = {
         login: {
             title: 'Masuk',
-            description: 'Masuk ke akun JuruTani Anda untuk mengakses semua fitur pertanian digital yang kami sediakan.',
+            description: 'Masuk ke akun JuruTani Anda untuk mengakses semua fitur penyuluhan pertanian digital yang kami sediakan.',
             keywords: ['login JuruTani', 'masuk akun', 'autentikasi'],
             robots: 'noindex, follow',
         },

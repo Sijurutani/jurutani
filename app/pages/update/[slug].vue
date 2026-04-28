@@ -176,13 +176,41 @@ const coverImageUrl = computed(() => {
 })
 
 // SEO
-useSeoMeta({
+const shareUrl = computed(() => {
+  const slug = slugParam.value || ''
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/update/${slug}`
+  }
+  return `https://jurutani.com/update/${slug}`
+})
+
+useSeoDetail({
   title: news.value.title,
   description: news.value.sub_title || getExcerpt(news.value.content, 160),
-  ogTitle: news.value.title,
-  ogDescription: news.value.sub_title || getExcerpt(news.value.content, 160),
-  ogImage: coverImageUrl.value,
-  twitterCard: 'summary_large_image'
+  image: coverImageUrl.value,
+  url: shareUrl.value,
+  type: 'article',
+  ogImageComponent: 'OgImageNews',
+  ogImageProps: {
+    title: news.value.title,
+    description: news.value.sub_title || getExcerpt(news.value.content, 160),
+    author: news.value.profiles?.full_name || 'Tim JuruTani',
+    date: formatDate(news.value.created_at),
+    category: news.value.category || 'Berita Pertanian',
+    image: coverImageUrl.value,
+  },
+  schema: {
+    type: 'Article',
+    data: {
+      headline: news.value.title,
+      datePublished: news.value.published_at || news.value.created_at,
+      dateModified: news.value.updated_at,
+      author: {
+        name: news.value.profiles?.full_name || 'Tim JuruTani',
+        url: 'https://jurutani.com'
+      }
+    }
+  }
 })
 
 // Image gallery state

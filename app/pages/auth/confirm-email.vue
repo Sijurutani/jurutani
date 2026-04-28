@@ -1,7 +1,7 @@
 <!-- pages/auth/confirm-email.vue -->
 <script setup lang="ts">
 definePageMeta({
-  layout: 'blank',
+  layout: 'auth',
   middleware: ['guest']
 })
 
@@ -54,98 +54,77 @@ onMounted(() => {
 })
 </script>
 <template>
-  <div class="min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md">
-      <!-- Logo -->
-      <div class="flex items-center justify-center space-x-3 mb-8">
-            <NuxtLink data-pg-name="Logo" class="flex items-center sm:flex-row" to="/">
-              <NuxtImg src="/LOGO02.png" alt="Logo" class="h-10" />
-            </NuxtLink>
+  <section class="app-reveal app-reveal--2 flex flex-col space-y-5 lg:space-y-7 pb-2">
+    <div class="text-center space-y-5 py-4">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20 mb-2">
+        <UIcon name="i-lucide-mail" class="h-8 w-8" />
       </div>
       
-      <UCard class="shadow-lg border-0">
-        <div class="text-center p-6">
-          <!-- Icon email -->
-          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <UIcon name="i-lucide-mail" class="w-8 h-8 text-green-600" />
-          </div>
-          
-          <!-- Title -->
-          <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">
-            Periksa Email Anda
-          </h2>
-          
-          <!-- Description -->
-          <p class="text-gray-600 dark:text-gray-300 mb-6">
-            Kami telah mengirimkan link konfirmasi ke email:
-          </p>
-          
-          <!-- Email display -->
-          <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 mb-6">
-            <p class="font-medium text-green-600 break-all">
-              {{ email }}
-            </p>
-          </div>
-          
-          <!-- Instructions -->
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-6 space-y-2">
-            <p>• Klik link konfirmasi di email untuk mengaktifkan akun</p>
-            <p>• Periksa folder spam/junk jika tidak menemukan email</p>
-            <p>• Link akan kedaluwarsa dalam 24 jam</p>
-          </div>
-          
-          <!-- Resend section -->
-          <div class="border-t pt-6">
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Tidak menerima email?
-            </p>
-            
-            <UButton
-              v-if="canResend"
-              color="success"
-              variant="outline"
-              :loading="loading"
-              :disabled="loading"
-              class="w-full"
-              @click="handleResendConfirmation"
-            >
-              <UIcon name="i-lucide-send" class="w-4 h-4 mr-2" />
-              {{ loading ? 'Mengirim...' : 'Kirim Ulang Email' }}
-            </UButton>
-            
-            <UButton
-              v-else
-              color="neutral"
-              variant="outline"
-              disabled
-              class="w-full"
-            >
-              <UIcon name="i-lucide-clock" class="w-4 h-4 mr-2" />
-              Kirim Ulang dalam {{ countdown }}s
-            </UButton>
-          </div>
-          
-          <!-- Back to login -->
-          <div class="mt-6 pt-6 border-t">
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-              Sudah konfirmasi email?
-            </p>
-            <UButton
-              variant="link"
-              to="/auth/login"
-              class="text-green-600 hover:text-green-700 font-medium"
-            >
-              <UIcon name="i-lucide-arrow-left" class="w-4 h-4 mr-1" />
-              Kembali ke Login
-            </UButton>
-          </div>
-        </div>
-      </UCard>
+      <h1 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl lg:text-3xl font-sans">
+        Periksa Email Anda
+      </h1>
       
-      <!-- Footer -->
-      <div class="text-center text-sm text-gray-400 mt-6">
-        <p>&copy; 2026 JuruTani. Teknologi untuk pertanian Indonesia.</p>
+      <div class="space-y-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+        <p>Kami telah mengirimkan instruksi ke email:</p>
+        <p class="font-medium text-emerald-600 dark:text-emerald-400 break-all bg-emerald-50 dark:bg-emerald-500/10 py-2 px-3 rounded-lg mx-auto inline-block border border-emerald-100 dark:border-emerald-500/20">{{ email }}</p>
+      </div>
+
+      <div class="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 space-y-1.5 text-left bg-neutral-50 dark:bg-neutral-800/50 p-4 rounded-xl border border-neutral-100 dark:border-neutral-800">
+        <p class="flex items-start gap-2">
+          <UIcon name="i-lucide-check-circle" class="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+          <span>Klik link konfirmasi di email untuk mengaktifkan akun.</span>
+        </p>
+        <p class="flex items-start gap-2">
+          <UIcon name="i-lucide-info" class="h-3.5 w-3.5 text-neutral-400 shrink-0 mt-0.5" />
+          <span>Periksa folder spam/junk jika tidak menemukan email.</span>
+        </p>
+        <p class="flex items-start gap-2">
+          <UIcon name="i-lucide-clock" class="h-3.5 w-3.5 text-neutral-400 shrink-0 mt-0.5" />
+          <span>Link akan kedaluwarsa dalam 24 jam.</span>
+        </p>
+      </div>
+
+      <div class="pt-4 flex flex-col gap-3">
+        <UButton
+          v-if="canResend"
+          @click="handleResendConfirmation"
+          block
+          size="lg"
+          variant="outline"
+          :loading="loading"
+          :disabled="loading"
+          class="w-full rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/50 transition-all duration-300"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-send" class="w-4 h-4" />
+          </template>
+          Kirim Ulang Email
+        </UButton>
+        <UButton
+          v-else
+          block
+          size="lg"
+          variant="soft"
+          color="neutral"
+          disabled
+          class="w-full rounded-xl opacity-70"
+        >
+          <template #leading>
+            <UIcon name="i-lucide-clock" class="w-4 h-4" />
+          </template>
+          Kirim ulang dalam {{ countdown }}s
+        </UButton>
       </div>
     </div>
-  </div>
+
+    <div class="pt-2 text-center border-t border-neutral-100 dark:border-neutral-800/50 mt-6">
+      <NuxtLink
+        to="/auth/login"
+        class="inline-flex items-center gap-1.5 text-[11px] sm:text-sm font-medium text-neutral-500 hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400 transition-colors"
+      >
+        <UIcon name="i-lucide-arrow-left" class="w-4 h-4" />
+        Sudah konfirmasi? Kembali ke Login
+      </NuxtLink>
+    </div>
+  </section>
 </template>

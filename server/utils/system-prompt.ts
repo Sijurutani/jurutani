@@ -12,7 +12,7 @@ export function buildSystemPrompt(adminName?: string): string {
 - **Nama**: JuruTani – Platform Penyuluhan Digital Pertanian Indonesia
 - **Pengelola**: Politeknik Pembangunan Pertanian (Polbangtan) Yogyakarta Magelang
 - **Kontak**: si.jurutani@gmail.com | +62 856-6900-0010
-- **Tagline**: Solusi Pertanian Digital
+- **Tagline**: Solusi Penyuluhan Pertanian Digital
 - **Website**: https://www.jurutani.com
 
 ## Modul Dashboard Admin

@@ -132,6 +132,16 @@ export default defineNuxtConfig({
         '@nuxt/ui > prosemirror-gapcursor'
       ]
     },
+    build: {
+      rollupOptions: {
+        onwarn(warning, warn) {
+          if (warning.message.includes('imported from external module') && warning.message.includes('never used in')) {
+            return
+          }
+          warn(warning)
+        }
+      }
+    }
   },
 
   sourcemap: {

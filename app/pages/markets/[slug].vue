@@ -328,7 +328,29 @@ watch(() => product.value, (newVal) => {
       keywords: seoKeywords.value,
       image: seoImage.value,
       url: shareUrl.value,
-      type: 'product'
+      type: 'product',
+      ogImageComponent: 'OgImageMarket',
+      ogImageProps: {
+        title: product.value.name,
+        description: product.value.excerpt || getExcerpt(product.value.content, 160),
+        price: priceLabel.value || 'Harga tidak tersedia',
+        seller: product.value.seller || 'Toko JuruTani',
+        image: seoImage.value,
+        badge: product.value.category || 'Produk Tersedia'
+      },
+      schema: {
+        type: 'Product',
+        data: {
+          name: product.value.name,
+          description: product.value.excerpt || getExcerpt(product.value.content, 160),
+          image: seoImage.value,
+          offers: {
+            priceCurrency: 'IDR',
+            price: product.value.price || 0,
+            availability: product.value.status === 'approved' ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
+          }
+        }
+      }
     })
   }
 }, { immediate: true })

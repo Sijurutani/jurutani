@@ -21,6 +21,13 @@
     --bg-badge: rgba(240, 253, 244, 1);
     --border-badge: rgba(187, 247, 208, 1);
     --text-badge: #15803d;
+
+    --auth-shell-bg: #f5f7fb;
+    --auth-pane-bg: rgba(245, 247, 251, 0.94);
+    --auth-pane-border: rgba(148, 163, 184, 0.35);
+    --auth-form-surface: rgba(255, 255, 255, 0.74);
+    --auth-input-bg: #ffffff;
+    --auth-input-border: rgba(148, 163, 184, 0.55);
   }
 
   .dark {
@@ -37,6 +44,13 @@
     --bg-badge: rgba(6, 78, 59, 0.45);
     --border-badge: rgba(110, 231, 183, 0.45);
     --text-badge: #a7f3d0;
+
+    --auth-shell-bg: #1f2126;
+    --auth-pane-bg: linear-gradient(90deg, #343741 0%, #2f323b 34%, #292c34 66%, #24262d 100%);
+    --auth-pane-border: rgba(100, 116, 139, 0.45);
+    --auth-form-surface: rgba(26, 29, 36, 0.6);
+    --auth-input-bg: rgba(33, 37, 45, 0.9);
+    --auth-input-border: rgba(100, 116, 139, 0.55);
   }
 
   html {

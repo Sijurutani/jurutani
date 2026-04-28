@@ -2,7 +2,7 @@
 import { toastStore } from '~/composables/useJuruTaniToast'
 
 definePageMeta({
-  layout: 'blank',
+  layout: 'auth',
   middleware: ['guest'],
   ssr: false,
 })
@@ -68,14 +68,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <!-- Tidak render UI apapun -->
-  <div v-if="loading" class="min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8 p-8">
-      <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">{{ statusMessage }}</h2>
-        <p class="text-gray-500 dark:text-gray-400">Mohon tunggu sebentar</p>
-      </div>
+  <section v-if="loading" class="app-reveal app-reveal--2 flex flex-col items-center justify-center py-12 space-y-5">
+    <div class="relative flex h-16 w-16 items-center justify-center">
+      <div class="absolute inset-0 rounded-full border-[3px] border-emerald-100 dark:border-emerald-500/20" />
+      <div class="absolute inset-0 animate-spin rounded-full border-[3px] border-emerald-500 border-t-transparent" />
+      <UIcon name="i-lucide-loader-2" class="h-6 w-6 text-emerald-500" />
     </div>
-  </div>
+    
+    <div class="text-center space-y-1.5">
+      <h2 class="text-lg font-semibold tracking-tight text-neutral-900 dark:text-white font-sans">{{ statusMessage }}</h2>
+      <p class="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400">Mohon tunggu sebentar, kami sedang menyiapkan akun Anda.</p>
+    </div>
+  </section>
 </template>

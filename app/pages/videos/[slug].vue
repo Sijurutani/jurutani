@@ -55,18 +55,31 @@ if (error.value || !video.value) {
   throw createError({ statusCode: 404, statusMessage: 'Video tidak ditemukan' })
 }
 
+// ─── Format Helpers ────────────────────────────────────────────────────────────
+const formatDate = (dateString: string): string =>
+  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+    .format(new Date(dateString))
+
+const formatCategory = (category?: string | null): string =>
+  category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Video'
+
 // ─── SEO ───────────────────────────────────────────────────────────────────────
 const thumbnailForSeo = computed(() =>
   video.value?.link_yt ? getYouTubeThumbnail(video.value.link_yt) : '/video.png'
 )
 
-useSeoMeta({
+useSeoDetail({
   title: video.value.title,
   description: video.value.description || `Tonton ${video.value.title} - Video edukasi pertanian dari JuruTani`,
-  ogTitle: video.value.title,
-  ogDescription: video.value.description || `Tonton ${video.value.title}`,
-  ogImage: thumbnailForSeo.value,
-  twitterCard: 'summary_large_image'
+  image: thumbnailForSeo.value,
+  type: 'article',
+  ogImageComponent: 'OgImageVideo',
+  ogImageProps: {
+    title: video.value.title,
+    category: formatCategory(video.value.category),
+    date: formatDate(video.value.created_at),
+    thumbnail: thumbnailForSeo.value,
+  },
 })
 
 // ─── YouTube Embed ─────────────────────────────────────────────────────────────
@@ -80,13 +93,7 @@ const youtubeEmbedUrl = computed(() =>
     : null
 )
 
-// ─── Format Helpers ────────────────────────────────────────────────────────────
-const formatDate = (dateString: string): string =>
-  new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-    .format(new Date(dateString))
 
-const formatCategory = (category?: string | null): string =>
-  category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Video'
 
 // ─── Share URL ─────────────────────────────────────────────────────────────────
 const shareUrl = computed(() => {
@@ -216,39 +223,72 @@ const { data: relatedVideos } = await useAsyncData(
 
         <!-- Right Column - Related Videos Sidebar -->
         <div class="lg:col-span-1">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 sticky top-8">
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+          <div class="sticky top-8">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <UIcon name="i-heroicons-play-circle" class="w-5 h-5 text-green-600" />
               Video Terkait
             </h3>
 
             <!-- Related Videos List -->
-            <div v-if="relatedVideos && relatedVideos.length > 0" class="space-y-4">
+            <div v-if="relatedVideos && relatedVideos.length > 0" class="space-y-3">
               <NuxtLink
                 v-for="item in relatedVideos.slice(0, 4)"
                 :key="item.id"
                 :to="`/videos/${item.slug}`"
-                class="group block hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-2 transition-colors"
+                class="group block rounded-xl overflow-hidden relative aspect-video shadow-md hover:shadow-xl transition-all duration-300"
               >
-                <div class="relative aspect-video bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden mb-2">
-                  <img
-                    v-if="item.link_yt"
-                    :src="getYouTubeThumbnail(item.link_yt)"
-                    :alt="item.title"
-                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  >
-                  <div v-else class="w-full h-full flex items-center justify-center">
-                    <UIcon name="i-heroicons-video-camera" class="w-12 h-12 text-gray-400" />
-                  </div>
-                  <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                      <UIcon name="i-heroicons-play" class="w-5 h-5 text-white ml-0.5" />
-                    </div>
+                <!-- Thumbnail -->
+                <img
+                  v-if="item.link_yt"
+                  :src="getYouTubeThumbnail(item.link_yt)"
+                  :alt="item.title"
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                >
+                <div v-else class="w-full h-full bg-gray-800 flex items-center justify-center">
+                  <UIcon name="i-heroicons-video-camera" class="w-12 h-12 text-gray-500" />
+                </div>
+
+                <!-- Gradient overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                <!-- Category badge top-left -->
+                <div class="absolute top-3 left-3">
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-600 text-white shadow">
+                    <UIcon name="i-heroicons-video-camera" class="w-3 h-3" />
+                    {{ formatCategory(item.category) }}
+                  </span>
+                </div>
+
+                <!-- Play button center (hover) -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
+                    <UIcon name="i-heroicons-play" class="w-6 h-6 text-white ml-0.5" />
                   </div>
                 </div>
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                  {{ item.title }}
-                </h4>
+
+                <!-- Title + meta bottom -->
+                <div class="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6">
+                  <h4 class="text-sm font-bold text-white line-clamp-2 leading-snug mb-1">
+                    {{ item.title }}
+                  </h4>
+                  <div class="flex items-center gap-2 text-xs text-gray-300">
+                    <UIcon name="i-heroicons-calendar" class="w-3 h-3" />
+                    <span>{{ formatDate(item.created_at) }}</span>
+                    <span class="mx-1">·</span>
+                    <UIcon name="i-heroicons-play-circle" class="w-3 h-3" />
+                    <span>Video</span>
+                  </div>
+                </div>
+              </NuxtLink>
+
+              <!-- Tombol Lebih Banyak -->
+              <NuxtLink
+                to="/videos"
+                class="flex items-center justify-center gap-2 w-full mt-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+              >
+                <UIcon name="i-lucide-layout-grid" class="w-4 h-4" />
+                Lebih Banyak Video
+                <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
               </NuxtLink>
             </div>
 
@@ -261,34 +301,7 @@ const { data: relatedVideos } = await useAsyncData(
         </div>
       </div>
 
-      <!-- More Related Videos (Bottom Grid) -->
-      <section v-if="relatedVideos && relatedVideos.length > 4" class="mt-12">
-        <div class="mb-8">
-          <h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-            <UIcon name="i-heroicons-play-circle" class="w-6 h-6 text-green-600" />
-            Lebih Banyak Video {{ formatCategory(video.category) }}
-          </h2>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <VideoCardContent
-            v-for="item in relatedVideos.slice(4)"
-            :key="item.id"
-            :video="item"
-            variant="default"
-          />
-        </div>
-
-        <div class="mt-8 flex justify-center">
-          <NuxtLink
-            to="/videos"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-linear-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg transition-all duration-200 hover:shadow-lg hover:shadow-green-500/25 transform hover:-translate-y-0.5"
-          >
-            <span>Lihat Semua Video</span>
-            <UIcon name="i-lucide-arrow-right" class="w-4 h-4" />
-          </NuxtLink>
-        </div>
-      </section>
     </div>
   </div>
 </template>

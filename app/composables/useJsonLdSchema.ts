@@ -52,7 +52,7 @@ export const useOrganizationSchema = () => {
             name: 'Indonesia',
         },
         knowsAbout: [
-            'Pertanian Digital',
+            'Penyuluhan Pertanian Digital',
             'Penyuluhan Pertanian',
             'Teknologi Pertanian',
             'Agribisnis',
