@@ -280,7 +280,7 @@ const misi = [
 
           <div class="p-6 md:p-10 flex flex-col items-center gap-6">
             <NuxtImg
-              src="/logo/sponsor1.png"
+              src="/logo/sponsor.png"
               alt="Polbangtan Yogyakarta Magelang"
               class="max-h-20 object-contain opacity-90 hover:opacity-100 transition-opacity"
             />

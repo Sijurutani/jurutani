@@ -15,7 +15,7 @@ const sponsors: Sponsor[] = [
   {
     id: 1,
     name: "Partner Teknologi Pertanian",
-    logo: "/logo/sponsor1.png",
+    logo: "/logo/sponsor.png",
     description: "Partner Teknologi Pertanian Terpercaya",
     website: "https://example.com"
   }

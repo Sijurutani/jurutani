@@ -15,7 +15,7 @@ export const aboutHero: HeroSection = {
 }
 
 export const logoJuruTani = '/jurutani.png'
-export const sponsorLogo = '/logo/sponsor1.png'
+export const sponsorLogo = '/logo/sponsor.png'
 
 export const galleryImages = [
     '/gallery/image1.webp',

@@ -74,7 +74,7 @@ defineExpose({
           </p>
           <div class="flex justify-center">
             <img
-              src="/logo/sponsor1.png"
+              src="/logo/sponsor.png"
               alt="Sponsor Logo"
               class="h-12 md:h-16 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity duration-200 mx-auto"
             >
