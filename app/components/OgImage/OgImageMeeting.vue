@@ -18,7 +18,7 @@ const props = defineProps({
 <template>
   <div class="w-full h-full flex flex-row items-center relative text-white" style="background-color: #0c4a6e;">
     <!-- Base Background -->
-    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;" />
+    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;">
 
     <!-- Full Gradient Overlay -->
     <div class="absolute inset-0 w-full h-full" style="background-image: linear-gradient(135deg, rgba(5, 30, 55, 0.97) 0%, rgba(12, 74, 110, 0.92) 60%, rgba(3, 105, 161, 0.85) 100%);" />
@@ -29,11 +29,11 @@ const props = defineProps({
       <!-- Logo -->
       <div class="flex items-center mb-8">
         <div class="flex items-center justify-center px-4 py-2 rounded-2xl border" style="background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
-          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;" />
+          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;">
         </div>
       </div>
 
-      <div class="flex flex-col flex-grow justify-center">
+      <div class="flex flex-col grow justify-center">
         <!-- Badges -->
         <div class="flex flex-row items-center mb-6">
           <div class="flex px-4 py-2 rounded-full border" style="background-color: rgba(186, 230, 253, 0.2); border-color: rgba(125, 211, 252, 0.3); margin-right: 16px;">

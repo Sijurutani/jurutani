@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
+import type { EmbedItem } from '~/utils/embed'
 import { formatDateLong } from '~/utils/dateFormatter'
 import { parseEmbeds, getEmbedSrc, getEmbedAspect } from '~/utils/embed'
 
@@ -18,7 +19,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const notFound = ref(false)
 
-const embeds = computed(() => parseEmbeds(meeting.value?.embeds))
+const embeds = computed((): EmbedItem[] => parseEmbeds(meeting.value?.embeds as any))
 
 const content = computed(() => meeting.value?.content || '')
 
@@ -177,6 +178,7 @@ onMounted(async () => {
 
         <!-- Body: Content -->
         <div class="p-6 md:p-8">
+          <!-- eslint-disable-next-line vue/no-v-html -->
           <div
             v-if="content"
             class="prose prose-sm md:prose lg:prose-lg max-w-none prose-emerald prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-emerald-600 hover:prose-a:text-emerald-700 dark:prose-invert dark:prose-headings:text-white dark:prose-p:text-gray-200 dark:prose-a:text-emerald-400"

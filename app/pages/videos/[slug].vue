@@ -249,7 +249,7 @@ const { data: relatedVideos } = await useAsyncData(
                 </div>
 
                 <!-- Gradient overlay -->
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div class="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
 
                 <!-- Category badge top-left -->
                 <div class="absolute top-3 left-3">

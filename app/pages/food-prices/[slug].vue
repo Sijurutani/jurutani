@@ -118,13 +118,13 @@ const getSimilarFoods = async (category: string, excludeId: string, limit: numbe
     .in('food_id', ids)
     .is('deleted_at', null)
     .order('date', { ascending: false })
-  const foodsWithPrice: FoodWithPrice[] = (foods || []).map(food => {
+  const foodsWithPrice = (foods || []).map(food => {
     const priceEntry = prices?.find(p => p.food_id === food.id)
     return {
       ...food,
       latest_price: priceEntry?.price ?? 0,
       latest_price_date: priceEntry?.date ?? food.updated_at ?? null
-    }
+    } as unknown as FoodWithPrice
   })
   return { data: foodsWithPrice, error: null }
 }
@@ -539,7 +539,7 @@ v-if="trend.price_change" :class="[
                 :alt="item.name"
                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
-                @error="(e) => { e.target.style.display = 'none' }"
+                @error="(e) => { (e.target as HTMLImageElement).style.display = 'none' }"
               >
               <div v-else class="w-full h-full flex items-center justify-center">
                 <UIcon :name="getCategoryIcon(item.category)" class="w-16 h-16 text-gray-400" />

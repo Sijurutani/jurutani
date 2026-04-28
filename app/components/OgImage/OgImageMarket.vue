@@ -30,7 +30,7 @@ const props = defineProps({
 <template>
   <div class="w-full h-full flex flex-row items-center relative text-white" style="background-color: #14532d;">
     <!-- Base Background for Full Width (Right pane will cover it) -->
-    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;" />
+    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;">
     
     <!-- Gradient Overlay for Left Area -->
     <div class="absolute inset-0" style="width: 60%; height: 100%; background-image: linear-gradient(to right, rgba(10, 40, 20, 0.95), rgba(20, 83, 45, 0.85));" />
@@ -41,11 +41,11 @@ const props = defineProps({
       <!-- Logo Kiri Atas -->
       <div class="flex items-center mb-8">
         <div class="flex items-center justify-center px-4 py-2 rounded-2xl border" style="background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
-          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;" />
+          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;">
         </div>
       </div>
 
-      <div class="flex flex-col flex-grow justify-center">
+      <div class="flex flex-col grow justify-center">
         <div class="flex flex-row items-center mb-6">
           <div class="flex px-4 py-2 rounded-full border" style="background-color: rgba(220, 252, 231, 0.2); border-color: rgba(187, 247, 208, 0.3); margin-right: 16px;">
             <span style="font-size: 20px; font-weight: 600; color: #bbf7d0;">{{ badge }}</span>
@@ -76,7 +76,7 @@ const props = defineProps({
     <!-- Kanan: Visual/Brand -->
     <div class="h-full flex flex-col justify-center items-center relative p-10 border-l border-green-800" style="width: 40%; background-image: linear-gradient(to bottom right, #15803d, #14532d);">
       <div v-if="image" class="w-full h-full flex items-center justify-center">
-        <img :src="image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);" />
+        <img :src="image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
       </div>
       <div v-else class="flex flex-col items-center justify-center h-full text-white">
         <!-- Logo SVG -->

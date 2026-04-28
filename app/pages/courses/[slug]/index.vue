@@ -291,7 +291,7 @@ const goBack = () => router.push('/courses')
             <div v-else class="flex items-center justify-center h-full">
               <UIcon name="i-lucide-graduation-cap" class="w-20 h-20 text-amber-300 dark:text-amber-700 opacity-60" />
             </div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            <div class="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
 
             <!-- Overlay badges -->
             <div class="absolute top-4 left-4 flex items-center gap-2">

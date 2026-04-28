@@ -26,7 +26,7 @@ const props = defineProps({
 <template>
   <div class="w-full h-full flex flex-row items-center relative text-white" style="background-color: #78350f;">
     <!-- Base Background -->
-    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;" />
+    <img src="/background.jpg" class="absolute inset-0 w-full h-full" style="object-fit: cover;">
 
     <!-- Gradient Overlay Left -->
     <div class="absolute inset-0" style="width: 60%; height: 100%; background-image: linear-gradient(to right, rgba(60, 20, 5, 0.97), rgba(120, 53, 15, 0.88));" />
@@ -37,11 +37,11 @@ const props = defineProps({
       <!-- Logo -->
       <div class="flex items-center mb-8">
         <div class="flex items-center justify-center px-4 py-2 rounded-2xl border" style="background-color: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2);">
-          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;" />
+          <img src="/LOGO02.png" style="height: 48px; object-fit: contain;">
         </div>
       </div>
 
-      <div class="flex flex-col flex-grow justify-center">
+      <div class="flex flex-col grow justify-center">
         <!-- Badges -->
         <div class="flex flex-row items-center mb-6">
           <div class="flex px-4 py-2 rounded-full border" style="background-color: rgba(254, 215, 170, 0.2); border-color: rgba(253, 186, 116, 0.3); margin-right: 16px;">
@@ -82,7 +82,7 @@ const props = defineProps({
     <!-- Kanan: Gambar -->
     <div class="h-full flex flex-col justify-center items-center relative p-10 border-l" style="width: 40%; background-image: linear-gradient(to bottom right, #92400e, #78350f); border-color: rgba(180, 83, 9, 0.5);">
       <div v-if="image" class="w-full h-full flex items-center justify-center">
-        <img :src="image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);" />
+        <img :src="image" style="width: 100%; height: 100%; object-fit: cover; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
       </div>
       <div v-else class="flex flex-col items-center justify-center h-full text-white">
         <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: #fed7aa; opacity: 0.9; margin-bottom: 32px;">

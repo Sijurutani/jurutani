@@ -328,7 +328,7 @@ watch(() => product.value, (newVal) => {
       keywords: seoKeywords.value,
       image: seoImage.value,
       url: shareUrl.value,
-      type: 'product',
+      type: 'website',
       ogImageComponent: 'OgImageMarket',
       ogImageProps: {
         title: product.value.name,
@@ -374,8 +374,8 @@ const { data: similarProducts } = await useAsyncData(
       ...item,
       content: item.content as ProductMarket['content'],
       images: normalizeStringArray(item.images),
-      attachments: normalizeAttachments(item.attachments),
-      links: normalizeLinks(item.links)
+      attachments: normalizeAttachments(item.attachments) as unknown as any,
+      links: normalizeLinks(item.links) as unknown as any
     })) as unknown as ProductMarket[]
   }
 )
