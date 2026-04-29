@@ -249,7 +249,7 @@ watch(
             />
           </div>
           <NuxtLink to="/discussions/expert" class="qa-see-all qa-see-all--inline">
-            Selengkapnya
+            Selengkapnya <span class="sr-only">tentang Pakar</span>
             <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
           </NuxtLink>
         </div>
@@ -338,7 +338,7 @@ watch(
             />
           </div>
           <NuxtLink to="/discussions/instructor" class="qa-see-all qa-see-all--inline">
-            Selengkapnya
+            Selengkapnya <span class="sr-only">tentang Penyuluh</span>
             <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
           </NuxtLink>
         </div>

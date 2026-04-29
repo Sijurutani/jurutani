@@ -424,7 +424,7 @@ onBeforeUnmount(() => {
           to="/markets"
           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[13px] font-semibold text-green-600 dark:text-green-400 bg-green-600/8 dark:bg-green-400/10 border border-green-600/20 dark:border-green-400/20 rounded-full no-underline hover:bg-green-600/15 hover:border-green-600/40 transition-all duration-200 ml-auto"
         >
-          Selengkapnya
+          Selengkapnya <span class="sr-only">promosi</span>
           <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
         </NuxtLink>
       </div>

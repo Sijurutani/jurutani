@@ -165,6 +165,7 @@ const handleImageError = (event: Event) => {
             <div ref="desktopProfileDropdownRef" class="relative">
               <button
                 type="button"
+                aria-label="Buka menu profil"
                 class="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
                 @click="isProfileOpen = !isProfileOpen"
               >
@@ -317,6 +318,7 @@ const handleImageError = (event: Event) => {
             <div ref="mobileProfileDropdownRef" class="relative">
               <button
                 type="button"
+                aria-label="Buka menu profil"
                 class="relative focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 rounded-full transition-all duration-200 hover:scale-105 active:scale-95"
                 @click="isProfileOpen = !isProfileOpen"
               >

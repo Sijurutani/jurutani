@@ -38,7 +38,7 @@ useJsonLdSchemas(schemas)
       <h2 id="promotion-section" class="sr-only">
         Promosi Spesial
       </h2>
-      <HomePromotionSection />
+      <LazyHomePromotionSection />
     </section>
 
     <!-- ═══ Food Price Section -->
@@ -46,7 +46,7 @@ useJsonLdSchemas(schemas)
       <h2 id="food-price-section" class="sr-only">
         Informasi Harga Pangan
       </h2>
-      <HomeFoodPriceSection />
+      <LazyHomeFoodPriceSection />
     </section>
 
     <!-- ═══ Testimonials Section -->
@@ -54,7 +54,7 @@ useJsonLdSchemas(schemas)
       <h2 id="testimonials-section" class="sr-only">
         Testimoni Pengguna
       </h2>
-      <HomeTestimoni />
+      <LazyHomeTestimoni />
     </section>
 
   </main>

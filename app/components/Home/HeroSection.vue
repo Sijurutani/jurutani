@@ -5,11 +5,6 @@ import type { Database } from '~/types/database.types'
 type HeroData = Database['public']['Tables']['hero_data']['Row']
 
 const supabase = useSupabaseClient()
-const carouselItems = ref<HeroData[]>([])
-const error = ref<string | null>(null)
-const loading = ref(false)
-const isInitialized = ref(false)
-
 const getImageUrl = (imageUrl: string): string | null => {
   if (!imageUrl) return null
   if (imageUrl.startsWith('http')) return imageUrl
@@ -17,28 +12,37 @@ const getImageUrl = (imageUrl: string): string | null => {
   return data.publicUrl
 }
 
-const fetchHeroData = async () => {
-  loading.value = true
-  error.value = null
-  try {
-    const { data, error: fetchError } = await supabase
-      .schema('public')
-      .from('hero_data')
-      .select('*')
-      .eq('status', 'active')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: true })
+const { data: heroData, pending: loading, error: fetchErrorObj, refresh: fetchHeroData } = await useAsyncData('hero-data', async () => {
+  const { data, error: fetchError } = await supabase
+    .schema('public')
+    .from('hero_data')
+    .select('*')
+    .eq('status', 'active')
+    .is('deleted_at', null)
+    .order('created_at', { ascending: true })
 
-    if (fetchError) throw fetchError
-    carouselItems.value = (data as HeroData[]) || []
-    isInitialized.value = true
-  } catch (err: any) {
-    error.value = err.message || 'Terjadi kesalahan saat memuat data hero'
-    console.error('Error fetching hero data:', err)
-  } finally {
-    loading.value = false
-  }
-}
+  if (fetchError) throw fetchError
+  return (data as HeroData[]) || []
+}, { default: () => [] as HeroData[] })
+
+const carouselItems = computed(() => heroData.value || [])
+const error = computed(() => fetchErrorObj.value ? fetchErrorObj.value.message || 'Terjadi kesalahan saat memuat data hero' : null)
+const isInitialized = computed(() => true)
+
+useHead(() => {
+  const firstImage = carouselItems.value[0]?.image_url;
+  const firstImageUrl = firstImage ? getImageUrl(firstImage) : null;
+  return firstImageUrl ? {
+    link: [
+      {
+        rel: 'preload',
+        as: 'image',
+        href: firstImageUrl,
+        fetchpriority: 'high'
+      }
+    ]
+  } : {}
+})
 
 // --- Carousel Logic ---
 const itemsCount = computed(() => carouselItems.value.length)
@@ -253,7 +257,6 @@ onMounted(async () => {
   if (!import.meta.client) return
   updateQuickItemsPerView()
   window.addEventListener('resize', updateQuickItemsPerView, { passive: true })
-  await fetchHeroData()
 })
 
 onBeforeUnmount(() => {
@@ -330,6 +333,7 @@ watch(itemsCount, (newLength, oldLength) => {
             <button
               v-if="quickDotCount > 1"
               type="button"
+              aria-label="Layanan selanjutnya"
               class="hero-shortaccess__cta"
               @click="scrollQuickTo(Math.min(quickDotIndex + 1, quickDotCount - 1))"
             >
@@ -435,7 +439,8 @@ watch(itemsCount, (newLength, oldLength) => {
                     :src="getImageUrl(item.image_url)!"
                     :alt="item.title || 'Slide'"
                     class="carousel-slide-full__img"
-                    loading="lazy"
+                    :loading="index === 0 ? undefined : 'lazy'"
+                    :fetchpriority="index === 0 ? 'high' : 'auto'"
                     @error="(e: any) => e.target.style.display = 'none'"
                   >
                   <!-- Fallback gradient -->

@@ -17,6 +17,7 @@ const isDark = computed(() => colorMode.value === 'dark')
     <UButton
       variant="ghost"
       size="sm"
+      aria-label="Ganti tema warna"
       class="!rounded-xl
              text-green-700 dark:text-green-300
              hover:bg-green-100/50 dark:hover:bg-green-700/30

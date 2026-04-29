@@ -187,7 +187,7 @@ onMounted(() => {
     </NuxtLink>
 
     <NuxtLink to="/weathers" class="wx-see-more-btn">
-      Selengkapnya
+      Selengkapnya <span class="sr-only">tentang Cuaca</span>
       <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
     </NuxtLink>
 

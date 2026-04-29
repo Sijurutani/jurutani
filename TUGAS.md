@@ -33,53 +33,53 @@
 
 ---
 
-#### [ ] 1. Perbaiki Largest Contentful Paint (LCP: 54.5s)
+#### [x] 1. Perbaiki Largest Contentful Paint (LCP: 54.5s)
 
 - **Estimasi Dampak:** Sangat Tinggi  
 - **Sumber Masalah:** Render-blocking requests, gambar tidak dioptimasi, LCP element lambat ditemukan
 - **Langkah:**
-  - [ ] Identifikasi elemen LCP (biasanya hero image atau heading utama)
-  - [ ] Tambahkan `rel="preload"` untuk LCP image di `<head>`
-  - [ ] Pastikan LCP image bukan lazy-loaded (`loading="lazy"` → hapus untuk LCP element)
-  - [ ] Gunakan `fetchpriority="high"` pada LCP image
-  - [ ] Audit LCP request discovery chain — minimasi redirect dan chain panjang
+  - [x] Identifikasi elemen LCP (biasanya hero image atau heading utama)
+  - [x] Tambahkan `rel="preload"` untuk LCP image di `<head>`
+  - [x] Pastikan LCP image bukan lazy-loaded (`loading="lazy"` → hapus untuk LCP element)
+  - [x] Gunakan `fetchpriority="high"` pada LCP image
+  - [x] Audit LCP request discovery chain — minimasi redirect dan chain panjang
 
 ---
 
-#### [ ] 2. Hilangkan Render-Blocking Requests
+#### [x] 2. Hilangkan Render-Blocking Requests
 
 - **Estimasi Simpanan:** ~2,960 ms  
 - **Langkah:**
-  - [ ] Identifikasi CSS/JS yang memblokir render di Lighthouse "Render-blocking requests" panel
-  - [ ] Pindahkan CSS non-kritis ke `<link rel="preload">` atau inline critical CSS
-  - [ ] Tambahkan `defer` atau `async` pada script non-kritis
-  - [ ] Pertimbangkan code-splitting di Nuxt (`defineAsyncComponent`, dynamic `import()`)
+  - [x] Identifikasi CSS/JS yang memblokir render di Lighthouse "Render-blocking requests" panel
+  - [x] Pindahkan CSS non-kritis ke `<link rel="preload">` atau inline critical CSS
+  - [x] Tambahkan `defer` atau `async` pada script non-kritis
+  - [x] Pertimbangkan code-splitting di Nuxt (`defineAsyncComponent`, dynamic `import()`)
 
 ---
 
-#### [ ] 3. Optimalkan Pengiriman Gambar
+#### [x] 3. Optimalkan Pengiriman Gambar
 
 - **Estimasi Simpanan:** ~8,673 KiB  
 - **Langkah:**
-  - [ ] Konversi semua gambar ke format **WebP** atau **AVIF**
-  - [ ] Gunakan komponen `<NuxtImg>` / `<NuxtPicture>` dari `@nuxt/image` untuk otomasi konversi & resize
-  - [ ] Pastikan `@nuxt/image` sudah dikonfigurasi dengan provider yang tepat (Cloudinary / IPX / dll)
-  - [ ] Tambahkan atribut `width` dan `height` eksplisit pada semua `<img>` (lihat juga item CLS)
-  - [ ] Implementasi `loading="lazy"` pada gambar di bawah fold
-  - [ ] Gunakan `sizes` attribute untuk responsive images
+  - [x] Konversi semua gambar ke format **WebP** atau **AVIF**
+  - [x] Gunakan komponen `<NuxtImg>` / `<NuxtPicture>` dari `@nuxt/image` untuk otomasi konversi & resize
+  - [x] Pastikan `@nuxt/image` sudah dikonfigurasi dengan provider yang tepat (Cloudinary / IPX / dll)
+  - [x] Tambahkan atribut `width` dan `height` eksplisit pada semua `<img>` (lihat juga item CLS)
+  - [x] Implementasi `loading="lazy"` pada gambar di bawah fold
+  - [x] Gunakan `sizes` attribute untuk responsive images
 
 ---
 
-#### [ ] 4. Perbaiki Cache Lifetime
+#### [x] 4. Perbaiki Cache Lifetime
 
 - **Estimasi Simpanan:** ~9,929 KiB  
 - **Langkah:**
-  - [ ] Set HTTP header `Cache-Control` dengan TTL panjang untuk aset statis (JS, CSS, fonts, images):
+  - [x] Set HTTP header `Cache-Control` dengan TTL panjang untuk aset statis (JS, CSS, fonts, images):
     ```
     Cache-Control: public, max-age=31536000, immutable
     ```
-  - [ ] Pastikan aset statis menggunakan content hash di nama file (Nuxt melakukan ini secara otomatis)
-  - [ ] Konfigurasi di `nitro.routeRules` di `nuxt.config.ts`:
+  - [x] Pastikan aset statis menggunakan content hash di nama file (Nuxt melakukan ini secara otomatis)
+  - [x] Konfigurasi di `nitro.routeRules` di `nuxt.config.ts`:
     ```ts
     routeRules: {
       '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
@@ -93,42 +93,42 @@
 
 ---
 
-#### [ ] 5. Kurangi Total Blocking Time (TBT: 990ms)
+#### [x] 5. Kurangi Total Blocking Time (TBT: 990ms)
 
 - **Langkah:**
-  - [ ] Kurangi JavaScript execution time (lihat item 6)
-  - [ ] Audit long tasks (lihat item 10)
-  - [ ] Pertimbangkan Web Workers untuk komputasi berat
-  - [ ] Pecah bundle JS besar menjadi chunk yang lebih kecil
+  - [x] Kurangi JavaScript execution time (lihat item 6)
+  - [x] Audit long tasks (lihat item 10)
+  - [x] Pertimbangkan Web Workers untuk komputasi berat
+  - [x] Pecah bundle JS besar menjadi chunk yang lebih kecil
 
 ---
 
-#### [ ] 6. Kurangi JavaScript Execution Time (4.2s)
+#### [x] 6. Kurangi JavaScript Execution Time (4.2s)
 
 - **Langkah:**
-  - [ ] Jalankan `nuxt analyze` untuk melihat bundle breakdown
-  - [ ] Identifikasi library besar yang bisa diganti dengan alternatif lebih ringan
-  - [ ] Gunakan `defineAsyncComponent()` untuk komponen yang tidak dibutuhkan saat render awal
-  - [ ] Audit dependency: hapus package yang tidak terpakai
+  - [x] Jalankan `nuxt analyze` untuk melihat bundle breakdown
+  - [x] Identifikasi library besar yang bisa diganti dengan alternatif lebih ringan
+  - [x] Gunakan `defineAsyncComponent()` untuk komponen yang tidak dibutuhkan saat render awal
+  - [x] Audit dependency: hapus package yang tidak terpakai
 
 ---
 
-#### [ ] 7. Kurangi JavaScript Tidak Terpakai
+#### [x] 7. Kurangi JavaScript Tidak Terpakai
 
 - **Estimasi Simpanan:** ~680 KiB  
 - **Langkah:**
-  - [ ] Gunakan dynamic import untuk modul yang hanya dibutuhkan di halaman tertentu
-  - [ ] Periksa apakah ada library yang di-import seluruhnya padahal hanya dipakai sebagian (misalnya: lodash → lodash-es dengan tree-shaking)
-  - [ ] Aktifkan tree-shaking yang proper di Nuxt/Vite
+  - [x] Gunakan dynamic import untuk modul yang hanya dibutuhkan di halaman tertentu
+  - [x] Periksa apakah ada library yang di-import seluruhnya padahal hanya dipakai sebagian (misalnya: lodash → lodash-es dengan tree-shaking)
+  - [x] Aktifkan tree-shaking yang proper di Nuxt/Vite
 
 ---
 
-#### [ ] 8. Kurangi CSS Tidak Terpakai
+#### [x] 8. Kurangi CSS Tidak Terpakai
 
 - **Estimasi Simpanan:** ~37 KiB  
 - **Langkah:**
-  - [ ] Pastikan konfigurasi `content` di `tailwind.config` mencakup semua file Vue/TS
-  - [ ] Hapus CSS global yang sudah tidak relevan
+  - [x] Pastikan konfigurasi `content` di `tailwind.config` mencakup semua file Vue/TS
+  - [x] Hapus CSS global yang sudah tidak relevan
 
 ---
 
@@ -218,13 +218,13 @@
 
 ---
 
-#### [ ] 17. Tombol Tanpa Accessible Name
+#### [x] 17. Tombol Tanpa Accessible Name
 
 - **Dampak:** Pengguna screen reader tidak bisa memahami fungsi tombol  
 - **Langkah:**
-  - [ ] Cari semua `<button>` dan `<UButton>` tanpa teks visible atau `aria-label`
-  - [ ] Tambahkan `aria-label="Deskripsi aksi"` pada icon-only buttons
-  - [ ] Contoh fix:
+  - [x] Cari semua `<button>` dan `<UButton>` tanpa teks visible atau `aria-label`
+  - [x] Tambahkan `aria-label="Deskripsi aksi"` pada icon-only buttons
+  - [x] Contoh fix:
     ```html
     <!-- Sebelum -->
     <button><Icon name="heroicons:x-mark" /></button>
@@ -235,21 +235,21 @@
 
 ---
 
-#### [ ] 18. Kontras Warna Tidak Cukup
+#### [x] 18. Kontras Warna Tidak Cukup
 
 - **Langkah:**
-  - [ ] Gunakan DevTools → Accessibility → Color Contrast checker
-  - [ ] Target rasio: **4.5:1** untuk teks normal, **3:1** untuk teks besar
-  - [ ] Audit palette warna brand JuruTani — terutama teks hijau muda di background putih
-  - [ ] Perhatikan dark mode — kontras sering bermasalah di mode gelap
+  - [x] Gunakan DevTools → Accessibility → Color Contrast checker
+  - [x] Target rasio: **4.5:1** untuk teks normal, **3:1** untuk teks besar
+  - [x] Audit palette warna brand JuruTani — terutama teks hijau muda di background putih
+  - [x] Perhatikan dark mode — kontras sering bermasalah di mode gelap
 
 ---
 
-#### [ ] 19. Touch Target Terlalu Kecil
+#### [x] 19. Touch Target Terlalu Kecil
 
 - **Langkah:**
-  - [ ] Pastikan semua elemen interaktif (button, link, input) minimal **44×44px** (Apple) atau **48×48px** (Google)
-  - [ ] Tambahkan padding jika elemen secara visual lebih kecil:
+  - [x] Pastikan semua elemen interaktif (button, link, input) minimal **44×44px** (Apple) atau **48×48px** (Google)
+  - [x] Tambahkan padding jika elemen secara visual lebih kecil:
     ```css
     .icon-btn {
       padding: 12px;
@@ -260,11 +260,11 @@
 
 ---
 
-#### [ ] 20. Link Identik dengan Tujuan Sama
+#### [x] 20. Link Identik dengan Tujuan Sama
 
 - **Langkah:**
-  - [ ] Audit link dengan teks "Baca selengkapnya", "Lihat detail", dll yang merujuk ke URL berbeda
-  - [ ] Tambahkan context tersembunyi menggunakan `<span class="sr-only">` atau `aria-label`:
+  - [x] Audit link dengan teks "Baca selengkapnya", "Lihat detail", dll yang merujuk ke URL berbeda
+  - [x] Tambahkan context tersembunyi menggunakan `<span class="sr-only">` atau `aria-label`:
     ```html
     <a href="/berita/123" aria-label="Baca selengkapnya tentang Harga Cabai Naik">
       Baca selengkapnya
@@ -317,10 +317,10 @@
 
 ---
 
-#### [ ] 25. Content Security Policy (CSP) — Proteksi XSS
+#### [x] 25. Content Security Policy (CSP) — Proteksi XSS
 
 - **Langkah:**
-  - [ ] Tambahkan header CSP di `nuxt.config.ts`:
+  - [x] Tambahkan header CSP di `nuxt.config.ts`:
     ```ts
     routeRules: {
       '/**': {
@@ -330,40 +330,40 @@
       }
     }
     ```
-  - [ ] Mulai dengan mode `Content-Security-Policy-Report-Only` untuk audit tanpa blocking
+  - [x] Mulai dengan mode `Content-Security-Policy-Report-Only` untuk audit tanpa blocking
   - [ ] Pertimbangkan package `nuxt-security`
 
 ---
 
-#### [ ] 26. HSTS Policy
+#### [x] 26. HSTS Policy
 
 - **Langkah:**
-  - [ ] Tambahkan header Strict-Transport-Security:
+  - [x] Tambahkan header Strict-Transport-Security:
     ```
     Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
     ```
-  - [ ] Submit domain ke HSTS preload list: https://hstspreload.org
+  - [x] Submit domain ke HSTS preload list: https://hstspreload.org
 
 ---
 
-#### [ ] 27. Cross-Origin Opener Policy (COOP)
+#### [x] 27. Cross-Origin Opener Policy (COOP)
 
 - **Langkah:**
-  - [ ] Tambahkan header:
+  - [x] Tambahkan header:
     ```
     Cross-Origin-Opener-Policy: same-origin
     ```
 
 ---
 
-#### [ ] 28. X-Frame-Options (XFO) — Proteksi Clickjacking
+#### [x] 28. X-Frame-Options (XFO) — Proteksi Clickjacking
 
 - **Langkah:**
-  - [ ] Tambahkan header:
+  - [x] Tambahkan header:
     ```
     X-Frame-Options: SAMEORIGIN
     ```
-  - [ ] Atau via CSP: `frame-ancestors 'self'`
+  - [x] Atau via CSP: `frame-ancestors 'self'`
 
 ---
 
@@ -379,22 +379,22 @@
 
 ```
 Sprint 1 — Performance Kritis (Dampak Terbesar)
-├── [3]  Optimasi gambar → WebP + NuxtImg
-├── [9]  Fix CLS → tambah width/height pada semua img
-├── [2]  Hilangkan render-blocking requests
-└── [4]  Perbaiki cache lifetime
+├── [x]  Optimasi gambar → WebP + NuxtImg
+├── [x]  Fix CLS → tambah width/height pada semua img
+├── [x]  Hilangkan render-blocking requests
+└── [x]  Perbaiki cache lifetime
 
 Sprint 2 — JavaScript & Loading
-├── [6]  Kurangi JS execution time (nuxt analyze)
-├── [7]  Kurangi unused JavaScript
-├── [8]  Kurangi unused CSS
-└── [5]  Kurangi TBT
+├── [x]  Kurangi JS execution time (nuxt analyze)
+├── [x]  Kurangi unused JavaScript
+├── [x]  Kurangi unused CSS
+└── [x]  Kurangi TBT
 
 Sprint 3 — Aksesibilitas & UX
-├── [17] Tombol tanpa accessible name
-├── [18] Perbaiki kontras warna
-├── [19] Touch targets
-└── [20] Link identik
+├── [x] Tombol tanpa accessible name
+├── [x] Perbaiki kontras warna
+├── [x] Touch targets
+└── [x] Link identik
 
 Sprint 4 — Keamanan & Best Practices
 ├── [25] Implementasi CSP

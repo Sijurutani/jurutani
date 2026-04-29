@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
 
         <!-- Bottom see more -->
         <NuxtLink to="/food-prices" class="fp-see-more fp-see-more--inline">
-          Selengkapnya
+          Selengkapnya <span class="sr-only">tentang Harga Pangan</span>
           <UIcon name="i-lucide-arrow-right" class="w-3.5 h-3.5" />
         </NuxtLink>
       </div>

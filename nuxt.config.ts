@@ -42,6 +42,10 @@ export default defineNuxtConfig({
     preset: 'node-server',
   },
 
+  features: {
+    inlineStyles: true,
+  },
+
   modules: [
     '@nuxtjs/mdc',
     '@pinia/nuxt',
@@ -84,8 +88,8 @@ export default defineNuxtConfig({
   },
 
   image: {
-    format: ['webp', 'png', 'jpg'],
-    provider: 'none',
+    format: ['avif', 'webp', 'png', 'jpg'],
+    provider: 'ipx',
     presets: {
       avatar: {
         modifiers: {
@@ -151,6 +155,16 @@ export default defineNuxtConfig({
 
   routeRules: {
     '/hidden': { robots: false },
+    '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/images/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/**': {
+      headers: {
+        'Content-Security-Policy-Report-Only': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' wss: https:; font-src 'self' data: https:; frame-src 'self' https:;",
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'X-Frame-Options': 'SAMEORIGIN'
+      }
+    }
   },
 
   site: {
