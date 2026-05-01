@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Database } from '~/types/database.types'
-import { getMarketPublicUrl } from '~/utils/storage'
 
 type ProductMarket = Database['public']['Tables']['product_markets']['Row']
 
@@ -27,16 +26,31 @@ const categories = computed(() =>
 
 const selectedCategory = ref('')
 
-// ── Banners (TransitionGroup carousel, arrow-navigated) ────────────────────
-const banners = ref<Banner[]>([])
+// ── Banners via SSR (bukan onMounted = tidak ada client waterfall) ─────────────
+const { data: bannersData } = await useAsyncData(
+  'home-banners',
+  async () => {
+    const { data } = await supabase
+      .from('banner')
+      .select('id, image_url, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(10)
+    return (data || []) as Banner[]
+  },
+  { maxAge: 300, dedupe: 'defer' }
+)
+const banners = computed(() => bannersData.value || [])
 const bannerIndex = ref(0)
 const bannerTransitioning = ref(false)
-const bannerProgressWidth = ref(0)
+// Progress via CSS animation (bukan setInterval — tidak membebani CPU main thread)
+// Kita gunakan key reaktif untuk restart animasi via re-mount element
+const bannerProgressKey = ref(0)
 
 const getBannerUrl = (path: string) => {
   if (!path) return '/placeholder.png'
   if (path.startsWith('http')) return path
   try {
+    // URL publik langsung (transform memerlukan Supabase Pro plan)
     const { data } = supabase.storage.from('banner-image').getPublicUrl(path)
     return data.publicUrl
   } catch { return '/placeholder.png' }
@@ -44,36 +58,18 @@ const getBannerUrl = (path: string) => {
 
 // Autoplay
 const bannerAutoplayTimer = ref<ReturnType<typeof setInterval> | null>(null)
-const bannerProgressTimer = ref<ReturnType<typeof setInterval> | null>(null)
-
-const stopBannerProgress = () => {
-  if (bannerProgressTimer.value) {
-    clearInterval(bannerProgressTimer.value)
-    bannerProgressTimer.value = null
-  }
-}
-
-const startBannerProgress = () => {
-  stopBannerProgress()
-  bannerProgressWidth.value = 0
-  const step = 100 / (4000 / 50)
-  bannerProgressTimer.value = setInterval(() => {
-    bannerProgressWidth.value = Math.min(bannerProgressWidth.value + step, 100)
-  }, 50)
-}
 
 const stopBannerAutoplay = () => {
   if (bannerAutoplayTimer.value) {
     clearInterval(bannerAutoplayTimer.value)
     bannerAutoplayTimer.value = null
   }
-  stopBannerProgress()
 }
 
 const startBannerAutoplay = () => {
   stopBannerAutoplay()
   if (banners.value.length > 1) {
-    startBannerProgress()
+    bannerProgressKey.value++ // restart CSS animation
     bannerAutoplayTimer.value = setInterval(() => {
       if (!bannerTransitioning.value) nextBanner()
     }, 4000)
@@ -84,7 +80,7 @@ const goToBanner = (i: number) => {
   if (bannerTransitioning.value || i === bannerIndex.value) return
   bannerIndex.value = i
   bannerTransitioning.value = true
-  startBannerProgress()
+  bannerProgressKey.value++ // restart CSS progress animation
   setTimeout(() => { bannerTransitioning.value = false }, 500)
 }
 
@@ -92,7 +88,7 @@ const prevBanner = () => {
   if (bannerTransitioning.value || !banners.value.length) return
   bannerIndex.value = (bannerIndex.value - 1 + banners.value.length) % banners.value.length
   bannerTransitioning.value = true
-  startBannerProgress()
+  bannerProgressKey.value++
   setTimeout(() => { bannerTransitioning.value = false }, 500)
 }
 
@@ -100,7 +96,7 @@ const nextBanner = () => {
   if (bannerTransitioning.value || !banners.value.length) return
   bannerIndex.value = (bannerIndex.value + 1) % banners.value.length
   bannerTransitioning.value = true
-  startBannerProgress()
+  bannerProgressKey.value++
   setTimeout(() => { bannerTransitioning.value = false }, 500)
 }
 
@@ -142,12 +138,35 @@ const scrollCatTo = (i: number) => {
   catDotIndex.value = i
 }
 
-// ── Products ────────────────────────────────────────────────────────────────
+// ── Products via SSR + caching 2 menit ───────────────────────────────────
 const products = ref<ProductMarket[]>([])
-const loadingProducts = ref(true)
+const loadingProducts = ref(false)
 const productTrackRef = ref<HTMLElement | null>(null)
 const productPageIndex = ref(0)
-const productPerPage = ref(2) // updated on mount/resize
+const productPerPage = ref(2)
+
+// Fetch awal via SSR (menghilangkan client-side waterfall)
+const { data: initialProducts } = await useAsyncData(
+  `home-products-${selectedCategory.value || 'all'}`,
+  async () => {
+    let q = supabase
+      .from('product_markets')
+      .select('id,name,slug,category,price,price_range,price_unit,thumbnail_url,images')
+      .is('deleted_at', null)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(8)
+    if (selectedCategory.value) q = q.eq('category', selectedCategory.value)
+    const { data } = await q
+    return (data || []) as ProductMarket[]
+  },
+  { maxAge: 120, dedupe: 'defer' }
+)
+
+// Set produk awal dari SSR
+if (initialProducts.value) {
+  products.value = initialProducts.value
+}
 
 const updateProductPerPage = () => {
   if (!productTrackRef.value || !products.value.length) return
@@ -197,8 +216,13 @@ const scrollProductTo = (i: number) => {
 }
 
 const getImage = (p: ProductMarket) => {
-  const url = getMarketPublicUrl(p.thumbnail_url || '')
-  return url || '/product.png'
+  const thumbPath = p.thumbnail_url || ''
+  if (!thumbPath) return '/product.png'
+  if (thumbPath.startsWith('http')) return thumbPath
+  try {
+    const { data } = supabase.storage.from('markets').getPublicUrl(thumbPath)
+    return data.publicUrl || '/product.png'
+  } catch { return '/product.png' }
 }
 
 const formatPrice = (p: ProductMarket) => {
@@ -210,13 +234,10 @@ const formatPrice = (p: ProductMarket) => {
 watch(selectedCategory, fetchProducts)
 
 onMounted(async () => {
-  const { data } = await supabase
-    .from('banner')
-    .select('*')
-    .order('updated_at', { ascending: false })
-  banners.value = data || []
+  // Banner sudah tersedia dari SSR via bannersData, tidak perlu fetch lagi
   if (banners.value.length > 1) nextTick(() => startBannerAutoplay())
-  await fetchProducts()
+  // Set perPage setelah DOM siap
+  nextTick(() => updateProductPerPage())
   window.addEventListener('resize', updateProductPerPage, { passive: true })
 })
 
@@ -265,6 +286,9 @@ onBeforeUnmount(() => {
               alt="Banner Promo JuruTani"
               class="w-full h-full object-cover block"
               loading="lazy"
+              width="900"
+              height="321"
+              decoding="async"
               @error="(e: any) => (e.target as HTMLImageElement).src = '/placeholder.png'"
             >
           </div>
@@ -306,10 +330,11 @@ onBeforeUnmount(() => {
             :class="{ 'promo-banner-dot--active': i === bannerIndex }"
             @click="goToBanner(i)"
           >
+            <!-- CSS animation progress (GPU compositor, tanpa setInterval) -->
             <span
               v-if="i === bannerIndex"
-              class="promo-banner-dot__progress"
-              :style="{ width: `${bannerProgressWidth}%` }"
+              :key="bannerProgressKey"
+              class="promo-banner-dot__progress promo-banner-dot__progress--animate"
             />
           </button>
         </div>
@@ -384,6 +409,9 @@ onBeforeUnmount(() => {
               :alt="product.name"
               class="w-full h-full object-cover transition-transform duration-400 hover:scale-105"
               loading="lazy"
+              width="300"
+              height="300"
+              decoding="async"
               @error="(e: any) => (e.target as HTMLImageElement).src = '/product.png'"
             >
           </div>
@@ -514,9 +542,22 @@ onBeforeUnmount(() => {
   top: 0;
   bottom: 0;
   left: 0;
+  right: 0;
   background: #f59e0b;
   border-radius: 9999px;
-  transition: width 0.05s linear;
+  /* ✅ GPU compositor animation: tidak menyentuh main thread sama sekali */
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* Animasi berjalan melalui CSS keyframe, bukan JS setInterval */
+.promo-banner-dot__progress--animate {
+  animation: banner-progress 4s linear forwards;
+}
+
+@keyframes banner-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 .promo-banner-dot:not(.promo-banner-dot--active):hover {

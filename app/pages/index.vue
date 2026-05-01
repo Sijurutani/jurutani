@@ -17,7 +17,7 @@ useJsonLdSchemas(schemas)
 
 <template>
   <main>
-    <!-- Hero Section -->
+    <!-- Hero Section: always render immediately (above the fold, LCP element) -->
     <HomeHeroSection />
 
     <!-- ═══ Weather Section ═══ -->
@@ -33,24 +33,24 @@ useJsonLdSchemas(schemas)
       <HomeQuickAccess />
     </section>
 
-    <!-- ═══ Promotion Section -->
-    <section aria-labelledby="promotion-section" class="mt-16">
+    <!-- ═══ Promotion Section (below fold: defer rendering hingga scroll dekat) ═══ -->
+    <section aria-labelledby="promotion-section" class="mt-16 perf-section">
       <h2 id="promotion-section" class="sr-only">
         Promosi Spesial
       </h2>
       <LazyHomePromotionSection />
     </section>
 
-    <!-- ═══ Food Price Section -->
-    <section aria-labelledby="food-price-section" class="mt-16">
+    <!-- ═══ Food Price Section ═══ -->
+    <section aria-labelledby="food-price-section" class="mt-16 perf-section">
       <h2 id="food-price-section" class="sr-only">
         Informasi Harga Pangan
       </h2>
       <LazyHomeFoodPriceSection />
     </section>
 
-    <!-- ═══ Testimonials Section -->
-    <section aria-labelledby="testimonials-section" class="my-16">
+    <!-- ═══ Testimonials Section ═══ -->
+    <section aria-labelledby="testimonials-section" class="my-16 perf-section">
       <h2 id="testimonials-section" class="sr-only">
         Testimoni Pengguna
       </h2>
@@ -59,3 +59,19 @@ useJsonLdSchemas(schemas)
 
   </main>
 </template>
+
+<style>
+/*
+  content-visibility: auto — CSS modern yang memberitahu browser untuk melewati
+  layout & rendering element yang belum terlihat di viewport.
+  Dampak: browser tidak perlu mem-paint semua 5 section sekaligus saat load,
+  sehingga mengurangi Main-Thread work secara signifikan.
+  Tidak mempengaruhi tampilan atau UX sama sekali.
+*/
+.perf-section {
+  content-visibility: auto;
+  /* contain-intrinsic-size: memberitahu browser perkiraan ukuran
+     sebelum elemen dirender, mencegah scroll jump */
+  contain-intrinsic-size: 0 400px;
+}
+</style>

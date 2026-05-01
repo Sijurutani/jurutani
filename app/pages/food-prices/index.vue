@@ -369,12 +369,6 @@ const handlePageChange = (page: number) => {
 
 // SEO
 useSeoOptimized('food-prices')
-useHead({
-  title: 'Daftar Harga Pangan DIY - JuruTani',
-  meta: [
-    { name: 'description', content: 'Informasi harga komoditas pertanian terkini dari produsen lokal di Daerah Istimewa Yogyakarta. Data transparan untuk keputusan bisnis yang lebih baik.' }
-  ]
-})
 </script>
 
 <template>

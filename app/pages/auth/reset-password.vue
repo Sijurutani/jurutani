@@ -2,7 +2,7 @@
 import type { Database } from '~/types/database.types'
 
 // SEO Optimization
-useSeoAuth('reset-password')
+useSeoOptimized('reset-password')
 
 definePageMeta({
   layout: 'auth',

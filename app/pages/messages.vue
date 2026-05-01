@@ -4,8 +4,6 @@ definePageMeta({
   layout: 'default'
 })
 
-useSeoOptimized('messages')
-
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()

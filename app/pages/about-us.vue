@@ -1,169 +1,67 @@
 <script setup lang="ts">
-useHead({
-  title: 'Tentang JuruTani - Platform Penyuluhan Digital Pertanian Indonesia',
-  meta: [
-    { name: 'description', content: 'JuruTani adalah inovasi platform penyuluhan digital pertanian dari Politeknik Pembangunan Pertanian Yogyakarta Magelang.' },
-    { property: 'og:title', content: 'Tentang JuruTani - Platform Penyuluhan Digital Pertanian' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:image', content: '/jurutani.png' },
-  ],
-  link: [{ rel: 'canonical', href: 'https://jurutani.id/about-us' }],
-})
+import {
+  galleryData, innovationPoints, platformAdvantages,
+  visionMission, institutionHighlights, teamCategories,
+} from '~/data/about'
 
 useSeoOptimized('about')
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const galleryData = [
-  { src: '/gallery/image1.webp', title: 'Layanan Penyuluhan',   desc: 'Konsultasi langsung dengan penyuluh pertanian digital' },
-  { src: '/gallery/image2.webp', title: 'Berita Pertanian',     desc: 'Informasi terbaru seputar pertanian dan teknologi' },
-  { src: '/gallery/image3.webp', title: 'Marketplace Petani',   desc: 'Jual beli pupuk, bibit, dan hasil panen langsung' },
-  { src: '/gallery/image4.webp', title: 'Edukasi & Artikel',    desc: 'Bacaan informatif untuk petani Indonesia' },
-  { src: '/gallery/image5.webp', title: 'Kursus & Alat Bantu',  desc: 'Belajar mandiri melalui kursus dan kalkulator tani' },
-]
-
-const innovationPoints = [
-  { icon: 'i-lucide-message-square', title: 'Konsultasi Digital Real-Time',  desc: 'Akses langsung dengan penyuluh pertanian profesional kapan saja' },
-  { icon: 'i-lucide-database',       title: 'Database Komoditas Lengkap',    desc: 'Informasi detail tentang berbagai jenis tanaman dan teknik budidaya' },
-  { icon: 'i-lucide-cloud-rain',     title: 'Data Cuaca & Pasar Akurat',     desc: 'Prediksi cuaca harian dan harga komoditas real-time' },
-  { icon: 'i-lucide-shopping-cart',  title: 'Marketplace Terintegrasi',      desc: 'Jual-beli hasil panen langsung tanpa perantara' },
-  { icon: 'i-lucide-book-open',      title: 'Edukasi & Kursus Pertanian',    desc: 'Materi pembelajaran dari ahli dan praktisi berpengalaman' },
-  { icon: 'i-lucide-user',           title: 'Alat Bantu Otomatis',           desc: 'Kalkulator pupuk, prediksi hasil, dan tools analisis' },
-]
-
-const platformAdvantages = [
-  { icon: 'i-lucide-bar-chart-3',    title: 'Data Terintegrasi & Real-Time', desc: 'Database komoditas, cuaca, dan harga pasar dalam satu platform terpadu' },
-  { icon: 'i-lucide-smartphone',     title: 'User-Friendly untuk Semua',     desc: 'Interface intuitif untuk semua tingkat literasi digital petani' },
-  { icon: 'i-lucide-headset',        title: 'Penyuluhan Digital 24/7',       desc: 'Akses penyuluh kapan saja via chat, video call, atau forum diskusi' },
-  { icon: 'i-lucide-shopping-bag',   title: 'Marketplace Terintegrasi',      desc: 'Jual-beli produk pertanian langsung tanpa perantara' },
-  { icon: 'i-lucide-graduation-cap', title: 'Edukasi Berkualitas',           desc: 'Kursus dan artikel edukatif dari ahli pertanian profesional' },
-  { icon: 'i-lucide-wrench',         title: 'Tools & Kalkulasi Otomatis',    desc: 'Kalkulator pupuk, prediksi panen, dan analisis keuntungan' },
-]
-
-const institutionHighlights = [
-  { icon: 'i-lucide-graduation-cap', title: 'Pendidikan Vokasi',       desc: 'Program praktis berbasis industri' },
-  { icon: 'i-lucide-search',         title: 'Riset & Inovasi',         desc: 'Penelitian pertanian berkelanjutan' },
-  { icon: 'i-lucide-earth',          title: 'Pemberdayaan Masyarakat', desc: 'Solusi nyata untuk petani lokal' },
-]
-
-const teamCategories = [
-  {
-    icon: 'i-lucide-user-search',
-    title: 'Mahasiswa Berprestasi',
-    items: ['Terpilih dari berbagai program studi', 'Kompetensi teknologi digital terdepan', 'Pemahaman mendalam tentang pertanian', 'Semangat menciptakan dampak sosial'],
-  },
-  {
-    icon: 'i-lucide-user-check',
-    title: 'Dosen Pembimbing',
-    items: ['Ahli di bidang pertanian dan teknologi', 'Pengalaman puluhan tahun di industri', 'Komitmen pada inovasi berkelanjutan', 'Mentoring profesional untuk tim'],
-  },
-]
-
-const misi = [
-  'Mengembangkan solusi digital yang mudah diakses petani',
-  'Menyediakan data real-time untuk keputusan pertanian yang tepat',
-  'Membangun komunitas petani yang terhubung dan berdaya',
-]
 </script>
 
 <template>
   <main class="min-h-screen">
+    <!-- ── Hero ── -->
+    <CommonPageHeroSection
+      title="Si JuruTani"
+      title-accent="Platform Penyuluhan Digital"
+      subtitle="Inovasi dari Politeknik Pembangunan Pertanian Yogyakarta Magelang untuk memajukan pertanian Indonesia di era digital."
+      :badge="{ text: 'Platform Inovasi Pertanian', icon: 'i-lucide-sprout' }"
+      decorative="gradient"
+      align="center"
+      :cta="{ text: 'Mulai Belajar', link: '/courses', icon: 'i-lucide-graduation-cap' }"
+      :cta-secondary="{ text: 'Hubungi Kami', link: '/contact-us' }"
+      :stats="[
+        { value: '2024', label: 'Tahun Berdiri' },
+        { value: '6+', label: 'Fitur Utama' },
+        { value: '100%', label: 'Untuk Petani' },
+      ]"
+    />
 
-    <!-- ── Hero ────────────────────────────────────────────────────────────── -->
-    <header class="relative overflow-hidden bg-linear-to-br from-green-50 via-white to-emerald-50 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950 pt-20 pb-16">
-      <!-- Decorative blobs -->
-      <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-emerald-200/30 dark:bg-emerald-900/20 blur-3xl" />
-        <div class="absolute -bottom-24 -left-24 w-96 h-96 rounded-full bg-green-200/30 dark:bg-green-900/20 blur-3xl" />
-      </div>
+    <div class="ab-wrap">
 
-      <div class="container relative mx-auto px-4 text-center max-w-3xl">
-        <NuxtImg src="/jurutani.png" alt="Logo JuruTani" class="w-24 mx-auto mb-6 drop-shadow-xl" />
-
-        <h1 class="text-4xl md:text-6xl font-bold bg-linear-to-r from-green-700 via-emerald-600 to-green-800 bg-clip-text text-transparent leading-tight mb-4">
-          Si JuruTani
-        </h1>
-
-        <div class="w-16 h-1 rounded-full bg-linear-to-r from-green-500 to-emerald-500 mx-auto mb-6" />
-
-        <p class="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-          Inovasi digital dari
-          <strong class="text-green-700 dark:text-green-400">Politeknik Pembangunan Pertanian Yogyakarta Magelang</strong>
-          untuk memajukan pertanian Indonesia menuju era digital yang berkelanjutan.
-        </p>
-      </div>
-    </header>
-
-    <div class="container mx-auto px-4 py-12 space-y-20 max-w-6xl">
-
-      <!-- ── Tentang ─────────────────────────────────────────────────────── -->
-      <section aria-labelledby="about-heading">
-        <div class="rounded-2xl bg-white dark:bg-gray-900 border border-green-100 dark:border-green-900/60 shadow-sm overflow-hidden">
-
-          <!-- Header section -->
-          <div class="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-8 text-center border-b border-green-100 dark:border-green-900/60">
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs font-semibold mb-4">
-              <UIcon name="i-lucide-sprout" class="w-3.5 h-3.5" />
-              Platform Inovasi Penyuluhan Digital
+      <!-- ── Tentang ── -->
+      <section class="ab-section">
+        <div class="ab-split">
+          <div class="ab-split__text app-reveal">
+            <div class="ab-chip">
+              <UIcon name="i-lucide-sprout" class="ab-chip__icon" />
+              Platform Inovasi
             </div>
-            <h2 id="about-heading" class="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200">
-              Apa itu Si JuruTani?
-            </h2>
+            <h2 class="ab-heading">Apa itu <span class="ab-accent">Si JuruTani?</span></h2>
+            <blockquote class="ab-quote">
+              Menghubungkan teknologi modern dengan kearifan pertanian tradisional Indonesia.
+            </blockquote>
+            <p class="ab-body">
+              <strong>Si JuruTani</strong> lahir dari mahasiswa dan dosen <strong>Polbangtan Yogyakarta Magelang</strong> — ekosistem digital yang menjembatani petani dengan penyuluh, pakar, dan pasar secara terpadu.
+            </p>
+            <p class="ab-body">
+              Dengan antarmuka intuitif, petani dapat meningkatkan produktivitas dan keberlanjutan usaha tani secara mandiri kapan pun dan di mana pun.
+            </p>
           </div>
 
-          <div class="p-6 md:p-10 space-y-8">
-            <!-- Highlight quote -->
-            <p class="text-center text-base md:text-lg font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 rounded-r-xl px-6 py-4">
-              <strong>Si JuruTani</strong> menghubungkan teknologi modern dengan kearifan pertanian tradisional Indonesia untuk menciptakan ekosistem pertanian yang berkelanjutan.
-            </p>
-
-            <!-- Dua kolom teks -->
-            <div class="grid md:grid-cols-2 gap-6 text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-              <div class="space-y-4">
-                <h3 class="text-lg font-bold text-green-700 dark:text-green-300 flex items-center gap-2">
-                  <UIcon name="i-lucide-sprout" class="w-5 h-5 flex-shrink-0" />
-                  Lahir dari Pendidikan
-                </h3>
-                <p>
-                  <strong>Si JuruTani</strong> adalah hasil karya inovatif dari mahasiswa dan dosen
-                  <strong>Polbangtan Yogyakarta Magelang</strong>. Platform ini dikembangkan untuk menjawab tantangan modernisasi pertanian Indonesia di era digital.
-                </p>
-                <p>
-                  Dengan teknologi digital terdepan, petani dapat mengakses informasi real-time tentang komoditas, data cuaca, harga pasar, dan teknik pertanian berkelanjutan.
-                </p>
-              </div>
-              <div class="space-y-4">
-                <h3 class="text-lg font-bold text-green-700 dark:text-green-300 flex items-center gap-2">
-                  <UIcon name="i-lucide-user-check" class="w-5 h-5 flex-shrink-0" />
-                  Solusi Terpadu
-                </h3>
-                <p>
-                  Bukan sekadar aplikasi mobile — Si JuruTani adalah ekosistem digital yang mengintegrasikan berbagai layanan penyuluhan modern dan menjembatani petani dengan ahli pertanian.
-                </p>
-                <p>
-                  Dengan antarmuka yang intuitif, petani dapat meningkatkan produktivitas, efisiensi, dan keberlanjutan usaha tani mereka secara mandiri.
-                </p>
-              </div>
-            </div>
-
-            <!-- Innovation grid -->
-            <div class="rounded-xl bg-green-50/60 dark:bg-green-900/10 border border-green-100 dark:border-green-900/50 p-6">
-              <h3 class="text-base font-bold text-green-800 dark:text-green-200 text-center mb-5">
-                Inovasi Penyuluhan Digital Kami
-              </h3>
-              <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <div
-                  v-for="point in innovationPoints"
-                  :key="point.title"
-                  class="flex items-start gap-3 p-3 rounded-lg hover:bg-green-100/60 dark:hover:bg-green-800/20 transition-colors"
-                >
-                  <div class="flex-shrink-0 w-8 h-8 rounded-lg bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                    <UIcon :name="point.icon" class="w-4 h-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-sm font-semibold text-green-800 dark:text-green-200 leading-snug">{{ point.title }}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">{{ point.desc }}</p>
-                  </div>
+          <div class="ab-split__grid app-reveal app-reveal--2">
+            <p class="ab-grid-label">Inovasi Penyuluhan Digital</p>
+            <div class="ab-feat-grid">
+              <div
+                v-for="p in innovationPoints"
+                :key="p.title"
+                class="ab-feat-card"
+              >
+                <div class="ab-feat-card__icon">
+                  <UIcon :name="p.icon" class="w-4 h-4" />
+                </div>
+                <div>
+                  <p class="ab-feat-card__title">{{ p.title }}</p>
+                  <p class="ab-feat-card__desc">{{ p.description }}</p>
                 </div>
               </div>
             </div>
@@ -171,70 +69,25 @@ const misi = [
         </div>
       </section>
 
-      <!-- ── Gallery ────────────────────────────────────────────────────────── -->
-      <section aria-labelledby="gallery-heading">
-        <div class="text-center mb-8">
-          <h2 id="gallery-heading" class="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200 mb-2">
-            Galeri Inovasi
-          </h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
-            Perjalanan pengembangan dan implementasi JuruTani sebagai platform penyuluhan digital pertanian
-          </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="(item, i) in galleryData"
-            :key="i"
-            class="group relative overflow-hidden rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 aspect-[4/3] bg-green-100 dark:bg-green-900/30"
-          >
-            <NuxtImg
-              :src="item.src"
-              :alt="item.title"
-              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-            <div class="absolute inset-0 bg-linear-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-              <div class="p-4 text-white">
-                <h3 class="font-semibold text-sm mb-0.5">{{ item.title }}</h3>
-                <p class="text-xs text-white/80">{{ item.desc }}</p>
-              </div>
+      <!-- ── Visi & Misi ── -->
+      <section class="ab-section">
+        <CommonSectionHeader title="Visi & Misi" subtitle="Arah dan komitmen JuruTani dalam memajukan pertanian Indonesia" align="center" class="mb-10" />
+        <div class="ab-vm-grid">
+          <div class="ab-vm-card ab-vm-card--visi app-reveal">
+            <div class="ab-vm-card__head">
+              <div class="ab-vm-icon"><UIcon :name="visionMission.vision.icon" class="w-5 h-5 text-white" /></div>
+              <h3 class="ab-vm-card__title">{{ visionMission.vision.title }}</h3>
             </div>
+            <p class="ab-body">{{ visionMission.vision.content }}</p>
           </div>
-        </div>
-      </section>
-
-      <!-- ── Visi & Misi ─────────────────────────────────────────────────── -->
-      <section aria-labelledby="vision-heading">
-        <div class="grid md:grid-cols-2 gap-6">
-
-          <!-- Visi -->
-          <div class="rounded-2xl bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 p-6 md:p-8">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <UIcon name="i-lucide-eye" class="w-5 h-5 text-white" />
-              </div>
-              <h3 id="vision-heading" class="text-xl font-bold text-green-800 dark:text-green-200">Visi</h3>
+          <div class="ab-vm-card app-reveal app-reveal--2">
+            <div class="ab-vm-card__head">
+              <div class="ab-vm-icon ab-vm-icon--em"><UIcon :name="visionMission.mission.icon" class="w-5 h-5 text-white" /></div>
+              <h3 class="ab-vm-card__title">{{ visionMission.mission.title }}</h3>
             </div>
-            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-              Menjadi platform digital terdepan yang mengintegrasikan teknologi modern dengan praktik pertanian berkelanjutan untuk menciptakan ekosistem pertanian Indonesia yang cerdas, produktif, dan ramah lingkungan.
-            </p>
-          </div>
-
-          <!-- Misi -->
-          <div class="rounded-2xl bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 p-6 md:p-8">
-            <div class="flex items-center gap-3 mb-4">
-              <div class="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                <UIcon name="i-lucide-check-circle-2" class="w-5 h-5 text-white" />
-              </div>
-              <h3 class="text-xl font-bold text-green-800 dark:text-green-200">Misi</h3>
-            </div>
-            <ul class="space-y-3">
-              <li
-                v-for="item in misi"
-                :key="item"
-                class="flex items-start gap-2.5 text-sm text-gray-700 dark:text-gray-300"
-              >
-                <UIcon name="i-lucide-check" class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+            <ul class="ab-mission-list">
+              <li v-for="item in visionMission.mission.items" :key="item" class="ab-mission-item">
+                <span class="ab-mission-dot"><UIcon name="i-lucide-check" class="w-3 h-3" /></span>
                 {{ item }}
               </li>
             </ul>
@@ -242,117 +95,611 @@ const misi = [
         </div>
       </section>
 
-      <!-- ── Keunggulan Platform ────────────────────────────────────────────── -->
-      <section aria-labelledby="advantages-heading">
-        <div class="text-center mb-8">
-          <h2 id="advantages-heading" class="text-2xl md:text-3xl font-bold text-green-800 dark:text-green-200 mb-2">
-            Keunggulan Kompetitif JuruTani
-          </h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
-            Fitur-fitur unggulan yang dirancang khusus untuk kebutuhan petani Indonesia
-          </p>
-        </div>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <!-- ── Keunggulan ── -->
+      <section class="ab-section">
+        <CommonSectionHeader title="Keunggulan Kompetitif" subtitle="Fitur unggulan yang dirancang khusus untuk kebutuhan petani Indonesia" align="center" class="mb-10" />
+        <div class="ab-adv-grid">
           <div
             v-for="f in platformAdvantages"
             :key="f.title"
-            class="group rounded-xl bg-white dark:bg-gray-900 border border-green-100 dark:border-green-900/60 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 p-6 flex flex-col gap-3"
+            class="ab-adv-card app-reveal"
           >
-            <div class="w-11 h-11 rounded-xl bg-linear-to-br from-green-500 to-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div class="ab-adv-icon">
               <UIcon :name="f.icon" class="w-5 h-5 text-white" />
             </div>
-            <h3 class="font-semibold text-green-800 dark:text-green-200 text-sm leading-snug">{{ f.title }}</h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{{ f.desc }}</p>
+            <h3 class="ab-adv-card__title">{{ f.title }}</h3>
+            <p class="ab-adv-card__desc">{{ f.description }}</p>
           </div>
         </div>
       </section>
 
-      <!-- ── Sponsor / Institusi ────────────────────────────────────────────── -->
-      <section aria-labelledby="sponsor-heading">
-        <div class="rounded-2xl bg-white dark:bg-gray-900 border border-green-100 dark:border-green-900/60 shadow-sm overflow-hidden">
-          <div class="bg-linear-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-6 py-6 border-b border-green-100 dark:border-green-900/60 text-center">
-            <h2 id="sponsor-heading" class="text-xl md:text-2xl font-bold text-green-800 dark:text-green-200 mb-1">
-              Institusi Pengembang & Mitra Strategis
-            </h2>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Dukungan penuh dari institusi pendidikan dan organisasi strategis</p>
-          </div>
-
-          <div class="p-6 md:p-10 flex flex-col items-center gap-6">
-            <NuxtImg
-              src="/logo/sponsor.png"
-              alt="Polbangtan Yogyakarta Magelang"
-              class="max-h-20 object-contain opacity-90 hover:opacity-100 transition-opacity"
-            />
-            <div class="text-center">
-              <h3 class="font-semibold text-green-800 dark:text-green-200 mb-1">Polbangtan YoMa</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Politeknik Pembangunan Pertanian Yogyakarta Magelang</p>
+      <!-- ── Gallery ── -->
+      <section class="ab-section">
+        <CommonSectionHeader title="Galeri Inovasi" subtitle="Perjalanan pengembangan JuruTani sebagai platform penyuluhan digital" align="center" class="mb-10" />
+        <div class="ab-gallery">
+          <div
+            v-for="(item, i) in galleryData"
+            :key="i"
+            class="ab-gallery__item"
+            :class="{ 'ab-gallery__item--wide': i === 0 }"
+          >
+            <NuxtImg :src="item.src" :alt="item.alt || item.title" class="ab-gallery__img" loading="lazy" />
+            <div class="ab-gallery__overlay">
+              <p class="ab-gallery__title">{{ item.title }}</p>
+              <p class="ab-gallery__desc">{{ item.description }}</p>
             </div>
-
-            <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed text-center max-w-2xl border-t border-green-100 dark:border-green-900/50 pt-6">
-              <strong>JuruTani</strong> adalah produk dari komitmen Polbangtan Yogyakarta Magelang dalam mengembangkan inovasi berdampak bagi pertanian Indonesia. Melalui kolaborasi mahasiswa, dosen, dan mitra industri, platform ini terus berkembang memberikan manfaat bagi petani.
-            </p>
+            <span class="ab-gallery__badge">{{ item.title }}</span>
           </div>
         </div>
       </section>
 
-      <!-- ── Tim Pengembang ─────────────────────────────────────────────────── -->
-      <section aria-labelledby="team-heading">
-        <div class="rounded-2xl bg-linear-to-br from-green-600 to-emerald-600 overflow-hidden shadow-xl">
-
-          <!-- Header -->
-          <div class="px-6 py-8 text-center text-white">
-            <h2 id="team-heading" class="text-2xl md:text-3xl font-bold mb-2">Tim Pengembang Inovasi</h2>
-            <p class="text-green-100 text-sm">Mahasiswa dan Dosen Politeknik Pembangunan Pertanian Yogyakarta Magelang</p>
-          </div>
-
-          <!-- Institution card -->
-          <div class="mx-4 md:mx-8 mb-6 rounded-xl bg-white/10 border border-white/20 p-6 text-white">
-            <h3 class="text-lg font-bold mb-2 text-center">Polbangtan Yogyakarta Magelang (YoMa)</h3>
-            <p class="text-sm text-green-100 leading-relaxed text-center mb-5">
-              Institusi pendidikan tinggi vokasi yang berkomitmen mengembangkan SDM kompeten di bidang pertanian dan menciptakan solusi nyata untuk tantangan pertanian modern.
-            </p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div
-                v-for="h in institutionHighlights"
-                :key="h.title"
-                class="bg-white/10 rounded-lg p-4 text-center"
-              >
-                <UIcon :name="h.icon" class="w-6 h-6 mx-auto mb-2 text-green-200" />
-                <p class="font-semibold text-sm">{{ h.title }}</p>
-                <p class="text-xs text-green-100 mt-1">{{ h.desc }}</p>
-              </div>
+      <!-- ── Institusi ── -->
+      <section class="ab-section">
+        <div class="ab-inst-card app-reveal">
+          <div class="ab-inst-card__head">
+            <NuxtImg src="/logo/sponsor.png" alt="Polbangtan Yogyakarta Magelang" class="ab-inst-logo" />
+            <div>
+              <h2 class="ab-inst-card__name">Polbangtan Yogyakarta Magelang</h2>
+              <p class="ab-inst-card__sub">Politeknik Pembangunan Pertanian — Kementerian Pertanian RI</p>
             </div>
           </div>
+          <div class="ab-inst-highlights">
+            <div v-for="h in institutionHighlights" :key="h.title" class="ab-inst-hl">
+              <div class="ab-inst-hl__icon"><UIcon :name="h.icon" class="w-4 h-4 text-green-600 dark:text-green-400" /></div>
+              <p class="ab-inst-hl__title">{{ h.title }}</p>
+              <p class="ab-inst-hl__desc">{{ h.description }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <!-- Team categories -->
-          <div class="mx-4 md:mx-8 mb-8 grid md:grid-cols-2 gap-4">
-            <div
-              v-for="team in teamCategories"
-              :key="team.title"
-              class="rounded-xl bg-white/10 border border-white/20 p-5 text-white"
-            >
-              <div class="flex items-center gap-2 mb-3">
-                <UIcon :name="team.icon" class="w-5 h-5 text-green-200" />
-                <h4 class="font-semibold text-sm">{{ team.title }}</h4>
+      <!-- ── Tim ── -->
+      <section class="ab-section">
+        <CommonSectionHeader title="Tim Pengembang" subtitle="Mahasiswa dan Dosen Polbangtan Yogyakarta Magelang" align="center" class="mb-10" />
+        <div class="ab-team-wrap app-reveal">
+          <div class="ab-team-grid">
+            <div v-for="team in teamCategories" :key="team.title" class="ab-team-card">
+              <div class="ab-team-card__head">
+                <div class="ab-team-icon"><UIcon :name="team.icon" class="w-5 h-5 text-white" /></div>
+                <h4 class="ab-team-card__title">{{ team.title }}</h4>
               </div>
-              <ul class="space-y-1.5">
-                <li
-                  v-for="item in team.items"
-                  :key="item"
-                  class="flex items-start gap-2 text-xs text-green-100"
-                >
-                  <UIcon name="i-lucide-check" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-green-300" />
+              <ul class="ab-team-list">
+                <li v-for="item in team.items" :key="item" class="ab-team-item">
+                  <UIcon name="i-lucide-check" class="w-3.5 h-3.5 text-green-300 flex-shrink-0 mt-0.5" />
                   {{ item }}
                 </li>
               </ul>
             </div>
           </div>
+        </div>
+      </section>
 
+      <!-- ── CTA ── -->
+      <section class="ab-section">
+        <div class="ab-cta app-reveal">
+          <div class="ab-cta__chip">
+            <UIcon name="i-lucide-sparkles" class="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+            Bergabunglah Bersama Kami
+          </div>
+          <h2 class="ab-cta__heading">Siap Memajukan Pertanian Indonesia?</h2>
+          <p class="ab-cta__sub">Bergabunglah dengan ribuan petani yang telah merasakan manfaat JuruTani.</p>
+          <div class="ab-cta__btns">
+            <UButton to="/auth/register" size="lg" class="ab-btn-primary">
+              <UIcon name="i-lucide-user-plus" class="mr-2 w-4 h-4" />Daftar Gratis
+            </UButton>
+            <UButton to="/contact-us" variant="outline" color="primary" size="lg">
+              <UIcon name="i-lucide-mail" class="mr-2 w-4 h-4" />Hubungi Kami
+            </UButton>
+          </div>
         </div>
       </section>
 
     </div>
   </main>
 </template>
+
+<style scoped>
+.ab-wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 4rem 1.25rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+@media (min-width: 640px) { .ab-wrap { padding: 4rem 2rem 6rem; } }
+
+.ab-section {}
+
+/* chip / badge */
+.ab-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  background: var(--bg-badge);
+  border: 1px solid var(--border-badge);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-badge);
+  margin-bottom: 1rem;
+}
+.ab-chip__icon { width: 0.75rem; height: 0.75rem; color: var(--text-badge); }
+
+/* typography */
+.ab-heading {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--text-base);
+  line-height: 1.2;
+  margin-bottom: 0.875rem;
+}
+@media (min-width: 768px) { .ab-heading { font-size: 2.25rem; } }
+
+.ab-accent {
+  background: linear-gradient(135deg, var(--text-accent), var(--text-accent-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.ab-quote {
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #16a34a;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--text-accent);
+  background: rgba(22, 163, 74, 0.06);
+  border-radius: 0 0.5rem 0.5rem 0;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+}
+
+.ab-body {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+/* split */
+.ab-split {
+  display: grid;
+  gap: 2.5rem;
+}
+@media (min-width: 1024px) {
+  .ab-split { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
+/* feat grid */
+.ab-grid-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-bottom: 0.875rem;
+}
+
+.ab-feat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+}
+
+.ab-feat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--bg-badge);
+  border: 1px solid var(--border-badge);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.ab-feat-card:hover { box-shadow: 0 4px 16px rgba(22,163,74,0.15); transform: translateY(-2px); }
+
+.ab-feat-card__icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background: rgba(22, 163, 74, 0.15);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ab-feat-card__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-base);
+  line-height: 1.3;
+  margin-bottom: 0.2rem;
+}
+.ab-feat-card__desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* visi misi */
+.ab-vm-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+@media (min-width: 768px) { .ab-vm-grid { grid-template-columns: 1fr 1fr; } }
+
+.ab-vm-card {
+  padding: 1.75rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(22,163,74,0.15);
+  background: #fff;
+}
+:global(.dark) .ab-vm-card { background: rgba(17,24,39,0.6); }
+
+.ab-vm-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ab-vm-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #16a34a, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ab-vm-icon--em { background: linear-gradient(135deg, #059669, #0d9488); }
+.ab-vm-card__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-base);
+}
+
+.ab-mission-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.625rem; }
+.ab-mission-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.ab-mission-dot {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: rgba(22,163,74,0.12);
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.15rem;
+}
+
+/* advantages */
+.ab-adv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (min-width: 768px) { .ab-adv-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.ab-adv-card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  border: 1px solid rgba(22,163,74,0.1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+:global(.dark) .ab-adv-card { background: rgba(17,24,39,0.6); }
+.ab-adv-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.3); }
+
+.ab-adv-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #16a34a, #34d399);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.875rem;
+}
+
+.ab-adv-card__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-base);
+  margin-bottom: 0.375rem;
+  line-height: 1.35;
+}
+.ab-adv-card__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* gallery */
+.ab-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+@media (min-width: 768px) { .ab-gallery { grid-template-columns: repeat(3, 1fr); } }
+
+.ab-gallery__item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  aspect-ratio: 4/3;
+  background: #1a2e1a;
+}
+.ab-gallery__item--wide {
+  grid-column: span 2;
+}
+@media (min-width: 768px) {
+  .ab-gallery__item--wide { grid-column: span 2; }
+}
+
+.ab-gallery__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.ab-gallery__item:hover .ab-gallery__img { transform: scale(1.06); }
+
+.ab-gallery__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.08) 55%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.25rem;
+}
+.ab-gallery__item:hover .ab-gallery__overlay { opacity: 1; }
+
+.ab-gallery__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+.ab-gallery__desc {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.4;
+}
+
+.ab-gallery__badge {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* institusi */
+.ab-inst-card {
+  border-radius: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(22,163,74,0.15);
+  overflow: hidden;
+}
+:global(.dark) .ab-inst-card { background: rgba(17,24,39,0.6); }
+
+.ab-inst-card__head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  background: var(--bg-badge);
+  border-bottom: 1px solid var(--border-badge);
+}
+
+.ab-inst-logo {
+  max-height: 4rem;
+  object-fit: contain;
+}
+
+.ab-inst-card__name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-base);
+  margin-bottom: 0.25rem;
+}
+.ab-inst-card__sub {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ab-inst-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 1.5rem 1.75rem;
+}
+@media (max-width: 640px) { .ab-inst-highlights { grid-template-columns: 1fr; } }
+
+.ab-inst-hl {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgba(22,163,74,0.04);
+  border: 1px solid rgba(22,163,74,0.1);
+}
+.ab-inst-hl__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  background: rgba(22,163,74,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.625rem;
+}
+.ab-inst-hl__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-base);
+  margin-bottom: 0.25rem;
+}
+.ab-inst-hl__desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* tim */
+.ab-team-wrap {
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, #16a34a, #047857);
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.ab-team-wrap::before {
+  content: '';
+  position: absolute;
+  top: -4rem;
+  right: -4rem;
+  width: 16rem;
+  height: 16rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+
+.ab-team-grid {
+  display: grid;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+@media (min-width: 768px) { .ab-team-grid { grid-template-columns: 1fr 1fr; } }
+
+.ab-team-card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+}
+
+.ab-team-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ab-team-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.625rem;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ab-team-card__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ab-team-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.ab-team-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: rgba(209,250,229,0.9);
+  line-height: 1.5;
+}
+
+/* cta */
+.ab-cta {
+  text-align: center;
+  padding: 3rem 2rem;
+  border-radius: 1.5rem;
+  background: var(--bg-badge);
+  border: 1px solid var(--border-badge);
+  position: relative;
+  overflow: hidden;
+}
+.ab-cta::before {
+  content: '';
+  position: absolute;
+  top: -3rem;
+  right: -3rem;
+  width: 12rem;
+  height: 12rem;
+  background: rgba(22,163,74,0.08);
+  border-radius: 50%;
+  filter: blur(2rem);
+}
+
+.ab-cta__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  background: rgba(22,163,74,0.1);
+  border: 1px solid rgba(22,163,74,0.2);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-badge);
+  margin-bottom: 1rem;
+}
+
+.ab-cta__heading {
+  font-size: 1.625rem;
+  font-weight: 800;
+  color: var(--text-base);
+  margin-bottom: 0.75rem;
+}
+@media (min-width: 768px) { .ab-cta__heading { font-size: 2rem; } }
+
+.ab-cta__sub {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+}
+
+.ab-cta__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.ab-btn-primary {
+  background: linear-gradient(135deg, #16a34a, #059669) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(22,163,74,0.3);
+}
+</style>

@@ -8,10 +8,7 @@ definePageMeta({
   layout: 'default'
 })
 
-useSeoMeta({
-  title: 'Pasar Tani JuruTani',
-  description: 'Marketplace produk pertanian, peternakan, dan alat tani terpercaya'
-})
+useSeoOptimized('markets')
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 type ProductMarketRow = Database['public']['Tables']['product_markets']['Row']

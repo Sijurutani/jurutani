@@ -3,10 +3,7 @@ import { watchDebounced } from '@vueuse/core'
 import { Enum } from '~/utils/enum'
 import type { Database } from '~/types/database.types'
 
-useSeoMeta({
-  title: 'Berita Terbaru',
-  description: 'Berita dan artikel terbaru tentang pertanian dan agrikultur'
-})
+useSeoOptimized('news')
 
 type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
   author?: { id: string, full_name: string | null, username: string | null, avatar_url: string | null } | null

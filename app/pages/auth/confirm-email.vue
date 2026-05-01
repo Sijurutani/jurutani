@@ -5,6 +5,8 @@ definePageMeta({
   middleware: ['guest']
 })
 
+useSeoOptimized('confirm-email')
+
 const toast = usejuruTaniToast()
 const authStore = useAuthStore()
 const route = useRoute()

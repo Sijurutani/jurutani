@@ -209,7 +209,7 @@ const handleImageLoad = () => { imageLoading.value = false; imageError.value = f
 
           <!-- Read more -->
           <div class="flex items-center gap-2 text-white font-semibold opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-            <span class="text-sm">Baca Selengkapnya <span class="sr-only">tentang {{ article.title }}</span></span>
+            <span class="text-sm">Baca Selengkapnya <span class="sr-only">tentang {{ news.title }}</span></span>
             <UIcon name="i-heroicons-arrow-right" class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-2" />
           </div>
         </div>

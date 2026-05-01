@@ -55,17 +55,31 @@ watch(isMobileMenuOpen, (open) => {
   }
 })
 
-const handleLogout = async () => {
-  const result = await authStore.signOut()
-  
-  if (result.success) {
-    toastStore.success('Berhasil logout')
-    isProfileOpen.value = false
-    await navigateTo('/')
-    window.location.reload()
-  } else {
-    toastStore.error('Gagal logout')
-    console.error('Logout failed:', result.error)
+const showLogoutModal = ref(false)
+const logoutLoading = ref(false)
+
+// Buka modal konfirmasi dulu
+const handleLogout = () => {
+  isProfileOpen.value = false
+  showLogoutModal.value = true
+}
+
+// Jalankan logout setelah konfirmasi
+const doLogout = async () => {
+  logoutLoading.value = true
+  try {
+    const result = await authStore.signOut()
+    if (result.success) {
+      toastStore.success('Berhasil logout')
+      showLogoutModal.value = false
+      await navigateTo('/')
+      window.location.reload()
+    } else {
+      toastStore.error('Gagal logout')
+      console.error('Logout failed:', result.error)
+    }
+  } finally {
+    logoutLoading.value = false
   }
 }
 
@@ -102,7 +116,7 @@ const handleImageError = (event: Event) => {
             :aria-label="`${siteMeta.title} - Kembali ke beranda`"
           >
             <NuxtImg
-              src="/jurutani.png"
+              src="/Logo02.png"
               :alt="`Logo ${siteMeta.title}`"
               class="h-8 w-auto logo-img"
               loading="eager"
@@ -297,7 +311,7 @@ const handleImageError = (event: Event) => {
               :aria-label="`${siteMeta.title} - Kembali ke beranda`"
             >
               <NuxtImg
-                src="/jurutani.png"
+                src="/LOGO02.png"
                 :alt="`Logo ${siteMeta.title}`"
                 class="h-7 w-auto logo-img"
                 loading="eager"
@@ -467,6 +481,13 @@ const handleImageError = (event: Event) => {
         </div>
       </div>
     </Transition>
+
+    <!-- ═══════════════════════ LOGOUT CONFIRMATION MODAL ═══════════════════════ -->
+    <CommonLogoutConfirmModal
+      v-model="showLogoutModal"
+      :loading="logoutLoading"
+      @confirm="doLogout"
+    />
   </div>
 </template>
 

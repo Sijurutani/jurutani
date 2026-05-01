@@ -7,12 +7,7 @@ const authStore = useAuthStore()
 const supabase = useSupabaseClient()
 
 // SEO Meta
-useHead({
-  title: 'Pengaturan Akun - JuruTani',
-  meta: [
-    { name: 'description', content: 'Kelola pengaturan email dan password akun JuruTani Anda dengan aman.' }
-  ]
-})
+useSeoOptimized('setting')
 
 // Get current user from auth store
 const currentUser = computed(() => authStore.user)

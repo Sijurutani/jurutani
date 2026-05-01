@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // SEO Optimization
-useSeoAuth('login')
+useSeoOptimized('login')
 
 definePageMeta({
   layout: 'auth',

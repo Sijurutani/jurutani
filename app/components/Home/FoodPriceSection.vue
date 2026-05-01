@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { formatCurrency } from '~/utils/currency'
-import type { Database } from '~/types/database.types'
 import { getFoodPublicUrl } from '~/utils/storage'
+import type { Database } from '~/types/database.types'
 
 const supabase = useSupabaseClient<Database>()
 
-type FoodRow = Database['public']['Tables']['foods']['Row'] & {
-  latest_price?: number
-  latest_price_date?: string
+type FoodRow = {
+  id: string
+  name: string
+  category: string | null
+  satuan: string | null
+  slug: string | null
+  image_url: string | null
+  latest_price: number
+  latest_price_date: string
 }
 
 const getCategoryTheme = (val: string) => ({
@@ -23,42 +29,48 @@ const formatShortDate = (d?: string) => {
   } catch { return '' }
 }
 
-const getFoodImage = (imagePath: string | null | undefined) => {
-  if (!imagePath) return null
-  return getFoodPublicUrl(imagePath)
-}
 
-// ── Fetch: langsung ambil data terbaru lintas semua kategori ──────────────────
-const { data: items, pending } = await useAsyncData<FoodRow[]>('fp-home-latest', async () => {
-  const { data: foods } = await supabase
-    .from('foods')
-    .select('id,name,category,satuan,slug,updated_at,image_url')
-    .is('deleted_at', null)
 
-  const { data: prices } = await supabase
-    .from('food_prices')
-    .select('food_id,price,date')
-    .is('deleted_at', null)
-    .order('date', { ascending: false })
+// ── OPTIMASI: Ganti 2 query terpisah → 1 query efisien via JOIN ───────────────
+// Sebelumnya: fetch ALL foods + fetch ALL food_prices → gabung di JS (sangat berat!)
+// Sekarang: Supabase hanya kirim 12 baris data dengan JOIN langsung di DB server
+const { data: items, pending } = await useAsyncData<FoodRow[]>(
+  'fp-home-latest',
+  async () => {
+    // Ambil 12 harga terbaru sekaligus dengan JOIN sisi server
+    const { data, error } = await supabase
+      .from('food_prices')
+      .select('price, date, foods!inner(id, name, category, satuan, slug, image_url)')
+      .is('deleted_at', null)
+      .is('foods.deleted_at', null)
+      .order('date', { ascending: false })
+      .limit(50) // ambil lebih dulu, lalu deduplicate di JS
 
-  const merged = (foods || []).map(food => {
-    const p = (prices || []).find(x => x.food_id === food.id)
-    return {
-      ...food,
-      latest_price: p?.price ?? 0,
-      latest_price_date: p?.date ?? food.updated_at ?? undefined,
-    } as FoodRow
-  })
+    if (error) throw error
 
-  // Sort by latest price date desc, ambil 12 terbaru
-  return merged
-    .filter(f => f.latest_price && f.latest_price > 0)
-    .sort((a, b) =>
-      new Date(b.latest_price_date || '').getTime() -
-      new Date(a.latest_price_date || '').getTime()
-    )
-    .slice(0, 12)
-})
+    // Deduplicate: ambil harga terbaru per makanan, lalu ambil 12 terbaru
+    const seen = new Set<string>()
+    const deduped: FoodRow[] = []
+    for (const row of (data || [])) {
+      const food = row.foods as any
+      if (!food || seen.has(food.id)) continue
+      if (!row.price || row.price <= 0) continue
+      seen.add(food.id)
+      deduped.push({
+        id: food.id,
+        name: food.name,
+        category: food.category,
+        satuan: food.satuan,
+        slug: food.slug,
+        image_url: getFoodPublicUrl(food.image_url || null),
+        latest_price: row.price,
+        latest_price_date: row.date,
+      })
+      if (deduped.length >= 12) break
+    }
+    return deduped
+  }
+)
 
 // ── Carousel (page-based dots, sama dengan PromotionSection) ─────────────────
 const trackRef = ref<HTMLElement | null>(null)
@@ -66,7 +78,8 @@ const dotIndex = ref(0)
 const perPage = ref(2) // card visible per halaman, diupdate setelah mount
 
 const updatePerPage = () => {
-  if (!trackRef.value || !items.value?.length) return
+  const itemList = items.value as FoodRow[] | null
+  if (!trackRef.value || !itemList?.length) return
   const card = trackRef.value.children[0] as HTMLElement
   if (!card) return
   const cardW = card.offsetWidth
@@ -74,9 +87,10 @@ const updatePerPage = () => {
   perPage.value = Math.max(1, Math.round(trackW / cardW))
 }
 
-const dotCount = computed(() =>
-  Math.max(1, Math.ceil((items.value?.length ?? 0) / perPage.value))
-)
+const dotCount = computed(() => {
+  const itemList = items.value as FoodRow[] | null
+  return Math.max(1, Math.ceil((itemList?.length ?? 0) / perPage.value))
+})
 
 const handleScroll = () => {
   if (!trackRef.value) return
@@ -125,7 +139,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- ── Carousel ── -->
-    <template v-else-if="items && items.length > 0">
+    <template v-else-if="(items as FoodRow[] | null)?.length">
       <div ref="trackRef" class="fp-track" @scroll.passive="handleScroll">
         <NuxtLink
           v-for="item in items"
@@ -133,12 +147,16 @@ onBeforeUnmount(() => {
           :to="`/food-prices/${item.slug || item.id}`"
           class="fp-card"
         >
-          <div v-if="getFoodImage(item.image_url)" class="fp-card__image-wrap">
+          <div v-if="item.image_url" class="fp-card__image-wrap">
             <img
-              :src="getFoodImage(item.image_url) || ''"
+              :src="item.image_url"
               :alt="item.name"
               class="fp-card__image"
               loading="lazy"
+              width="200"
+              height="200"
+              decoding="async"
+              @error="(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.style.display = 'none' }"
             >
           </div>
           <div v-else class="fp-card__icon-bg" :style="{ background: getCategoryTheme(item.category || '').bg }">

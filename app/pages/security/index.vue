@@ -5,12 +5,7 @@ import { toastStore } from '@/composables/useJuruTaniToast'
 const supabase = useSupabaseClient()
 
 // SEO Meta
-useHead({
-  title: 'Ganti Password - JuruTani',
-  meta: [
-    { name: 'description', content: 'Ubah password akun JuruTani Anda dengan mudah dan aman.' }
-  ]
-})
+useSeoOptimized('security')
 
 // Form data
 const newPassword = ref('')

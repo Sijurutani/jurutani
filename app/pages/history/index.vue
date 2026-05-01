@@ -5,6 +5,8 @@ import type { SortOption } from '~/types/content'
 import { toastStore } from '~/composables/useJuruTaniToast'
 import { Enum } from '~/utils/enum'
 
+useSeoOptimized('history')
+
 type HistoryType = 'news' | 'markets'
 type HistoryFilter = 'all' | HistoryType
 

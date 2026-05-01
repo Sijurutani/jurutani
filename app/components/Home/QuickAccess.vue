@@ -74,6 +74,25 @@ const fetchExperts = async () => {
   }
 }
 
+// ── SSR fetch via useAsyncData (tidak ada waterfall di client) ──────────────────
+const { data: expertsData } = await useAsyncData(
+  'home-experts',
+  async () => {
+    const { data } = await supabase
+      .from('experts')
+      .select('id, user_id, category, note, profiles!inner(full_name, avatar_url)')
+      .order('id', { ascending: false })
+      .limit(5)
+    return (data || []) as unknown as Expert[]
+  },
+  { maxAge: 120, dedupe: 'defer' }
+)
+
+if (expertsData.value) {
+  experts.value = expertsData.value
+  loadingExperts.value = false
+}
+
 // ── 8 Penyuluh Terbaru ────────────────────────────────────────
 interface Instructor {
   id: number
@@ -143,11 +162,34 @@ const fetchInstructors = async () => {
   }
 }
 
+// ── SSR fetch via useAsyncData ────────────────────────────────────────────
+const { data: instructorsData } = await useAsyncData(
+  'home-instructors',
+  async () => {
+    const { data } = await supabase
+      .from('instructors')
+      .select('id, user_id, provinces, district, profiles!inner(full_name, avatar_url)')
+      .order('id', { ascending: false })
+      .limit(5)
+    return (data || []) as unknown as Instructor[]
+  },
+  { maxAge: 120, dedupe: 'defer' }
+)
+
+if (instructorsData.value) {
+  instructors.value = instructorsData.value
+  loadingInstructors.value = false
+}
+
 onMounted(() => {
-  fetchExperts()
-  fetchInstructors()
+  // Data sudah tersedia dari SSR, hanya setup event listener
   window.addEventListener('resize', updateExpertPerPage, { passive: true })
   window.addEventListener('resize', updateInstructorPerPage, { passive: true })
+  // Update perPage setelah DOM ready
+  nextTick(() => {
+    updateExpertPerPage()
+    updateInstructorPerPage()
+  })
 })
 
 onBeforeUnmount(() => {
@@ -205,6 +247,10 @@ watch(
                 :src="expert.profiles?.avatar_url || '/profile.png'"
                 :alt="expert.profiles?.full_name || 'Pakar'"
                 class="qa-expert-avatar"
+                loading="lazy"
+                width="44"
+                height="44"
+                decoding="async"
                 @error="(e: any) => e.target.src = '/profile.png'"
               >
               <span class="qa-expert-verified" aria-label="Terverifikasi">
@@ -292,6 +338,10 @@ watch(
                 :src="ins.profiles?.avatar_url || '/profile.png'"
                 :alt="ins.profiles?.full_name || 'Penyuluh'"
                 class="qa-expert-avatar"
+                loading="lazy"
+                width="44"
+                height="44"
+                decoding="async"
                 @error="(e: any) => e.target.src = '/profile.png'"
               >
               <span class="qa-expert-verified qa-ins-verified" aria-label="Terverifikasi">

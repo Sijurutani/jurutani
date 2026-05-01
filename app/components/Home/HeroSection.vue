@@ -5,11 +5,21 @@ import type { Database } from '~/types/database.types'
 type HeroData = Database['public']['Tables']['hero_data']['Row']
 
 const supabase = useSupabaseClient()
+
+// ── Helper: Build URL tanpa transform (fallback) ───────────────────────────
+const getRawImageUrl = (bucket: string, path: string): string => {
+  try {
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path)
+    return data.publicUrl
+  } catch { return '' }
+}
+
+// ── Ambil URL gambar — coba WebP transform dulu, fallback ke URL asli ─────────
 const getImageUrl = (imageUrl: string): string | null => {
   if (!imageUrl) return null
   if (imageUrl.startsWith('http')) return imageUrl
-  const { data } = supabase.storage.from('hero-image').getPublicUrl(imageUrl)
-  return data.publicUrl
+  // Selalu coba URL tanpa transform dulu (lebih aman, transform butuh konfigurasi khusus)
+  return getRawImageUrl('hero-image', imageUrl) || null
 }
 
 const { data: heroData, pending: loading, error: fetchErrorObj, refresh: fetchHeroData } = await useAsyncData('hero-data', async () => {
@@ -47,10 +57,9 @@ useHead(() => {
 // --- Carousel Logic ---
 const itemsCount = computed(() => carouselItems.value.length)
 const currentSlide = ref(0)
-const autoplayInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const progressKey = ref(0)
 const isTransitioning = ref(false)
-const progressWidth = ref(0)
-const progressInterval = ref<ReturnType<typeof setInterval> | null>(null)
+const autoplayInterval = ref<ReturnType<typeof setInterval> | null>(null)
 
 // Touch / swipe
 const isSwiping = ref(false)
@@ -109,20 +118,13 @@ const scrollQuickTo = (index: number) => {
   quickDotIndex.value = index
 }
 
-const stopProgress = () => {
-  if (progressInterval.value) {
-    clearInterval(progressInterval.value)
-    progressInterval.value = null
-  }
-}
+// ── Progress bar via CSS animation (GPU compositor) ──────────────────────────
+// Sebelumnya: setInterval(50ms) memodifikasi width CSS = forced reflow setiap 50ms!
+// Sekarang: CSS keyframe berjalan di GPU, tanpa menyentuh main thread
+const stopProgress = () => {} // tidak perlu stop, animasi berhenti sendiri
 
 const startProgress = () => {
-  stopProgress()
-  progressWidth.value = 0
-  const step = 100 / (4500 / 50) // 4.5s total, update every 50ms
-  progressInterval.value = setInterval(() => {
-    progressWidth.value = Math.min(progressWidth.value + step, 100)
-  }, 50)
+  progressKey.value++ // re-mount element = restart CSS animation
 }
 
 const goToSlide = (index: number, resetProgress = true) => {
@@ -218,7 +220,8 @@ const { data: counts } = await useAsyncData('hero-discussion-stats', async () =>
     instructors: instructors.count || 400,
     experts: experts.count || 200
   }
-}, { default: () => ({ profiles: 500, instructors: 400, experts: 200 }) })
+// Cache 1 jam: angka ini tidak berubah tiap detik, tidak perlu re-query setiap render
+}, { default: () => ({ profiles: 500, instructors: 400, experts: 200 }), maxAge: 3600, dedupe: 'defer' })
 
 const statsAnimated = ref(false)
 const statsRef = ref<HTMLElement | null>(null)
@@ -286,6 +289,8 @@ watch(itemsCount, (newLength, oldLength) => {
         <div class="hero-badge">
           <span class="hero-badge__dot" />
           <span class="hero-badge__text">Platform Penyuluhan Digital</span>
+          <!-- Light sweep overlay -->
+          <span class="hero-badge__sweep" aria-hidden="true" />
         </div>
 
         <!-- Heading -->
@@ -441,7 +446,14 @@ watch(itemsCount, (newLength, oldLength) => {
                     class="carousel-slide-full__img"
                     :loading="index === 0 ? undefined : 'lazy'"
                     :fetchpriority="index === 0 ? 'high' : 'auto'"
-                    @error="(e: any) => e.target.style.display = 'none'"
+                    decoding="async"
+                    @error="(e: any) => {
+                      // Fallback: coba URL tanpa transform parameter
+                      const img = e.target as HTMLImageElement
+                      const rawUrl = getRawImageUrl('hero-image', item.image_url || '')
+                      if (rawUrl && img.src !== rawUrl) { img.src = rawUrl }
+                      else { img.style.display = 'none' }
+                    }"
                   >
                   <!-- Fallback gradient -->
                   <div
@@ -504,11 +516,11 @@ watch(itemsCount, (newLength, oldLength) => {
                   :aria-label="`Ke slide ${index + 1}`"
                   @click="goToSlide(index)"
                 >
-                  <!-- Progress bar inside active dot -->
+                  <!-- CSS keyframe animation menggantikan JS setInterval (tidak ada Forced Reflow) -->
                   <span
                     v-if="index === currentSlide"
-                    class="carousel-dot__progress"
-                    :style="{ width: `${progressWidth}%` }"
+                    :key="progressKey"
+                    class="carousel-dot__progress carousel-dot__progress--animate"
                   />
                 </button>
               </div>
@@ -601,6 +613,38 @@ watch(itemsCount, (newLength, oldLength) => {
   margin-bottom: 1.25rem;
   width: fit-content;
   animation: fadeSlideUp 0.5s ease-out both;
+  /* Diperlukan untuk positioning light sweep */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Light sweep (shimmer) — GPU compositor via transform, tidak ada reflow */
+.hero-badge__sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 100%
+  );
+  border-radius: inherit;
+  /* translateX dari -200% (di luar kiri) ke 280% (di luar kanan) */
+  transform: translateX(-200%);
+  animation: badge-sweep 3.5s ease-in-out 1.5s infinite;
+  pointer-events: none;
+  will-change: transform;
+}
+
+@keyframes badge-sweep {
+  0%   { transform: translateX(-200%); opacity: 0; }
+  8%   { opacity: 1; }
+  45%  { transform: translateX(280%); opacity: 1; }
+  46%  { transform: translateX(280%); opacity: 0; }
+  100% { transform: translateX(280%); opacity: 0; }
 }
 
 .hero-badge__dot {
@@ -1117,9 +1161,22 @@ watch(itemsCount, (newLength, oldLength) => {
   top: 0;
   bottom: 0;
   left: 0;
+  right: 0;
   background: #16a34a;
   border-radius: 9999px;
-  transition: width 0.05s linear;
+  /* ✅ GPU compositor: tidak ada forced reflow, animasi berjalan di GPU */
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* CSS keyframe menggantikan JS setInterval sepenuhnya */
+.carousel-dot__progress--animate {
+  animation: hero-dot-progress 4.5s linear forwards;
+}
+
+@keyframes hero-dot-progress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 .carousel-dot:not(.carousel-dot--active):hover {

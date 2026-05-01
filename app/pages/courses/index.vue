@@ -3,10 +3,7 @@ import { watchDebounced } from '@vueuse/core'
 import { Enum } from '~/utils/enum'
 import type { Database } from '~/types/database.types'
 
-useSeoMeta({
-  title: 'Kursus Pertanian',
-  description: 'Kumpulan course pertanian terkurasi dari pakar dan penyuluh JuruTani'
-})
+useSeoOptimized('courses')
 
 type LearningCourse = Database['public']['Tables']['learning_courses']['Row']
 type Category = { id: string; name: string; slug?: string }

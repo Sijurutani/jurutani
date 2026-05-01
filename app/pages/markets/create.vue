@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
-import { formatFileSize } from '~/utils/storage'
 import {
+  formatFileSize,
   uploadMarketFile,
   validateFileType,
   validateFileSize,

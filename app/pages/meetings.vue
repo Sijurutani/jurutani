@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-useSeoOptimized('courses')
+// SEO Optimization di-handle di level child component
 </script>
 
 <template>

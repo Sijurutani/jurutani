@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+useSeoOptimized('tools')
+
 // Active tab state
 const activeTab = ref('benih')
 

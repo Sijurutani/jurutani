@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * SectionHeader - Reusable Section Header Component
- * Clean, elegant header for content sections
- */
-
 interface Props {
   title: string
   subtitle?: string
@@ -17,71 +12,127 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   align: 'center',
-  size: 'md'
-})
-
-const titleSizeClass = computed(() => {
-  switch (props.size) {
-    case 'sm': return 'text-2xl md:text-3xl'
-    case 'lg': return 'text-3xl md:text-5xl'
-    default: return 'text-3xl md:text-4xl'
-  }
-})
-
-const alignClass = computed(() => {
-  switch (props.align) {
-    case 'left': return 'text-left'
-    case 'right': return 'text-right'
-    default: return 'text-center'
-  }
+  size: 'md',
 })
 </script>
 
 <template>
-  <div class="mb-12" :class="alignClass">
+  <div class="sh-wrapper" :class="`sh-wrapper--${align}`">
     <!-- Badge -->
-    <div 
-      v-if="badge"
-      class="inline-flex items-center gap-2 px-3 py-1.5 mb-4 rounded-full bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700"
-    >
-      <UIcon v-if="badge.icon" :name="badge.icon" class="text-green-600 dark:text-green-400 text-sm" />
-      <span class="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide">
-        {{ badge.text }}
-      </span>
+    <div v-if="badge" class="sh-badge" :class="{ 'sh-badge--center': align === 'center' }">
+      <UIcon v-if="badge.icon" :name="badge.icon" class="sh-badge__icon" />
+      <span class="sh-badge__text">{{ badge.text }}</span>
     </div>
 
     <!-- Title -->
-    <h2 
-      class="font-bold text-gray-800 dark:text-white mb-4 relative inline-block"
-      :class="titleSizeClass"
+    <h2
+      class="sh-title"
+      :class="[`sh-title--${size}`, `sh-title--${align}`]"
     >
       {{ title }}
-      
-      <!-- Animated Underline -->
-      <span 
-        v-if="align === 'center'"
-        class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-linear-to-r from-green-500 to-emerald-500 rounded-full"
-      />
-      <span 
-        v-else-if="align === 'left'"
-        class="absolute -bottom-2 left-0 w-16 h-1 bg-linear-to-r from-green-500 to-emerald-500 rounded-full"
-      />
-      <span 
-        v-else-if="align === 'right'"
-        class="absolute -bottom-2 right-0 w-16 h-1 bg-linear-to-r from-green-500 to-emerald-500 rounded-full"
-      />
     </h2>
 
+    <!-- Accent bar -->
+    <div class="sh-bar" :class="`sh-bar--${align}`" aria-hidden="true" />
+
     <!-- Subtitle -->
-    <p 
+    <p
       v-if="subtitle"
-      class="text-base md:text-lg text-gray-600 dark:text-gray-400 max-w-3xl leading-relaxed"
-      :class="{ 'mx-auto': align === 'center' }"
+      class="sh-subtitle"
+      :class="{ 'sh-subtitle--center': align === 'center' }"
     >
       {{ subtitle }}
     </p>
 
-    <!-- Slot for custom content -->
     <slot />
   </div>
 </template>
+
+<style scoped>
+.sh-wrapper {
+  margin-bottom: 0;
+}
+
+.sh-wrapper--center { text-align: center; }
+.sh-wrapper--left   { text-align: left; }
+.sh-wrapper--right  { text-align: right; }
+
+/* Badge */
+.sh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 9999px;
+  background: var(--bg-badge);
+  border: 1px solid var(--border-badge);
+  margin-bottom: 0.875rem;
+  width: fit-content;
+}
+
+.sh-badge--center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sh-badge__icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--text-badge);
+}
+
+.sh-badge__text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-badge);
+}
+
+/* Title */
+.sh-title {
+  font-weight: 800;
+  color: var(--text-base);
+  line-height: 1.2;
+  margin-bottom: 0.625rem;
+}
+
+.sh-title--sm { font-size: 1.375rem; }
+@media (min-width: 768px) { .sh-title--sm { font-size: 1.625rem; } }
+
+.sh-title--md { font-size: 1.625rem; }
+@media (min-width: 768px) { .sh-title--md { font-size: 2rem; } }
+
+.sh-title--lg { font-size: 1.875rem; }
+@media (min-width: 768px) { .sh-title--lg { font-size: 2.5rem; } }
+
+.sh-title--center { max-width: 42rem; margin-left: auto; margin-right: auto; }
+.sh-title--left   {}
+.sh-title--right  {}
+
+/* Accent bar */
+.sh-bar {
+  width: 2.5rem;
+  height: 3px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #16a34a, #34d399);
+  margin-bottom: 0.875rem;
+}
+
+.sh-bar--center { margin-left: auto; margin-right: auto; }
+.sh-bar--left   {}
+.sh-bar--right  { margin-left: auto; }
+
+/* Subtitle */
+.sh-subtitle {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--text-muted);
+  max-width: 38rem;
+}
+
+.sh-subtitle--center {
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>

@@ -5,6 +5,8 @@ import type { Database } from '~/types/database.types'
 const authStore = useAuthStore()
 const supabase = useSupabaseClient<Database>()
 
+useSeoOptimized('profile')
+
 const userData = computed(() => authStore.profile)
 const loading = computed(() => authStore.profileLoading)
 const error = computed(() => authStore.error)

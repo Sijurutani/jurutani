@@ -1,7 +1,7 @@
 <!-- pages/auth/register.vue -->
 <script setup lang="ts">
 // SEO Optimization
-useSeoAuth('register')
+useSeoOptimized('register')
 
 definePageMeta({
   layout: 'auth',

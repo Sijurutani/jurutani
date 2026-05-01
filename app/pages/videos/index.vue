@@ -7,10 +7,7 @@ definePageMeta({
   layout: 'default'
 })
 
-useSeoMeta({
-  title: 'Video Edukasi',
-  description: 'Koleksi video pembelajaran pertanian, tutorial praktis, teknik modern, dan tips ahli dari JuruTani'
-})
+useSeoOptimized('videos')
 
 type VideoRow = Database['public']['Tables']['videos']['Row']
 type CategoryRow = Database['public']['Tables']['category']['Row']

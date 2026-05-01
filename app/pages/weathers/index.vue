@@ -1,12 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'default' })
 
-useSeoMeta({
-  title: 'Cuaca Pertanian | JuruTani',
-  description: 'Informasi cuaca pertanian terkini, ramalan 5 hari, grafik 24 jam, dan rekomendasi kondisi bertani.',
-  ogTitle: 'Cuaca Pertanian | JuruTani',
-  ogType: 'website',
-})
+useSeoOptimized('weathers')
 
 // ─── State ─────────────────────────────────────────────────────
 const weatherData       = ref<any>(null)

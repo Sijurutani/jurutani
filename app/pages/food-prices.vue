@@ -1,6 +1,5 @@
 <script lang="ts" setup>
-// SEO Optimization
-useSeoOptimized('food-prices')
+// SEO Optimization di-handle di level child component
 </script>
 
 <template>

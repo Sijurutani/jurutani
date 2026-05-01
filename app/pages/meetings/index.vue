@@ -4,10 +4,7 @@ import { Enum } from '~/utils/enum'
 import type { Database } from '~/types/database.types'
 import { parseEmbeds } from '~/utils/embed'
 
-useSeoMeta({
-  title: 'Meetings & Webinar',
-  description: 'Jadwal kegiatan online dan offline seputar pertanian dari JuruTani'
-})
+useSeoOptimized('meetings')
 
 type MeetingRow = Database['public']['Tables']['meeting_schedules']['Row']
 

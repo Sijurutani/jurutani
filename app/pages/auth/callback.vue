@@ -7,6 +7,8 @@ definePageMeta({
   ssr: false,
 })
 
+useSeoOptimized('callback')
+
 const authStore = useAuthStore()
 const loading = ref(true)
 const statusMessage = ref('Memproses login...')
