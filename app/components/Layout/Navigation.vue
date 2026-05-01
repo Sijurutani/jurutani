@@ -116,7 +116,7 @@ const handleImageError = (event: Event) => {
             :aria-label="`${siteMeta.title} - Kembali ke beranda`"
           >
             <NuxtImg
-              src="/Logo02.png"
+              src="/LOGO02.png"
               :alt="`Logo ${siteMeta.title}`"
               class="h-8 w-auto logo-img"
               loading="eager"
