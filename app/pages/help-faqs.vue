@@ -66,7 +66,7 @@ const scrollToFaqs = () => document.getElementById('faq-section')?.scrollIntoVie
             v-for="(card, i) in quickHelpCards"
             :key="i"
             :to="card.link ?? '#'"
-            class="hf-quick-card app-reveal"
+            class="hf-quick-card app-reveal bg-white dark:bg-gray-900/60"
             :style="`animation-delay:${i * 60}ms`"
           >
             <div class="hf-quick-card__icon">
@@ -124,7 +124,7 @@ const scrollToFaqs = () => document.getElementById('faq-section')?.scrollIntoVie
           <div
             v-for="(item, index) in activeFaqs"
             :key="`${activeCategory}-${index}`"
-            class="hf-faq-item"
+            class="hf-faq-item bg-white dark:bg-gray-900/60"
             :class="{ 'hf-faq-item--open': isOpen(index) }"
           >
             <button class="hf-faq-item__btn" :aria-expanded="isOpen(index)" @click="toggleItem(index)">
@@ -225,13 +225,11 @@ const scrollToFaqs = () => document.getElementById('faq-section')?.scrollIntoVie
   flex-direction: column;
   padding: 1.5rem;
   border-radius: 1.125rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.12);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   text-decoration: none;
   transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
 }
-:global(.dark) .hf-quick-card { background: rgba(17,24,39,0.6); }
 .hf-quick-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(22,163,74,0.18); border-color: rgba(22,163,74,0.3); }
 
 .hf-quick-card__icon {
@@ -275,12 +273,10 @@ const scrollToFaqs = () => document.getElementById('faq-section')?.scrollIntoVie
 
 .hf-faq-item {
   border-radius: 0.875rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.1);
   overflow: hidden;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-:global(.dark) .hf-faq-item { background: rgba(17,24,39,0.6); }
 .hf-faq-item--open { border-color: rgba(22,163,74,0.3); box-shadow: 0 4px 16px rgba(22,163,74,0.1); }
 .hf-faq-item:not(.hf-faq-item--open):hover { border-color: rgba(22,163,74,0.2); }
 

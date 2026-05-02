@@ -73,14 +73,14 @@ useSeoOptimized('about')
       <section class="ab-section">
         <CommonSectionHeader title="Visi & Misi" subtitle="Arah dan komitmen JuruTani dalam memajukan pertanian Indonesia" align="center" class="mb-10" />
         <div class="ab-vm-grid">
-          <div class="ab-vm-card ab-vm-card--visi app-reveal">
+          <div class="ab-vm-card ab-vm-card--visi app-reveal bg-white dark:bg-gray-900/60">
             <div class="ab-vm-card__head">
               <div class="ab-vm-icon"><UIcon :name="visionMission.vision.icon" class="w-5 h-5 text-white" /></div>
               <h3 class="ab-vm-card__title">{{ visionMission.vision.title }}</h3>
             </div>
             <p class="ab-body">{{ visionMission.vision.content }}</p>
           </div>
-          <div class="ab-vm-card app-reveal app-reveal--2">
+          <div class="ab-vm-card app-reveal app-reveal--2 bg-white dark:bg-gray-900/60">
             <div class="ab-vm-card__head">
               <div class="ab-vm-icon ab-vm-icon--em"><UIcon :name="visionMission.mission.icon" class="w-5 h-5 text-white" /></div>
               <h3 class="ab-vm-card__title">{{ visionMission.mission.title }}</h3>
@@ -102,7 +102,7 @@ useSeoOptimized('about')
           <div
             v-for="f in platformAdvantages"
             :key="f.title"
-            class="ab-adv-card app-reveal"
+            class="ab-adv-card app-reveal bg-white dark:bg-gray-900/60"
           >
             <div class="ab-adv-icon">
               <UIcon :name="f.icon" class="w-5 h-5 text-white" />
@@ -135,7 +135,7 @@ useSeoOptimized('about')
 
       <!-- ── Institusi ── -->
       <section class="ab-section">
-        <div class="ab-inst-card app-reveal">
+        <div class="ab-inst-card app-reveal bg-white dark:bg-gray-900/60">
           <div class="ab-inst-card__head">
             <NuxtImg src="/logo/sponsor.png" alt="Polbangtan Yogyakarta Magelang" class="ab-inst-logo" />
             <div>
@@ -340,9 +340,7 @@ useSeoOptimized('about')
   padding: 1.75rem;
   border-radius: 1.25rem;
   border: 1px solid rgba(22,163,74,0.15);
-  background: #fff;
 }
-:global(.dark) .ab-vm-card { background: rgba(17,24,39,0.6); }
 
 .ab-vm-card__head {
   display: flex;
@@ -400,12 +398,10 @@ useSeoOptimized('about')
 .ab-adv-card {
   padding: 1.5rem;
   border-radius: 1rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.1);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
 }
-:global(.dark) .ab-adv-card { background: rgba(17,24,39,0.6); }
 .ab-adv-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(22,163,74,0.15); border-color: rgba(22,163,74,0.3); }
 
 .ab-adv-icon {
@@ -503,11 +499,9 @@ useSeoOptimized('about')
 /* institusi */
 .ab-inst-card {
   border-radius: 1.25rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.15);
   overflow: hidden;
 }
-:global(.dark) .ab-inst-card { background: rgba(17,24,39,0.6); }
 
 .ab-inst-card__head {
   display: flex;

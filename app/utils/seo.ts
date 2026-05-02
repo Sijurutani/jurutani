@@ -168,9 +168,9 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
 const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   home: {
     // Intent: cari platform penyuluhan digital pertanian / peternakan / perikanan
-    title: 'JuruTani — Platform Penyuluhan Pertanian, Peternakan & Perikanan Digital Indonesia',
+    title: 'Platform Penyuluhan Pertanian Digital Indonesia',
     description:
-      'Platform penyuluhan digital terpadu untuk petani, peternak, dan nelayan Indonesia. Edukasi, konsultasi ahli, harga komoditas real-time, dan komunitas agribisnis dari Polbangtan Yogyakarta-Magelang.',
+      'Platform penyuluhan digital petani Indonesia. Dapatkan edukasi gratis, konsultasi penyuluh ahli, dan info harga komoditas terkini dari Polbangtan.',
     keywords: [
       'platform penyuluhan pertanian digital',
       'penyuluhan peternakan perikanan online',
@@ -189,9 +189,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   news: {
     // Intent: cari berita agribisnis terkini, harga komoditas, kebijakan pangan
-    title: 'Berita Pertanian, Peternakan & Perikanan Terkini — JuruTani',
+    title: 'Berita Pertanian, Peternakan & Perikanan Terkini',
     description:
-      'Update berita agribisnis, harga komoditas, kebijakan pangan, dan inovasi pertanian terbaru untuk petani, peternak, dan nelayan Indonesia. Dipilih dan dikurasi oleh tim ahli JuruTani.',
+      'Update berita agribisnis, info harga komoditas & inovasi pertanian terbaru. Informasi dikurasi ahli JuruTani untuk majukan petani & peternak Indonesia.',
     keywords: [
       'berita pertanian terkini hari ini',
       'berita peternakan indonesia terbaru',
@@ -210,9 +210,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   courses: {
     // Intent: cari pelatihan budidaya, cara ternak, cara ikan, kursus pertanian online gratis
-    title: 'Kursus & Pelatihan Budidaya, Peternakan, Perikanan Online Gratis — JuruTani',
+    title: 'Kursus & Pelatihan Pertanian, Peternakan Online',
     description:
-      'Belajar budidaya tanaman, beternak, dan budidaya ikan gratis bersama penyuluh ahli. Kursus pertanian organik, cara ternak ayam sapi kambing, budidaya lele nila, dan agribisnis modern.',
+      'Belajar budidaya tanaman, ternak & perikanan gratis bersama ahlinya. Ikuti kursus pertanian organik dan panduan agribisnis modern khusus untuk pemula.',
     keywords: [
       'kursus pertanian online gratis',
       'pelatihan budidaya tanaman padi sayur',
@@ -231,9 +231,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   discussions: {
     // Intent: forum tanya jawab masalah tanaman/ternak, konsultasi penyuluh gratis
-    title: 'Forum Diskusi & Konsultasi Petani, Peternak, Nelayan — JuruTani',
+    title: 'Forum Konsultasi Petani, Peternak & Nelayan',
     description:
-      'Forum tanya jawab gratis seputar masalah budidaya, penyakit tanaman, penyakit ternak, dan tips pertanian. Konsultasi langsung dengan penyuluh ahli dan sesama petani berpengalaman.',
+      'Forum diskusi gratis seputar masalah budidaya, penyakit tanaman & ternak. Tanya langsung kendala agribisnis Anda dengan penyuluh ahli JuruTani di sini.',
     keywords: [
       'forum tanya jawab pertanian',
       'konsultasi pertanian penyuluh gratis',
@@ -252,9 +252,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   educations: {
     // Intent: cari panduan cara tanam, cara ternak, artikel pertanian organik
-    title: 'Artikel & Panduan Budidaya Pertanian, Peternakan, Perikanan — JuruTani',
+    title: 'Panduan Budidaya Pertanian, Peternakan & Perikanan',
     description:
-      'Panduan lengkap cara budidaya tanaman pangan & hortikultura, teknik beternak, dan pembudidayaan ikan. Tips pertanian organik, manajemen lahan, penanganan hama penyakit, dan peningkatan hasil panen.',
+      'Panduan budidaya tanaman pangan, peternakan & perikanan. Temukan ragam tips pertanian organik, solusi hama penyakit, dan strategi tingkatkan hasil panen.',
     keywords: [
       'panduan budidaya tanaman pangan',
       'cara budidaya padi jagung kedelai',
@@ -273,9 +273,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   markets: {
     // Intent: cari tempat jual hasil panen online, beli bibit/saprotan, marketplace tani
-    title: 'Marketplace Pertanian — Jual Beli Hasil Panen, Bibit & Saprotan Online',
+    title: 'Marketplace Pertanian — Jual Beli Hasil Panen & Saprotan',
     description:
-      'Marketplace online khusus pertanian untuk jual beli hasil panen, bibit unggul, benih ikan, pakan ternak, pupuk organik, obat-obatan tanaman, dan alat pertanian langsung dari produsen terpercaya.',
+      'Jual beli hasil panen, bibit unggul, pakan ternak & alat pertanian online. Transaksi aman langsung dari produsen terpercaya di marketplace JuruTani.',
     keywords: [
       'marketplace pertanian indonesia',
       'jual hasil panen online langsung',
@@ -294,9 +294,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   tools: {
     // Intent: kalkulator pupuk, jadwal tanam, kalkulator pakan ternak, analisis usaha tani
-    title: 'Tools & Kalkulator Pertanian, Peternakan, Perikanan Online — JuruTani',
+    title: 'Tools & Kalkulator Pertanian Online Gratis',
     description:
-      'Tools dan kalkulator online gratis untuk petani dan peternak. Hitung kebutuhan pupuk, dosis obat, pakan ternak, estimasi biaya produksi, jadwal tanam musiman, dan analisis kelayakan usaha tani.',
+      'Kalkulator agribisnis online gratis untuk petani & peternak. Hitung praktis kebutuhan pupuk, pakan ternak, jadwal tanam, serta analisis biaya usaha tani.',
     keywords: [
       'kalkulator kebutuhan pupuk otomatis',
       'kalkulator pakan ternak online',
@@ -315,9 +315,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   'food-prices': {
     // Intent: cari harga pangan hari ini, harga komoditas, harga beras cabai dll
-    title: 'Harga Pangan & Komoditas Pertanian Hari Ini — Yogyakarta, DIY & Jawa Tengah',
+    title: 'Harga Pangan & Komoditas Hari Ini — Yogyakarta & DIY',
     description:
-      'Pantau harga pangan dan komoditas pertanian terkini di Yogyakarta, DIY, dan Jawa Tengah. Update harga beras, cabai, bawang, daging, ikan, sayuran, dan hasil ternak dari pasar-pasar lokal.',
+      'Pantau harga pangan & komoditas pertanian terkini di Yogyakarta & DIY. Dapatkan update harga beras, cabai, daging, dan ikan harian dari pasar lokal.',
     keywords: [
       'harga pangan hari ini yogyakarta',
       'harga komoditas pertanian terbaru',
@@ -336,9 +336,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   videos: {
     // Intent: video tutorial cara tanam, cara ternak, cara panen dari penyuluh
-    title: 'Video Tutorial Budidaya, Peternakan & Perikanan dari Penyuluh Ahli — JuruTani',
+    title: 'Video Tutorial Pertanian & Peternakan dari Penyuluh Ahli',
     description:
-      'Tonton video tutorial pertanian, peternakan, dan perikanan dari penyuluh dan ahli agribisnis berpengalaman. Pelajari teknik budidaya, beternak, pemeliharaan ikan, dan tips panen secara visual.',
+      'Tonton video tutorial pertanian, peternakan & perikanan dari ahlinya. Belajar mudah teknik budidaya, merawat ternak, dan strategi panen yang sukses.',
     keywords: [
       'video tutorial pertanian indonesia',
       'video cara budidaya tanaman sayur',
@@ -357,9 +357,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   chat: {
     // Intent: konsultasi real-time dengan penyuluh, chat petani langsung
-    title: 'Konsultasi & Chat Langsung dengan Penyuluh Pertanian — JuruTani',
+    title: 'Chat Langsung dengan Penyuluh Pertanian',
     description:
-      'Chat langsung dengan penyuluh pertanian, dokter hewan, dan ahli perikanan di JuruTani. Dapatkan jawaban cepat untuk masalah budidaya, penyakit tanaman & ternak, dan pertanyaan agribisnis Anda.',
+      'Konsultasi chat dengan penyuluh pertanian, dokter hewan & pakar perikanan. Dapatkan solusi cepat untuk atasi penyakit tanaman dan masalah hewan ternak.',
     keywords: [
       'konsultasi penyuluh pertanian online',
       'chat petani peternak nelayan',
@@ -375,9 +375,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   meetings: {
     // Intent: cari webinar pertanian, jadwal pelatihan online, seminar agribisnis
-    title: 'Jadwal Webinar & Pertemuan Penyuluhan Pertanian — JuruTani',
+    title: 'Jadwal Webinar & Pertemuan Penyuluhan Pertanian',
     description:
-      'Ikuti webinar, pelatihan online, dan pertemuan penyuluhan pertanian, peternakan, dan perikanan bersama pakar dari Polbangtan. Daftar gratis dan tingkatkan pengetahuan agribisnis Anda.',
+      'Ikuti ragam webinar & pelatihan penyuluhan pertanian rutin bersama pakar Polbangtan. Daftar sekarang secara gratis guna meningkatkan wawasan agribisnis.',
     keywords: [
       'webinar pertanian peternakan online',
       'jadwal pelatihan penyuluhan pertanian',
@@ -393,9 +393,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
 
   weathers: {
     // Intent: cari info cuaca untuk bertani, prakiraan cuaca tani, rekomendasi jadwal tanam
-    title: 'Informasi Cuaca Pertanian & Prakiraan Hujan untuk Petani — JuruTani',
+    title: 'Cuaca Pertanian & Prakiraan Hujan untuk Petani',
     description:
-      'Pantau cuaca pertanian terkini, prakiraan hujan 5 hari, dan rekomendasi kondisi ideal untuk tanam, semprot, dan panen. Data cuaca akurat khusus untuk kebutuhan petani dan peternak Indonesia.',
+      'Pantau cuaca pertanian harian & prakiraan hujan akurat. Ketahui kondisi paling ideal untuk aktivitas tanam, semprot pupuk, serta panen di wilayah Anda.',
     keywords: [
       'cuaca pertanian hari ini',
       'prakiraan cuaca untuk petani',
@@ -413,9 +413,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   // ─── Static/Info Pages ──────────────────────────────────────────────────────
 
   about: {
-    title: 'Tentang JuruTani — Platform Penyuluhan Digital Polbangtan Yogyakarta-Magelang',
+    title: 'Tentang JuruTani — Platform Penyuluhan Digital Polbangtan',
     description:
-      'JuruTani adalah platform penyuluhan digital resmi Polbangtan Yogyakarta-Magelang. Mendukung petani, peternak, dan nelayan Indonesia melalui edukasi, teknologi, dan inovasi agribisnis modern.',
+      'JuruTani adalah platform penyuluhan digital resmi bentukan Polbangtan. Kami hadir mendukung petani Indonesia lewat edukasi dan inovasi agribisnis terpadu.',
     keywords: [
       'tentang JuruTani platform pertanian',
       'profil polbangtan yogyakarta magelang',
@@ -429,9 +429,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   contact: {
-    title: 'Hubungi Tim JuruTani — Layanan & Kemitraan Penyuluhan Pertanian',
+    title: 'Hubungi JuruTani — Layanan & Kemitraan Agribisnis',
     description:
-      'Hubungi tim JuruTani untuk pertanyaan layanan penyuluhan pertanian, peternakan, perikanan, kemitraan agribisnis, atau laporan teknis. Tim kami siap membantu petani dan peternak Indonesia.',
+      'Hubungi kontak JuruTani untuk layanan penyuluhan, penawaran kemitraan agribisnis, hingga bantuan kendala teknis. Tim kami siap merespon pertanyaan Anda.',
     keywords: [
       'kontak JuruTani',
       'hubungi penyuluh pertanian',
@@ -444,9 +444,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   help: {
-    title: 'Pusat Bantuan & Panduan JuruTani',
+    title: 'Pusat Bantuan & Panduan Penggunaan',
     description:
-      'Panduan lengkap cara menggunakan platform JuruTani. FAQ, tutorial fitur, dan bantuan teknis untuk petani, peternak, dan nelayan yang terdaftar di platform penyuluhan digital kami.',
+      'Pusat bantuan platform JuruTani. Temukan kumpulan FAQ, panduan tutorial fitur, serta kontak bantuan teknis bagi seluruh pengguna layanan penyuluhan kami.',
     keywords: [
       'cara menggunakan JuruTani',
       'panduan platform penyuluhan pertanian',
@@ -459,9 +459,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   terms: {
-    title: 'Syarat & Ketentuan Layanan — JuruTani',
+    title: 'Syarat & Ketentuan Layanan',
     description:
-      'Syarat dan ketentuan penggunaan platform penyuluhan pertanian JuruTani. Perjanjian pengguna, kebijakan layanan, dan hak serta kewajiban pengguna platform agribisnis digital.',
+      'Baca syarat & ketentuan layanan platform JuruTani. Ketahui dengan seksama berbagai perjanjian pengguna, aturan layanan, serta hak kewajiban Anda di sini.',
     keywords: ['syarat ketentuan JuruTani', 'terms of service platform pertanian'],
     ogType: 'website',
     ogImageComponent: 'Home',
@@ -470,7 +470,7 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   privacy: {
     title: 'Kebijakan Privasi — Perlindungan Data Pengguna JuruTani',
     description:
-      'Kebijakan privasi JuruTani menjelaskan cara kami mengumpulkan, menyimpan, dan melindungi data pribadi petani, peternak, dan nelayan yang terdaftar di platform penyuluhan digital kami.',
+      'Kebijakan privasi JuruTani menjelaskan cara komprehensif kami dalam mengumpulkan, memproses, dan senantiasa melindungi data pribadi pengguna platform ini.',
     keywords: ['kebijakan privasi JuruTani', 'perlindungan data petani', 'privacy policy agribisnis'],
     ogType: 'website',
     ogImageComponent: 'Home',
@@ -479,7 +479,7 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   // ─── Private Pages (noindex) ────────────────────────────────────────────────
 
   security: {
-    title: 'Keamanan Akun — JuruTani',
+    title: 'Keamanan Akun',
     description:
       'Kelola keamanan akun JuruTani Anda. Atur verifikasi dua langkah, ganti kata sandi, dan lindungi akses ke layanan penyuluhan digital Anda.',
     keywords: [],
@@ -489,7 +489,7 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   profile: {
-    title: 'Profil Saya — JuruTani',
+    title: 'Profil Saya',
     description:
       'Kelola profil petani, peternak, atau nelayan Anda di JuruTani. Edit informasi pribadi, atur preferensi komoditas, dan perbarui data usaha tani.',
     keywords: [],
@@ -499,8 +499,9 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   history: {
-    title: 'Riwayat Aktivitas — JuruTani',
-    description: 'Lihat riwayat diskusi, pelatihan, transaksi, dan semua interaksi Anda di platform penyuluhan JuruTani.',
+    title: 'Riwayat Aktivitas',
+    description:
+      'Lihat ringkasan riwayat interaksi, aktivitas kursus, konsultasi & transaksi Anda. Pantau terus seluruh perjalanan Anda bersama platform digital JuruTani.',
     keywords: [],
     ogType: 'website',
     robots: 'noindex, follow',
@@ -508,7 +509,7 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   },
 
   setting: {
-    title: 'Pengaturan Akun — JuruTani',
+    title: 'Pengaturan Akun',
     description:
       'Atur preferensi komoditas, notifikasi harga pangan, dan pengaturan akun penyuluhan JuruTani sesuai kebutuhan usaha tani Anda.',
     keywords: [],
@@ -523,43 +524,47 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
   login: {
     title: 'Masuk ke JuruTani',
     description:
-      'Masuk ke akun JuruTani untuk mengakses layanan penyuluhan pertanian, peternakan, dan perikanan digital Indonesia.',
+      'Akses akun JuruTani untuk menikmati semua fasilitas penyuluhan digital kami. Mari bertumbuh bersama komunitas petani & peternak di seluruh Indonesia.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',
   },
   register: {
-    title: 'Daftar Gratis — JuruTani',
+    title: 'Daftar Gratis',
     description:
-      'Buat akun JuruTani gratis dan bergabung dengan komunitas petani, peternak, dan nelayan digital Indonesia.',
+      'Buat akun JuruTani secara gratis dan jadilah bagian dari komunitas tani digital. Nikmati ragam akses edukasi, fitur konsultasi ahli, dan info komoditas.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',
   },
   'forgot-password': {
-    title: 'Lupa Kata Sandi — JuruTani',
-    description: 'Masukkan email Anda untuk menerima tautan pemulihan kata sandi akun JuruTani.',
+    title: 'Lupa Kata Sandi',
+    description:
+      'Masukkan alamat email Anda untuk segera menerima panduan pemulihan kata sandi. Dapatkan kembali akses penuh ke fasilitas penyuluhan agribisnis JuruTani.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',
   },
   'reset-password': {
-    title: 'Buat Kata Sandi Baru — JuruTani',
-    description: 'Buat kata sandi baru yang kuat untuk mengamankan kembali akun JuruTani Anda.',
+    title: 'Buat Kata Sandi Baru',
+    description:
+      'Buat kombinasi kata sandi baru yang kuat guna amankan kembali akun JuruTani Anda. Pastikan kerahasiaan data demi kelancaran memakai layanan penyuluhan.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',
   },
   'confirm-email': {
-    title: 'Verifikasi Email — JuruTani',
-    description: 'Periksa email Anda dan klik tautan verifikasi untuk mengaktifkan akun JuruTani.',
+    title: 'Verifikasi Email',
+    description:
+      'Periksa inbox email Anda dan klik tautan verifikasi yang baru kami kirim. Langkah validasi ini amat diperlukan guna mengaktifkan akun platform JuruTani.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',
   },
   callback: {
-    title: 'Memproses — JuruTani',
-    description: '',
+    title: 'Memproses',
+    description:
+      'Sistem JuruTani sedang memproses autentikasi akun Anda secara aman. Mohon tunggu beberapa saat selagi kami menyiapkan akses masuk ke beranda platform.',
     keywords: [],
     robots: 'noindex, nofollow',
     ogImageComponent: 'Home',

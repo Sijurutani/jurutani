@@ -62,7 +62,7 @@ const socialLinks = [
             :key="m.title"
             :to="m.link"
             :target="m.link?.startsWith('http') ? '_blank' : undefined"
-            class="cu-method"
+            class="cu-method bg-white dark:bg-gray-900/60"
           >
             <div class="cu-method__icon">
               <UIcon :name="m.icon" class="w-6 h-6" />
@@ -84,7 +84,7 @@ const socialLinks = [
         <div class="cu-form-grid">
           <!-- Form Panel -->
           <div class="cu-form-panel">
-            <div class="cu-form-panel__inner">
+            <div class="cu-form-panel__inner bg-white dark:bg-gray-900/80">
               <Transition name="cu-fade" mode="out-in">
                 <div v-if="isSubmitted" class="cu-success">
                   <div class="cu-success__icon">
@@ -135,7 +135,7 @@ const socialLinks = [
           <!-- Sidebar -->
           <div class="cu-sidebar">
             <!-- Office info -->
-            <div class="cu-info-card">
+            <div class="cu-info-card bg-white dark:bg-gray-900/60">
               <h3 class="cu-info-card__title">
                 <UIcon name="i-lucide-building-2" class="w-4 h-4" style="color:#16a34a" />
                 Informasi Kantor
@@ -161,7 +161,7 @@ const socialLinks = [
             </div>
 
             <!-- Map -->
-            <div class="cu-map-card">
+            <div class="cu-map-card bg-white dark:bg-gray-900/60">
               <div class="cu-map-card__header">
                 <div>
                   <p class="cu-map-card__title">Peta Lokasi</p>
@@ -184,7 +184,7 @@ const socialLinks = [
             </div>
 
             <!-- Social -->
-            <div class="cu-social-card">
+            <div class="cu-social-card bg-white dark:bg-gray-900/60">
               <h3 class="cu-info-card__title">
                 <UIcon name="i-lucide-share-2" class="w-4 h-4" style="color:#16a34a" />
                 Media Sosial
@@ -255,14 +255,12 @@ const socialLinks = [
   position: relative;
   padding: 1.75rem;
   border-radius: 1.25rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.12);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   text-decoration: none;
   transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
   overflow: hidden;
 }
-:global(.dark) .cu-method { background: rgba(17,24,39,0.6); }
 .cu-method:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(22,163,74,0.18); border-color: rgba(22,163,74,0.3); }
 
 .cu-method__icon {
@@ -336,12 +334,10 @@ const socialLinks = [
 .cu-form-panel__inner {
   position: relative;
   z-index: 1;
-  background: #fff;
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }
-:global(.dark) .cu-form-panel__inner { background: rgba(17,24,39,0.8); }
 
 /* form */
 .cu-form { display: flex; flex-direction: column; gap: 1rem; }
@@ -388,12 +384,9 @@ const socialLinks = [
 .cu-info-card, .cu-social-card {
   padding: 1.5rem;
   border-radius: 1.25rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.12);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-:global(.dark) .cu-info-card,
-:global(.dark) .cu-social-card { background: rgba(17,24,39,0.6); }
 
 .cu-info-card__title {
   display: flex;
@@ -434,12 +427,10 @@ const socialLinks = [
 
 .cu-map-card {
   border-radius: 1.25rem;
-  background: #fff;
   border: 1px solid rgba(22,163,74,0.12);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-:global(.dark) .cu-map-card { background: rgba(17,24,39,0.6); }
 
 .cu-map-card__header {
   display: flex;
