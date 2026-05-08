@@ -1,56 +1,37 @@
 <script setup lang="ts">
   const colorMode = useColorMode()
 
-  const modes = ['light', 'dark'] as const
-
-  const nextMode = () => {
-    const index = modes.indexOf(colorMode.preference as any)
-    colorMode.preference = modes[(index + 1) % modes.length]
-  }
-
-  const isDark = computed(() => colorMode.value === 'dark')
+  const isDark = computed({
+    get() {
+      return colorMode.value === 'dark'
+    },
+    set() {
+      colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+    }
+  })
 </script>
 
 <template>
   <ClientOnly>
-    <UButton
-      variant="ghost"
-      size="sm"
+    <button
       aria-label="Ganti tema warna"
-      class="!rounded-xl text-green-700 dark:text-green-300 hover:bg-green-100/50 dark:hover:bg-green-700/30 transition-all"
-      @click="nextMode"
+      class="relative flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-300 bg-white/40 hover:bg-white/60 backdrop-blur-md border border-white/60 shadow-sm overflow-hidden text-emerald-700"
+      @click="isDark = !isDark"
     >
-      <Transition name="slide" mode="out-in">
-        <UIcon
-          :key="colorMode.preference"
-          :name="isDark ? 'i-lucide-sun' : 'i-lucide-moon'"
-          class="text-2xl"
-        />
-      </Transition>
-    </UButton>
+      <UIcon
+        name="i-lucide-sun"
+        class="absolute text-xl transition-all duration-500 transform"
+        :class="isDark ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100'"
+      />
+      <UIcon
+        name="i-lucide-moon"
+        class="absolute text-xl transition-all duration-500 transform"
+        :class="isDark ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50'"
+      />
+    </button>
 
     <template #fallback>
-      <div class="size-8" />
+      <div class="w-10 h-10" />
     </template>
   </ClientOnly>
 </template>
-
-<style scoped>
-  .slide-enter-active,
-  .slide-leave-active {
-    transition: transform 0.15s ease;
-  }
-
-  .slide-enter-from {
-    transform: translateY(-100%);
-  }
-
-  .slide-enter-to,
-  .slide-leave-from {
-    transform: translateY(0);
-  }
-
-  .slide-leave-to {
-    transform: translateY(100%);
-  }
-</style>
