@@ -17,6 +17,8 @@ jobs:
           script: |
             cd /var/www/jurutani.com
             git pull origin main
+            rm -rf node_modules .nuxt .output pnpm-lock.yaml
+            pnpm store prune
             pnpm install
             pnpm build
             pm2 restart jurutani

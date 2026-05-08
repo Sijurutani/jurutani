@@ -392,6 +392,12 @@ export const useAuthStore = defineStore('auth', () => {
     avatarVersion.value = Math.floor(Date.now() / (5 * 60 * 1000))
   }
 
+  const init = async () => {
+    if (user.value && !profile.value) {
+      await fetchProfile(user.value.sub)
+    }
+  }
+
   // Otomatis fetch profil saat user login / ganti user
   watch(user, async (newUser) => {
     if (newUser && !profile.value) {
@@ -433,5 +439,6 @@ export const useAuthStore = defineStore('auth', () => {
     updateProfile,
     uploadAvatar,
     refreshAvatarCache,
+    init,
   }
 })
