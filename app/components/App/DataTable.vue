@@ -1,43 +1,43 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
-/**
- * Reusable Data Table Component
- * Menggunakan UTable dari Nuxt UI dengan fitur responsive dan customizable
- */
+  /**
+   * Reusable Data Table Component
+   * Menggunakan UTable dari Nuxt UI dengan fitur responsive dan customizable
+   */
 
-interface Column {
-  key: string
-  label: string
-  sortable?: boolean
-  class?: string
-}
+  interface Column {
+    key: string
+    label: string
+    sortable?: boolean
+    class?: string
+  }
 
-interface Props {
-  data: T[]
-  columns: Column[]
-  loading?: boolean
-  emptyText?: string
-  searchPlaceholder?: string
-  showSearch?: boolean
-  searchValue?: string
-}
+  interface Props {
+    data: T[]
+    columns: Column[]
+    loading?: boolean
+    emptyText?: string
+    searchPlaceholder?: string
+    showSearch?: boolean
+    searchValue?: string
+  }
 
-const props = withDefaults(defineProps<Props>(), {
-  loading: false,
-  emptyText: 'Tidak ada data',
-  searchPlaceholder: 'Cari...',
-  showSearch: false,
-  searchValue: ''
-})
+  const props = withDefaults(defineProps<Props>(), {
+    loading: false,
+    emptyText: 'Tidak ada data',
+    searchPlaceholder: 'Cari...',
+    showSearch: false,
+    searchValue: '',
+  })
 
-const emit = defineEmits<{
-  'update:search': [value: string]
-  'row-click': [row: T]
-}>()
+  const emit = defineEmits<{
+    'update:search': [value: string]
+    'row-click': [row: T]
+  }>()
 
-const search = computed({
-  get: () => props.searchValue,
-  set: (value: string) => emit('update:search', value)
-})
+  const search = computed({
+    get: () => props.searchValue,
+    set: (value: string) => emit('update:search', value),
+  })
 </script>
 
 <template>
@@ -47,11 +47,11 @@ const search = computed({
       <UInput
         v-model="search"
         :placeholder="searchPlaceholder"
-        icon="i-heroicons-magnifying-glass"
+        icon="i-lucide-search"
         size="lg"
-        :ui="{ 
+        :ui="{
           icon: { trailing: { pointer: '' } },
-          base: 'w-full'
+          base: 'w-full',
         }"
       >
         <template #trailing>
@@ -59,7 +59,7 @@ const search = computed({
             v-if="search"
             color="neutral"
             variant="link"
-            icon="i-heroicons-x-mark-20-solid"
+            icon="i-lucide-x"
             :padded="false"
             @click="search = ''"
           />
@@ -68,14 +68,16 @@ const search = computed({
     </div>
 
     <!-- Table -->
-    <div class="overflow-x-auto border border-gray-200 dark:border-gray-800 rounded-lg">
+    <div
+      class="overflow-x-auto border border-gray-200 dark:border-gray-800 rounded-lg"
+    >
       <UTable
         :rows="data"
         :columns="columns"
         :loading="loading"
-        :empty-state="{ 
-          icon: 'i-heroicons-circle-stack-20-solid', 
-          label: emptyText 
+        :empty-state="{
+          icon: 'i-lucide-database',
+          label: emptyText,
         }"
         :ui="{
           wrapper: 'rounded-lg',
@@ -84,22 +86,22 @@ const search = computed({
           thead: 'bg-gray-50 dark:bg-gray-800/50',
           tbody: 'divide-y divide-gray-200 dark:divide-gray-800',
           tr: {
-            base: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer'
+            base: 'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer',
           },
           th: {
             base: 'text-left',
             padding: 'px-4 py-3.5',
             color: 'text-gray-900 dark:text-white',
             font: 'font-semibold',
-            size: 'text-sm'
+            size: 'text-sm',
           },
           td: {
             base: 'whitespace-nowrap',
             padding: 'px-4 py-4',
             color: 'text-gray-700 dark:text-gray-300',
             font: '',
-            size: 'text-sm'
-          }
+            size: 'text-sm',
+          },
         }"
         @select="(row: T) => emit('row-click', row)"
       >
@@ -113,7 +115,7 @@ const search = computed({
 </template>
 
 <style scoped>
-.data-table-wrapper {
-  @apply w-full;
-}
+  .data-table-wrapper {
+    @apply w-full;
+  }
 </style>

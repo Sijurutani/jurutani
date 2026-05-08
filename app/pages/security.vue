@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-// SEO Optimization di-handle di level child component
+  // SEO Optimization di-handle di level child component
 
-definePageMeta({
-  middleware: ['auth']
-});
+  definePageMeta({
+    middleware: ['auth'],
+  })
 </script>
 
 <template>

@@ -1,54 +1,61 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { onClickOutside } from '@vueuse/core'
-import type { SortOption } from '~/composables/useContentList'
+  import { ref } from 'vue'
+  import { onClickOutside } from '@vueuse/core'
+  import type { SortOption } from '~/composables/useContentList'
 
-interface Props {
-  sortOptions: SortOption[]
-  currentSort: string
-}
+  interface Props {
+    sortOptions: SortOption[]
+    currentSort: string
+  }
 
-const props = defineProps<Props>()
+  const props = defineProps<Props>()
 
-const emit = defineEmits<{
-  'update:sort': [value: string]
-}>()
+  const emit = defineEmits<{
+    'update:sort': [value: string]
+  }>()
 
-const isOpen = ref(false)
-const dropdownRef = ref(null)
+  const isOpen = ref(false)
+  const dropdownRef = ref(null)
 
-// Close dropdown when clicking outside
-onClickOutside(dropdownRef, () => {
-  isOpen.value = false
-})
+  // Close dropdown when clicking outside
+  onClickOutside(dropdownRef, () => {
+    isOpen.value = false
+  })
 
-const handleSortChange = (value: string) => {
-  emit('update:sort', value)
-  isOpen.value = false
-}
+  const handleSortChange = (value: string) => {
+    emit('update:sort', value)
+    isOpen.value = false
+  }
 
-const getCurrentSortLabel = () => {
-  const option = props.sortOptions.find(opt => opt.value === props.currentSort)
-  return option?.label || 'Urutkan'
-}
+  const getCurrentSortLabel = () => {
+    const option = props.sortOptions.find(
+      (opt) => opt.value === props.currentSort,
+    )
+    return option?.label || 'Urutkan'
+  }
 </script>
 
 <template>
   <div class="relative">
-    <button
+    <UButton
+      color="neutral"
+      variant="ghost"
       type="button"
       class="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl hover:border-green-500 dark:hover:border-green-400 focus:outline-none focus:border-green-500 dark:focus:border-green-400 focus:ring-4 focus:ring-green-500/10 transition-all duration-200 text-gray-700 dark:text-gray-300 font-medium"
       @click="isOpen = !isOpen"
     >
-      <UIcon name="i-heroicons-arrows-up-down" class="w-5 h-5 text-green-600 dark:text-green-400" />
+      <UIcon
+        name="i-lucide-arrow-up-down"
+        class="w-5 h-5 text-green-600 dark:text-green-400"
+      />
       <span>{{ getCurrentSortLabel() }}</span>
-      <UIcon 
-        name="i-heroicons-chevron-down" 
+      <UIcon
+        name="i-lucide-chevron-down"
         class="w-4 h-4 transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
       />
-    </button>
-    
+    </UButton>
+
     <!-- Dropdown Menu -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
@@ -64,24 +71,27 @@ const getCurrentSortLabel = () => {
         class="absolute left-0 md:left-auto md:right-0 mt-2 w-48 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden"
       >
         <div class="py-1">
-          <button
+          <UButton
+            color="neutral"
+            variant="ghost"
             v-for="option in sortOptions"
             :key="option.value"
             type="button"
             class="w-full px-4 py-2.5 text-left hover:bg-green-50 dark:hover:bg-gray-700 transition-colors duration-150 flex items-center gap-3"
             :class="{
-              'bg-green-50 dark:bg-gray-700 text-green-600 dark:text-green-400 font-semibold': currentSort === option.value,
-              'text-gray-700 dark:text-gray-300': currentSort !== option.value
+              'bg-green-50 dark:bg-gray-700 text-green-600 dark:text-green-400 font-semibold':
+                currentSort === option.value,
+              'text-gray-700 dark:text-gray-300': currentSort !== option.value,
             }"
             @click="handleSortChange(option.value)"
           >
-            <UIcon 
+            <UIcon
               v-if="currentSort === option.value"
-              name="i-heroicons-check" 
-              class="w-5 h-5 text-green-600 dark:text-green-400" 
+              name="i-lucide-check"
+              class="w-5 h-5 text-green-600 dark:text-green-400"
             />
             <span class="flex-1">{{ option.label }}</span>
-          </button>
+          </UButton>
         </div>
       </div>
     </Transition>
@@ -89,5 +99,5 @@ const getCurrentSortLabel = () => {
 </template>
 
 <style scoped>
-/* Dropdown positioning is handled via Tailwind responsive classes */
+  /* Dropdown positioning is handled via Tailwind responsive classes */
 </style>

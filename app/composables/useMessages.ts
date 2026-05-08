@@ -5,7 +5,8 @@ type ProfileLite = Pick<
   'id' | 'full_name' | 'username' | 'email' | 'avatar_url' | 'role' | 'is_admin'
 >
 
-export type ConversationRow = Database['public']['Tables']['conversations']['Row']
+export type ConversationRow =
+  Database['public']['Tables']['conversations']['Row']
 export type ConversationWithProfiles = ConversationRow & {
   participant1: ProfileLite
   participant2: ProfileLite
@@ -24,7 +25,13 @@ export const useMessages = () => {
   const supabase = useSupabaseClient<Database>()
   const authStore = useAuthStore()
 
-  const myId = computed(() => authStore.user?.value?.sub || authStore.user?.value?.id || authStore.user?.value?.user?.id || authStore.computedProfile?.id)
+  const myId = computed(
+    () =>
+      authStore.user?.value?.sub ||
+      authStore.user?.value?.id ||
+      authStore.user?.value?.user?.id ||
+      authStore.computedProfile?.id,
+  )
 
   const loadingConversations = ref(false)
   const conversations = ref<ConversationWithProfiles[]>([])
@@ -33,7 +40,9 @@ export const useMessages = () => {
   const adminProfile = ref<ProfileLite | null>(null)
 
   function getOther(conv: ConversationWithProfiles, selfId: string) {
-    return conv.participant1_id === selfId ? conv.participant2 : conv.participant1
+    return conv.participant1_id === selfId
+      ? conv.participant2
+      : conv.participant1
   }
 
   async function ensureAdminProfile() {
@@ -49,7 +58,9 @@ export const useMessages = () => {
   }
 
   async function createOrGetConversation(otherUserId: string): Promise<string> {
-    const res = await supabase.rpc('create_or_get_conversation', { other_user_id: otherUserId })
+    const res = await supabase.rpc('create_or_get_conversation', {
+      other_user_id: otherUserId,
+    })
     if (res.error) throw res.error
     return res.data as unknown as string
   }
@@ -82,7 +93,7 @@ export const useMessages = () => {
         updated_at,
         participant1:profiles!conversations_participant1_id_fkey(id, full_name, username, email, avatar_url, role, is_admin),
         participant2:profiles!conversations_participant2_id_fkey(id, full_name, username, email, avatar_url, role, is_admin)
-      `
+      `,
       )
       .or(`participant1_id.eq.${selfId},participant2_id.eq.${selfId}`)
       .order('last_message_at', { ascending: false })
@@ -97,7 +108,7 @@ export const useMessages = () => {
   async function refreshUnreadCounts() {
     const selfId = myId.value
     if (!selfId) return
-    const ids = conversations.value.map(c => c.id)
+    const ids = conversations.value.map((c) => c.id)
     if (!ids.length) {
       unreadCounts.value = {}
       return
@@ -121,15 +132,22 @@ export const useMessages = () => {
   }
 
   async function markConversationRead(conversationId: string) {
-    const res = await supabase.rpc('mark_conversation_messages_read', { conversation_id: conversationId })
+    const res = await supabase.rpc('mark_conversation_messages_read', {
+      conversation_id: conversationId,
+    })
     if (res.error) throw res.error
     await refreshUnreadCounts()
   }
 
   async function deleteConversation(conversationId: string) {
-    const { error } = await supabase.from('conversations').delete().eq('id', conversationId)
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversationId)
     if (error) throw error
-    conversations.value = conversations.value.filter(c => c.id !== conversationId)
+    conversations.value = conversations.value.filter(
+      (c) => c.id !== conversationId,
+    )
     const next = { ...unreadCounts.value }
     delete next[conversationId]
     unreadCounts.value = next
@@ -138,7 +156,9 @@ export const useMessages = () => {
   async function fetchMessages(conversationId: string, limit = 200) {
     const { data, error } = await supabase
       .from('messages')
-      .select('*, sender:profiles!sender_id(id, full_name, username, email, avatar_url, role, is_admin)')
+      .select(
+        '*, sender:profiles!sender_id(id, full_name, username, email, avatar_url, role, is_admin)',
+      )
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .limit(limit)
@@ -146,7 +166,10 @@ export const useMessages = () => {
     return (data ?? []) as unknown as MessageWithSender[]
   }
 
-  async function uploadChatFile(conversationId: string, file: File): Promise<string> {
+  async function uploadChatFile(
+    conversationId: string,
+    file: File,
+  ): Promise<string> {
     const fileName = `${Date.now()}_${cleanFileName(file.name)}`
     const path = `${conversationId}/${fileName}`
     const { error } = await supabase.storage
@@ -157,7 +180,11 @@ export const useMessages = () => {
     return data.publicUrl
   }
 
-  async function sendMessage(params: { conversationId: string; content: string; imageUrl?: string | null }) {
+  async function sendMessage(params: {
+    conversationId: string
+    content: string
+    imageUrl?: string | null
+  }) {
     const selfId = myId.value
     if (!selfId) throw new Error('User tidak terautentikasi')
 
@@ -190,4 +217,3 @@ export const useMessages = () => {
     uploadChatFile,
   }
 }
-

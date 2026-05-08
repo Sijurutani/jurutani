@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![JuruTani Logo](./public/jurutani.png)
+![JuruTani Logo](./public/jurutani.webp)
 
 **Platform Digital untuk Inovasi Pertanian dan Penyuluhan Petani Indonesia**
 
@@ -44,16 +44,16 @@ Platform ini hadir sebagai solusi digital untuk menyediakan informasi terkini se
 
 JuruTani dibangun menggunakan teknologi modern:
 
-| Teknologi | Deskripsi |
-|-----------|-----------|
-| [Nuxt 3](https://nuxt.com/) | Vue.js Framework |
-| [TypeScript](https://www.typescriptlang.org/) | Type Safety |
-| [Tailwind CSS](https://tailwindcss.com/) | Styling |
-| [Nuxt UI](https://ui.nuxt.com/) | Component Library |
-| [Supabase](https://supabase.com/) | Backend & Database |
-| [VueUse](https://vueuse.org/) | Composition Utilities |
-| [Zod](https://zod.dev/) | Schema Validation |
-| [Google Gemini AI](https://ai.google.dev/) | AI Assistant |
+| Teknologi                                     | Deskripsi             |
+| --------------------------------------------- | --------------------- |
+| [Nuxt 4](https://nuxt.com/)                   | Vue.js Framework      |
+| [TypeScript](https://www.typescriptlang.org/) | Type Safety           |
+| [Tailwind CSS](https://tailwindcss.com/)      | Styling               |
+| [Nuxt UI](https://ui.nuxt.com/)               | Component Library     |
+| [Supabase](https://supabase.com/)             | Backend & Database    |
+| [VueUse](https://vueuse.org/)                 | Composition Utilities |
+| [Zod](https://zod.dev/)                       | Schema Validation     |
+| [Google Gemini AI](https://ai.google.dev/)    | AI Assistant          |
 
 ---
 
@@ -61,7 +61,7 @@ JuruTani dibangun menggunakan teknologi modern:
 
 ### Prasyarat
 
-- Node.js 18+ 
+- Node.js 18+
 - pnpm / npm / yarn
 - Supabase account
 
@@ -102,14 +102,14 @@ NUXT_PUBLIC_BASE_URL=http://localhost:3000
 
 ## 📦 Commands
 
-| Command | Deskripsi |
-|---------|-----------|
-| `pnpm dev` | Menjalankan development server |
-| `pnpm build` | Build untuk production |
-| `pnpm preview` | Preview production build |
-| `pnpm lint` | Linting code |
-| `pnpm format` | Format code dengan Prettier |
-| `pnpm analyze` | Analyze bundle size |
+| Command        | Deskripsi                      |
+| -------------- | ------------------------------ |
+| `pnpm dev`     | Menjalankan development server |
+| `pnpm build`   | Build untuk production         |
+| `pnpm preview` | Preview production build       |
+| `pnpm lint`    | Linting code                   |
+| `pnpm format`  | Format code dengan Prettier    |
+| `pnpm analyze` | Analyze bundle size            |
 
 ---
 

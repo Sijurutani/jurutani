@@ -18,34 +18,19 @@
               "name": "size",
               "customType": "select",
               "default": "sm",
-              "options": [
-                "2xs",
-                "xs",
-                "sm",
-                "md",
-                "lg",
-                "xl"
-              ]
+              "options": ["2xs", "xs", "sm", "md", "lg", "xl"]
             },
             {
               "name": "variant",
               "customType": "select",
               "default": "solid",
-              "options": [
-                "solid",
-                "outline",
-                "soft",
-                "ghost",
-                "link"
-              ]
+              "options": ["solid", "outline", "soft", "ghost", "link"]
             },
             {
               "name": "target",
               "customType": "select",
               "default": "",
-              "options": [
-                "_blank"
-              ]
+              "options": ["_blank"]
             }
           ],
           "slots": [

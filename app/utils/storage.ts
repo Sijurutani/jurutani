@@ -27,7 +27,7 @@ const BUCKET_NEWS = 'news-images'
 export async function uploadNewsFile(
   folder: NewsFolder,
   newsId: string,
-  file: File
+  file: File,
 ): Promise<string> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
@@ -85,16 +85,17 @@ const BUCKET_MARKETS = 'markets'
 export async function uploadMarketFile(
   folder: 'thumbnail' | 'gallery' | 'attachments',
   marketId: string,
-  file: File
+  file: File,
 ): Promise<string> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 11)
   const filename = `${timestamp}_${random}.${ext}`
-  const path = folder === 'thumbnail'
-    ? `${marketId}/${filename}`
-    : `${marketId}/${folder}/${filename}`
+  const path =
+    folder === 'thumbnail'
+      ? `${marketId}/${filename}`
+      : `${marketId}/${folder}/${filename}`
 
   const { error } = await supabase.storage
     .from(BUCKET_MARKETS)
@@ -146,7 +147,7 @@ const BUCKET_PRODUCT_MARKETS_ATTACHMENTS = 'product-markets-attachments'
 export async function uploadProductMarketFile(
   folder: ProductMarketFolder,
   slug: string,
-  file: File
+  file: File,
 ): Promise<string> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
@@ -160,7 +161,9 @@ export async function uploadProductMarketFile(
 
   if (error) throw new Error(error.message)
 
-  const { data } = supabase.storage.from(BUCKET_PRODUCT_MARKETS_IMAGES).getPublicUrl(path)
+  const { data } = supabase.storage
+    .from(BUCKET_PRODUCT_MARKETS_IMAGES)
+    .getPublicUrl(path)
   return data.publicUrl
 }
 
@@ -169,7 +172,7 @@ export async function uploadProductMarketFile(
  */
 export async function uploadProductMarketAttachment(
   slug: string,
-  file: File
+  file: File,
 ): Promise<{ url: string; name: string; type: string; size: number }> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
@@ -183,13 +186,15 @@ export async function uploadProductMarketAttachment(
 
   if (error) throw new Error(error.message)
 
-  const { data } = supabase.storage.from(BUCKET_PRODUCT_MARKETS_ATTACHMENTS).getPublicUrl(path)
+  const { data } = supabase.storage
+    .from(BUCKET_PRODUCT_MARKETS_ATTACHMENTS)
+    .getPublicUrl(path)
 
   return {
     url: data.publicUrl,
     name: file.name,
     type: file.type,
-    size: file.size
+    size: file.size,
   }
 }
 
@@ -200,18 +205,24 @@ export function getProductMarketPublicUrl(path: string | null): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
   const supabase = useSupabaseClient()
-  const { data } = supabase.storage.from(BUCKET_PRODUCT_MARKETS_IMAGES).getPublicUrl(path)
+  const { data } = supabase.storage
+    .from(BUCKET_PRODUCT_MARKETS_IMAGES)
+    .getPublicUrl(path)
   return data.publicUrl
 }
 
 /**
  * Get public URL for product market attachments
  */
-export function getProductMarketAttachmentUrl(path: string | null): string | null {
+export function getProductMarketAttachmentUrl(
+  path: string | null,
+): string | null {
   if (!path) return null
   if (path.startsWith('http')) return path
   const supabase = useSupabaseClient()
-  const { data } = supabase.storage.from(BUCKET_PRODUCT_MARKETS_ATTACHMENTS).getPublicUrl(path)
+  const { data } = supabase.storage
+    .from(BUCKET_PRODUCT_MARKETS_ATTACHMENTS)
+    .getPublicUrl(path)
   return data.publicUrl
 }
 
@@ -220,10 +231,12 @@ export function getProductMarketAttachmentUrl(path: string | null): string | nul
  */
 export async function deleteProductMarketFile(
   urlOrPath: string,
-  isAttachment: boolean = false
+  isAttachment: boolean = false,
 ): Promise<void> {
   const supabase = useSupabaseClient()
-  const bucket = isAttachment ? BUCKET_PRODUCT_MARKETS_ATTACHMENTS : BUCKET_PRODUCT_MARKETS_IMAGES
+  const bucket = isAttachment
+    ? BUCKET_PRODUCT_MARKETS_ATTACHMENTS
+    : BUCKET_PRODUCT_MARKETS_IMAGES
   const storagePrefix = `/storage/v1/object/public/${bucket}/`
   const path = urlOrPath.includes(storagePrefix)
     ? urlOrPath.split(storagePrefix)[1]!
@@ -262,7 +275,7 @@ function normalizeFoodImagePath(urlOrPath: string): string {
  */
 export async function uploadFoodImage(
   foodId: string,
-  file: File
+  file: File,
 ): Promise<string> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
@@ -293,7 +306,9 @@ export function getFoodPublicUrl(path: string | null): string | null {
 
   const supabase = useSupabaseClient()
   const normalizedPath = normalizeFoodImagePath(path)
-  const { data } = supabase.storage.from(BUCKET_FOOD_IMAGES).getPublicUrl(normalizedPath)
+  const { data } = supabase.storage
+    .from(BUCKET_FOOD_IMAGES)
+    .getPublicUrl(normalizedPath)
   return data.publicUrl
 }
 
@@ -309,7 +324,7 @@ export async function deleteFoodImage(urlOrPath: string): Promise<void> {
 export async function uploadCourseFile(
   folder: CourseFolder,
   courseId: string,
-  file: File
+  file: File,
 ): Promise<string> {
   const supabase = useSupabaseClient()
   const ext = file.name.split('.').pop() ?? 'bin'
@@ -373,7 +388,7 @@ export function validateFileSize(file: File, maxSizeMB: number): boolean {
  * Validate file type
  */
 export function validateFileType(file: File, allowedTypes: string[]): boolean {
-  return allowedTypes.some(type => file.type.includes(type))
+  return allowedTypes.some((type) => file.type.includes(type))
 }
 
 /**
@@ -397,4 +412,3 @@ export function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file)
   })
 }
-

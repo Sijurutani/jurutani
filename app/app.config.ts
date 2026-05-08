@@ -28,7 +28,6 @@ export default defineAppConfig({
       ring: 'ring-1 ring-gray-200 dark:ring-gray-800',
     },
 
-
     // Notification/Toast configuration
     notification: {
       timeout: 5000,

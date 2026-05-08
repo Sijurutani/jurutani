@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-// SEO Optimization
+  // SEO Optimization
 </script>
 
 <template>

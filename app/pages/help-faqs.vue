@@ -1,435 +1,629 @@
 <script setup lang="ts">
-import { faqCategories, faqData, quickHelpCards, supportResources } from '~/data/faq'
-import type { FaqItem } from '~/data/types'
+  import { ref, onMounted, onUnmounted } from 'vue'
+  import gsap from 'gsap'
+  import { faqData } from '~/data/faq'
 
-useSeoOptimized('help')
+  useSeoOptimized('help')
 
-const categories = faqCategories
-const activeCategory = ref('general')
-const searchQuery = ref('')
+  // ── Categories ──────────────────────────────────────────────
+  const categories = [
+    {
+      id: 'general',
+      number: '01',
+      label: 'Informasi Umum',
+      icon: 'i-lucide-info',
+    },
+    {
+      id: 'account',
+      number: '02',
+      label: 'Akun & Pendaftaran',
+      icon: 'i-lucide-user-circle',
+    },
+    {
+      id: 'farming',
+      number: '03',
+      label: 'Kajian & Fitur Pertanian',
+      icon: 'i-lucide-leaf',
+    },
+    {
+      id: 'marketplace',
+      number: '04',
+      label: 'Pemasaran & Marketplace',
+      icon: 'i-lucide-shopping-bag',
+    },
+    {
+      id: 'technical',
+      number: '05',
+      label: 'Bantuan Teknis',
+      icon: 'i-lucide-settings',
+    },
+  ]
 
-const feedbackMap = reactive<Record<string, 'up' | 'down' | null>>({})
-const feedbackKey = (cat: string, idx: number) => `${cat}_${idx}`
-const setFeedback = (cat: string, idx: number, v: 'up' | 'down') => {
-  const k = feedbackKey(cat, idx)
-  feedbackMap[k] = feedbackMap[k] === v ? null : v
-}
+  const scrollToFaqs = () =>
+    document.getElementById('faq-content')?.scrollIntoView({ behavior: 'smooth' })
 
-const activeFaqs = computed((): FaqItem[] => {
-  let items = faqData[activeCategory.value] || []
-  if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase()
-    items = items.filter(i => i.question.toLowerCase().includes(q) || i.answer.toLowerCase().includes(q))
-  }
-  return items
-})
+  const pageRef = ref<HTMLElement | null>(null)
+  let ctx: gsap.Context
 
-const openItems = ref<number[]>([0])
-const toggleItem = (i: number) => {
-  const idx = openItems.value.indexOf(i)
-  if (idx > -1) openItems.value.splice(idx, 1)
-  else openItems.value.push(i)
-}
-const isOpen = (i: number) => openItems.value.includes(i)
+  onMounted(() => {
+    ctx = gsap.context(() => {
+      // Light sweep effect exactly like HeroSection.vue
+      const sweeps = gsap.utils.toArray<HTMLElement>('.hf-badge__sweep')
+      sweeps.forEach((sweep) => {
+        const sweepTl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 })
+        sweepTl
+          .set(sweep, { xPercent: -200, opacity: 0 })
+          .to(sweep, { opacity: 1, duration: 0.25, ease: 'power1.out' })
+          .to(sweep, {
+            xPercent: 280,
+            opacity: 1,
+            duration: 1.6,
+            ease: 'power1.inOut',
+          })
+          .to(sweep, { opacity: 0, duration: 0.2, ease: 'power1.out' })
+      })
 
-watch(activeCategory, () => { openItems.value = [0] })
-watch(searchQuery, () => { openItems.value = activeFaqs.value.length > 0 ? [0] : [] })
+      // Badge dot pulsing effect exactly like HeroSection.vue
+      const dots = gsap.utils.toArray<HTMLElement>('.hf-badge__dot')
+      dots.forEach((dot) => {
+        gsap.to(dot, {
+          opacity: 0.4,
+          duration: 1.8,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        })
+      })
+    }, pageRef.value || undefined)
+  })
 
-const scrollToFaqs = () => document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' })
+  onUnmounted(() => {
+    ctx?.revert()
+  })
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <!-- Hero -->
-    <CommonPageHeroSection
-      title="Pusat Bantuan"
-      title-accent="JuruTani"
-      subtitle="Temukan jawaban, panduan, dan dukungan untuk memaksimalkan hasil pertanian Anda bersama JuruTani."
-      :badge="{ text: 'Help Center', icon: 'i-lucide-help-circle' }"
-      decorative="gradient"
-      align="center"
-      :cta="{ text: 'Cari Bantuan', icon: 'i-lucide-search', action: scrollToFaqs }"
-      :stats="[
-        { value: '24/7', label: 'Dukungan' },
-        { value: '10K+', label: 'Pertanyaan' },
-        { value: '98%', label: 'Kepuasan' },
-      ]"
-    />
-
-    <div class="hf-wrap">
-
-      <!-- Quick Help -->
-      <section>
-        <CommonSectionHeader title="Bantuan Cepat" subtitle="Akses langsung ke layanan bantuan yang paling sering digunakan" align="center" class="mb-10" />
-        <div class="hf-quick-grid">
-          <NuxtLink
-            v-for="(card, i) in quickHelpCards"
-            :key="i"
-            :to="card.link ?? '#'"
-            class="hf-quick-card app-reveal bg-white dark:bg-gray-900/60"
-            :style="`animation-delay:${i * 60}ms`"
-          >
-            <div class="hf-quick-card__icon">
-              <UIcon :name="card.icon" class="w-5 h-5" />
-            </div>
-            <h3 class="hf-quick-card__title">{{ card.title }}</h3>
-            <p class="hf-quick-card__desc">{{ card.description }}</p>
-            <span class="hf-quick-card__cta">Selengkapnya <UIcon name="i-lucide-arrow-right" class="w-3 h-3" /></span>
-          </NuxtLink>
-        </div>
-      </section>
-
-      <!-- FAQ -->
-      <section id="faq-section">
-        <CommonSectionHeader title="Pertanyaan Umum (FAQ)" subtitle="Jawaban untuk pertanyaan yang sering diajukan pengguna kami" align="center" class="mb-10" />
-
-        <!-- Search -->
-        <div class="hf-search-wrap">
-          <div class="hf-search-inner">
-            <AppSearchBar v-model="searchQuery" placeholder="Cari pertanyaan atau kata kunci..." />
-          </div>
-          <Transition name="hf-fade">
-            <p v-if="searchQuery" class="hf-search-stat">
-              Ditemukan <strong style="color:#16a34a">{{ activeFaqs.length }}</strong> hasil untuk <em>"{{ searchQuery }}"</em>
-            </p>
-          </Transition>
+  <div ref="pageRef" class="hf-page">
+    <!-- ════════════════════════════════════════════════
+         HERO — matches HeroSection & page header patterns
+         Uses bg-linear-to-r emerald gradient like other pages
+    ════════════════════════════════════════════════ -->
+    <section class="hf-hero mt-14 md:mt-20">
+      <div class="hf-hero__inner">
+        <!-- Eyebrow badge — matches hero-badge token style -->
+        <div class="hf-badge">
+          <span class="hf-badge__dot" />
+          <UIcon name="i-lucide-help-circle" class="w-3.5 h-3.5 text-[--text-badge]" />
+          <span class="hf-badge__text">Pusat Bantuan</span>
+          <!-- Light sweep — identical to PageHeroSection badge-sweep -->
+          <span class="hf-badge__sweep" aria-hidden="true" />
         </div>
 
-        <!-- Category filter -->
-        <div class="mb-8">
-          <CommonCategoryFilter :categories="categories" :active-category="activeCategory" @update:category="activeCategory = $event" />
-        </div>
+        <!-- H1 — matches hero-heading token style -->
+        <h1 class="hf-title">
+          Semua Jawaban yang
+          <span class="hf-title__accent">Anda Butuhkan</span>
+        </h1>
 
-        <!-- Accordion -->
-        <div class="hf-accordion">
-          <!-- Empty -->
-          <div v-if="activeFaqs.length === 0" class="hf-empty">
-            <div class="hf-empty__icon"><UIcon name="i-lucide-search-x" class="w-8 h-8" style="color:#16a34a" /></div>
-            <h3 class="hf-empty__title">Tidak ada hasil</h3>
-            <p class="hf-empty__desc">
-              Tidak ada pertanyaan yang cocok di kategori
-              <strong>{{ categories.find(c => c.id === activeCategory)?.name }}</strong>
-            </p>
-            <div class="hf-empty__btns">
-              <UButton size="md" color="primary" @click="searchQuery = ''">
-                <UIcon name="i-lucide-rotate-ccw" class="mr-2 w-4 h-4" />Hapus Pencarian
-              </UButton>
-              <UButton size="md" variant="outline" color="primary" to="/contact-us">
-                <UIcon name="i-lucide-message-square" class="mr-2 w-4 h-4" />Hubungi Kami
-              </UButton>
-            </div>
+        <!-- Description — matches hero-description -->
+        <p class="hf-desc">
+          Temukan jawaban lengkap, panduan langkah demi langkah, dan solusi
+          untuk setiap pertanyaan seputar platform JuruTani.
+        </p>
+
+        <!-- Stats — matches stat-item / stat-value pattern from HeroSection -->
+        <div class="hf-stats">
+          <div class="hf-stat">
+            <span class="hf-stat__val">10K+</span>
+            <span class="hf-stat__lbl">Pertanyaan</span>
           </div>
-
-          <!-- Items -->
-          <div
-            v-for="(item, index) in activeFaqs"
-            :key="`${activeCategory}-${index}`"
-            class="hf-faq-item bg-white dark:bg-gray-900/60"
-            :class="{ 'hf-faq-item--open': isOpen(index) }"
-          >
-            <button class="hf-faq-item__btn" :aria-expanded="isOpen(index)" @click="toggleItem(index)">
-              <div class="hf-faq-item__chevron" :class="{ 'hf-faq-item__chevron--open': isOpen(index) }">
-                <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
-              </div>
-              <div class="hf-faq-item__q">
-                <h3 class="hf-faq-item__question" :class="{ 'hf-faq-item__question--active': isOpen(index) }">{{ item.question }}</h3>
-              </div>
-              <span v-if="index === 0" class="hf-popular-badge">Popular</span>
-            </button>
-
-            <Transition name="hf-expand">
-              <div v-if="isOpen(index)" class="hf-faq-item__body">
-                <div class="hf-faq-item__line" />
-                <p class="hf-faq-item__answer">{{ item.answer }}</p>
-                <!-- Feedback -->
-                <div class="hf-feedback">
-                  <span class="hf-feedback__label">Apakah ini membantu?</span>
-                  <div class="hf-feedback__btns">
-                    <button
-                      class="hf-vote"
-                      :class="{ 'hf-vote--up': feedbackMap[feedbackKey(activeCategory, index)] === 'up' }"
-                      @click.stop="setFeedback(activeCategory, index, 'up')"
-                    >
-                      <UIcon name="i-lucide-thumbs-up" class="w-3.5 h-3.5" />
-                      Ya
-                    </button>
-                    <button
-                      class="hf-vote"
-                      :class="{ 'hf-vote--down': feedbackMap[feedbackKey(activeCategory, index)] === 'down' }"
-                      @click.stop="setFeedback(activeCategory, index, 'down')"
-                    >
-                      <UIcon name="i-lucide-thumbs-down" class="w-3.5 h-3.5" />
-                      Tidak
-                    </button>
-                  </div>
-                  <Transition name="hf-fade">
-                    <span v-if="feedbackMap[feedbackKey(activeCategory, index)]" class="hf-feedback__thanks">Terima kasih!</span>
-                  </Transition>
-                </div>
-              </div>
-            </Transition>
+          <div class="hf-stat__sep" />
+          <div class="hf-stat">
+            <span class="hf-stat__val">98%</span>
+            <span class="hf-stat__lbl">Kepuasan</span>
           </div>
-
-          <!-- Still need help -->
-          <div v-if="activeFaqs.length > 0" class="hf-still-help">
-            <UIcon name="i-lucide-help-circle" class="hf-still-help__icon" />
-            <h4 class="hf-still-help__title">Masih belum menemukan jawaban?</h4>
-            <p class="hf-still-help__desc">Tim support kami siap membantu permasalahan spesifik Anda kapan saja.</p>
-            <div class="hf-still-help__btns">
-              <UButton to="/contact-us" size="md" class="hf-btn-primary">
-                <UIcon name="i-lucide-send" class="mr-2 w-4 h-4" />Hubungi Support
-              </UButton>
-              <UButton to="/discussions" variant="outline" color="primary" size="md">
-                <UIcon name="i-lucide-users" class="mr-2 w-4 h-4" />Tanya Komunitas
-              </UButton>
-            </div>
+          <div class="hf-stat__sep" />
+          <div class="hf-stat">
+            <span class="hf-stat__val">24/7</span>
+            <span class="hf-stat__lbl">Dukungan</span>
           </div>
         </div>
-      </section>
 
-      <!-- Resources -->
-      <section>
-        <CommonSectionHeader title="Sumber Belajar" subtitle="Perkaya wawasan pertanian Anda dengan materi edukasi kami" align="center" class="mb-10" />
-        <div class="hf-resource-grid">
-          <div v-for="(r, i) in supportResources" :key="i" class="app-reveal" :style="`animation-delay:${i * 80}ms`">
-            <CommonIconInfoCard v-bind="r" hoverable variant="gradient" />
+        <!-- Scroll CTA -->
+        <button class="hf-scroll-cta" @click="scrollToFaqs">
+          <UIcon name="i-lucide-chevrons-down" class="w-4 h-4" />
+          Lihat Semua Pertanyaan
+        </button>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════
+         FAQ CONTENT
+    ════════════════════════════════════════════════ -->
+    <div id="faq-content" class="hf-content">
+      <!-- Category sections -->
+      <div
+        v-for="cat in categories"
+        :key="cat.id"
+        class="hf-category app-reveal"
+      >
+        <!-- Category header -->
+        <div class="hf-cat-head">
+          <span class="hf-cat-badge">{{ cat.number }}</span>
+          <div class="hf-cat-title-row">
+            <UIcon :name="cat.icon" class="w-4 h-4 text-[--text-accent]" />
+            <h2 class="hf-cat-title">{{ cat.label }}</h2>
           </div>
         </div>
-      </section>
+        <div class="hf-cat-rule" />
 
+        <!-- Accordion items -->
+        <AppFaqAccordion :items="faqData[cat.id]" />
+      </div>
+
+      <!-- ── CTA box — dual light/dark, styled like Footer/Cta.vue ── -->
+      <div class="hf-cta app-reveal">
+        <!-- decorative rings (mirrors cta-deco-ring pattern) -->
+        <div class="hf-cta__ring hf-cta__ring--1" />
+        <div class="hf-cta__ring hf-cta__ring--2" />
+        <div class="hf-cta__dot-grid" />
+
+        <div class="hf-cta__inner">
+          <div class="hf-badge hf-badge--cta mx-auto">
+            <span class="hf-badge__dot" />
+            <span class="hf-badge__text">Masih Bingung?</span>
+            <span class="hf-badge__sweep" aria-hidden="true" />
+          </div>
+          <h3 class="hf-cta__title">Kami siap membantu Anda</h3>
+          <p class="hf-cta__desc">
+            Jika pertanyaan Anda belum terjawab, hubungi tim support kami atau
+            bertanya langsung ke komunitas petani JuruTani.
+          </p>
+          <div class="hf-cta__btns">
+            <NuxtLink to="/contact-us" class="hf-btn hf-btn--solid">
+              <UIcon name="i-lucide-send" class="w-4 h-4" />
+              Hubungi Support
+            </NuxtLink>
+            <NuxtLink to="/discussions" class="hf-btn hf-btn--ghost">
+              <UIcon name="i-lucide-users" class="w-4 h-4" />
+              Tanya Komunitas
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.hf-wrap {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 4rem 1.25rem 5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 5rem;
-}
-@media (min-width: 640px) { .hf-wrap { padding: 4rem 2rem 6rem; } }
+  /* ═══════════════════════════════════════════════════════
+     PAGE — transparent, inherits layout bg-linear gradient
+  ═══════════════════════════════════════════════════════ */
+  .hf-page {
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
 
-/* quick cards */
-.hf-quick-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-@media (min-width: 768px) { .hf-quick-grid { grid-template-columns: repeat(4, 1fr); } }
+  /* ═══════════════════════════════════════════════════════
+     HERO
+     ─ Transparent bg (layout gradient shows through).
+     ─ All colors use global CSS vars that auto-switch dark/light.
+     ─ Gradient text uses --text-accent / --text-accent-light
+       exactly like HeroSection.vue .hero-heading__accent.
+  ═══════════════════════════════════════════════════════ */
+  .hf-hero {
+    padding: 3.5rem 1.25rem 3rem;
+    text-align: center;
+    position: relative;
+  }
 
-.hf-quick-card {
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem;
-  border-radius: 1.125rem;
-  border: 1px solid rgba(22,163,74,0.12);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  text-decoration: none;
-  transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
-}
-.hf-quick-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(22,163,74,0.18); border-color: rgba(22,163,74,0.3); }
+  @media (min-width: 640px) {
+    .hf-hero {
+      padding: 4rem 2rem 3.5rem;
+    }
+  }
 
-.hf-quick-card__icon {
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.75rem;
-  background: rgba(22,163,74,0.1);
-  color: #16a34a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 0.875rem;
-  transition: transform 0.25s ease;
-}
-.hf-quick-card:hover .hf-quick-card__icon { transform: scale(1.1) rotate(3deg); }
+  .hf-hero__inner {
+    max-width: 48rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 
-.hf-quick-card__title { font-size: 0.875rem; font-weight: 700; color: var(--text-base); margin-bottom: 0.375rem; transition: color 0.2s; }
-.hf-quick-card:hover .hf-quick-card__title { color: #16a34a; }
-.hf-quick-card__desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.55; flex: 1; }
+  /* ── Badge — identical to PageHeroSection badge ── */
+  .hf-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    background: var(--bg-badge);
+    border: 1px solid var(--border-badge);
+    border-radius: 9999px;
+    margin-bottom: 1.375rem;
+    width: fit-content;
+    position: relative;
+    overflow: hidden;
+  }
 
-.hf-quick-card__cta {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-top: 0.875rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #16a34a;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.hf-quick-card:hover .hf-quick-card__cta { opacity: 1; }
+  /* Light sweep shimmer — GPU compositor via transform */
+  .hf-badge__sweep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.55) 50%,
+      transparent 100%
+    );
+    border-radius: inherit;
+    /* translateX dari -200% ke 280% di-animate via GSAP */
+    transform: translateX(-200%);
+    pointer-events: none;
+    will-change: transform;
+  }
 
-/* search */
-.hf-search-wrap { max-width: 36rem; margin: 0 auto 2rem; }
-.hf-search-inner { position: relative; }
-.hf-search-stat { text-align: center; margin-top: 0.75rem; font-size: 0.8125rem; color: var(--text-muted); }
+  .hf-badge__dot {
+    display: block;
+    width: 0.375rem;
+    height: 0.375rem;
+    background: var(--text-accent);
+    border-radius: 50%;
+  }
 
-/* accordion */
-.hf-accordion { max-width: 44rem; margin: 0 auto; display: flex; flex-direction: column; gap: 0.625rem; }
+  .hf-badge__text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-badge);
+  }
 
-.hf-faq-item {
-  border-radius: 0.875rem;
-  border: 1px solid rgba(22,163,74,0.1);
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.hf-faq-item--open { border-color: rgba(22,163,74,0.3); box-shadow: 0 4px 16px rgba(22,163,74,0.1); }
-.hf-faq-item:not(.hf-faq-item--open):hover { border-color: rgba(22,163,74,0.2); }
+  /* ── H1 — identical token to .hero-heading ── */
+  .hf-title {
+    font-size: clamp(1.875rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--text-base);
+    margin-bottom: 1rem;
+    letter-spacing: -0.025em;
+  }
 
-.hf-faq-item__btn {
-  width: 100%;
-  padding: 1rem 1.25rem;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-}
+  /* Gradient accent — identical to .hero-heading__accent */
+  .hf-title__accent {
+    display: block;
+    background: linear-gradient(
+      135deg,
+      var(--text-accent),
+      var(--text-accent-light)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    isolation: isolate;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+  }
 
-.hf-faq-item__chevron {
-  flex-shrink: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.5rem;
-  background: rgba(156,163,175,0.2);
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-}
-.hf-faq-item__chevron--open {
-  background: rgba(22,163,74,0.1);
-  color: #16a34a;
-  transform: rotate(90deg);
-}
+  /* ── Description — identical token to .hero-description ── */
+  .hf-desc {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--text-muted);
+    max-width: 36rem;
+    margin-bottom: 2rem;
+  }
 
-.hf-faq-item__q { flex: 1; min-width: 0; }
-.hf-faq-item__question {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--text-base);
-  line-height: 1.45;
-  transition: color 0.2s;
-}
-.hf-faq-item__question--active { color: #16a34a; }
+  /* ── Stats — identical token to .stat-item / .stat-value ── */
+  .hf-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
-.hf-popular-badge {
-  flex-shrink: 0;
-  padding: 0.2rem 0.5rem;
-  border-radius: 9999px;
-  background: rgba(22,163,74,0.1);
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #16a34a;
-}
+  .hf-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+  }
 
-.hf-faq-item__body {
-  padding: 0 1.25rem 1.25rem 1.25rem;
-  padding-left: calc(1.25rem + 1.75rem + 0.75rem);
-  position: relative;
-}
-.hf-faq-item__line {
-  position: absolute;
-  left: calc(1.25rem + 0.875rem);
-  top: 0;
-  bottom: 1.25rem;
-  width: 1.5px;
-  background: linear-gradient(to bottom, #16a34a, transparent);
-}
+  .hf-stat__val {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--text-accent);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
 
-.hf-faq-item__answer {
-  font-size: 0.875rem;
-  line-height: 1.7;
-  color: var(--text-muted);
-  margin-bottom: 1rem;
-}
+  .hf-stat__lbl {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-subtle);
+    white-space: nowrap;
+  }
 
-/* feedback */
-.hf-feedback {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.625rem;
-  padding-top: 0.875rem;
-  border-top: 1px solid rgba(22,163,74,0.1);
-}
-.hf-feedback__label { font-size: 0.75rem; color: var(--text-subtle); }
-.hf-feedback__btns { display: flex; gap: 0.5rem; }
-.hf-feedback__thanks { font-size: 0.75rem; color: var(--text-subtle); font-style: italic; }
+  /* Separator — identical to .stat-sep */
+  .hf-stat__sep {
+    width: 1px;
+    height: 2rem;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(134, 239, 172, 0.5),
+      transparent
+    );
+    flex-shrink: 0;
+  }
 
-.hf-vote {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(156,163,175,0.3);
-  background: rgba(156,163,175,0.08);
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.hf-vote:hover { border-color: #16a34a; color: #16a34a; background: rgba(22,163,74,0.06); }
-.hf-vote--up { border-color: #16a34a; color: #16a34a; background: rgba(22,163,74,0.1); }
-.hf-vote--down { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.08); }
+  /* Scroll CTA — ghost button style matching nav-pill */
+  .hf-scroll-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.25rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-badge);
+    background: var(--bg-badge);
+    color: var(--text-badge);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      border-color 0.2s;
+  }
 
-/* still help */
-.hf-still-help {
-  margin-top: 0.5rem;
-  text-align: center;
-  padding: 2.5rem 1.5rem;
-  border-radius: 1.25rem;
-  background: var(--bg-badge);
-  border: 1px solid var(--border-badge);
-}
-.hf-still-help__icon { width: 2.75rem; height: 2.75rem; color: #16a34a; margin: 0 auto 0.75rem; }
-.hf-still-help__title { font-size: 1.0625rem; font-weight: 700; color: var(--text-base); margin-bottom: 0.375rem; }
-.hf-still-help__desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem; }
-.hf-still-help__btns { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+  .hf-scroll-cta:hover {
+    border-color: var(--text-accent);
+    background: rgba(22, 163, 74, 0.08);
+  }
 
-.hf-btn-primary {
-  background: linear-gradient(135deg, #16a34a, #059669) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 14px rgba(22,163,74,0.3);
-}
+  /* ═══════════════════════════════════════════════════════
+     CONTENT AREA
+  ═══════════════════════════════════════════════════════ */
+  .hf-content {
+    max-width: 52rem;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3.5rem;
+  }
 
-/* empty */
-.hf-empty { text-align: center; padding: 3.5rem 1.5rem; }
-.hf-empty__icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
-  background: rgba(22,163,74,0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-}
-.hf-empty__title { font-size: 1.0625rem; font-weight: 700; color: var(--text-base); margin-bottom: 0.5rem; }
-.hf-empty__desc { font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.5rem; }
-.hf-empty__btns { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+  @media (min-width: 640px) {
+    .hf-content {
+      padding: 2rem 2rem 5.5rem;
+    }
+  }
 
-/* resource */
-.hf-resource-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
-@media (min-width: 768px) { .hf-resource-grid { grid-template-columns: repeat(3, 1fr); } }
+  /* ═══════════════════════════════════════════════════════
+     CATEGORY HEADER
+  ═══════════════════════════════════════════════════════ */
+  .hf-cat-head {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 0.875rem;
+  }
 
-/* transitions */
-.hf-expand-enter-active { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
-.hf-expand-leave-active { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
-.hf-expand-enter-from, .hf-expand-leave-to { opacity: 0; max-height: 0; }
-.hf-expand-enter-to, .hf-expand-leave-from { opacity: 1; max-height: 800px; }
+  /* Number badge — Solar Flare (small accent only, per spec) */
+  .hf-cat-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.375rem;
+    height: 2.375rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(90deg, #ffaa00, #ff6600, #eb001a);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
 
-.hf-fade-enter-active, .hf-fade-leave-active { transition: opacity 0.2s; }
-.hf-fade-enter-from, .hf-fade-leave-to { opacity: 0; }
+  .hf-cat-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Category title — uses --text-accent (green) auto-switches dark/light */
+  .hf-cat-title {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--text-accent);
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  /* Divider rule */
+  .hf-cat-rule {
+    height: 1.5px;
+    background: var(--border-badge);
+    margin-bottom: 1rem;
+    border-radius: 1px;
+  }
+
+
+
+  /* ═══════════════════════════════════════════════════════
+     CTA BOX — dual light/dark, mirrors Footer/Cta.vue style
+     Light: soft green badge surface
+     Dark: deep green gradient (14532d → 052e16) like Footer CTA
+  ═══════════════════════════════════════════════════════ */
+  .hf-cta {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    /* Light mode: soft green badge surface */
+    background: var(--bg-badge);
+    border: 1.5px solid var(--border-badge);
+    text-align: center;
+  }
+
+  /* Dark: deep green gradient identical to Footer/Cta.vue .cta-card */
+  :global(.dark) .hf-cta {
+    background: linear-gradient(135deg, #14532d 0%, #052e16 60%, #022c22 100%);
+    border-color: rgba(134, 239, 172, 0.08);
+    box-shadow:
+      0 20px 60px -12px rgba(5, 46, 22, 0.5),
+      0 0 0 1px rgba(134, 239, 172, 0.06);
+  }
+
+  /* Decorative rings — mirrors cta-deco-ring */
+  .hf-cta__ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(134, 239, 172, 0.07);
+    pointer-events: none;
+  }
+  .hf-cta__ring--1 { width: 300px; height: 300px; top: -90px; right: -30px; }
+  .hf-cta__ring--2 { width: 180px; height: 180px; bottom: -55px; left: -35px; }
+
+  /* Dot grid — mirrors cta-dot-grid */
+  .hf-cta__dot-grid {
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: radial-gradient(circle at 1px 1px, rgba(134, 239, 172, 0.8) 1px, transparent 0);
+    background-size: 24px 24px;
+    pointer-events: none;
+  }
+
+  .hf-cta__inner {
+    position: relative;
+    z-index: 1;
+    padding: 2.5rem 2rem;
+  }
+
+  /* CTA Badge Override */
+  .hf-badge--cta {
+    display: flex; /* Ensures it acts as a flex container */
+    margin-bottom: 0.625rem;
+    background: rgba(22, 163, 74, 0.08);
+    border-color: rgba(22, 163, 74, 0.15);
+  }
+
+  :global(.dark) .hf-badge--cta {
+    background: rgba(134, 239, 172, 0.08);
+    border-color: rgba(134, 239, 172, 0.15);
+  }
+
+  /* .hf-cta__eyebrow is removed since we use hf-badge */
+
+  .hf-cta__title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-base);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    margin-bottom: 0.625rem;
+  }
+
+  :global(.dark) .hf-cta__title { color: #ffffff; }
+
+  .hf-cta__desc {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+    max-width: 30rem;
+    margin: 0 auto 1.75rem;
+  }
+
+  :global(.dark) .hf-cta__desc { color: rgba(187, 247, 208, 0.6); }
+
+  .hf-cta__btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+  }
+
+  /* Buttons */
+  .hf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.4rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  /* Solid — light: brand green / dark: #22c55e like Footer CTA primary */
+  .hf-btn--solid {
+    background: #16a34a;
+    color: #fff;
+    border: 1.5px solid #16a34a;
+  }
+  .hf-btn--solid:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35);
+  }
+  :global(.dark) .hf-btn--solid {
+    background: #22c55e;
+    color: #052e16;
+    border-color: #22c55e;
+  }
+  :global(.dark) .hf-btn--solid:hover { background: #4ade80; }
+
+  /* Ghost — light: outline accent / dark: ghost like Footer CTA ghost */
+  .hf-btn--ghost {
+    background: transparent;
+    color: #16a34a;
+    border: 1.5px solid rgba(22, 163, 74, 0.4);
+  }
+  .hf-btn--ghost:hover {
+    background: rgba(22, 163, 74, 0.07);
+    border-color: #16a34a;
+    transform: translateY(-1px);
+  }
+  :global(.dark) .hf-btn--ghost {
+    color: #bbf7d0;
+    border-color: rgba(134, 239, 172, 0.25);
+  }
+  :global(.dark) .hf-btn--ghost:hover {
+    border-color: rgba(134, 239, 172, 0.5);
+    background: rgba(134, 239, 172, 0.06);
+  }
+
+
+
+
+
+  /* ═══════════════════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════════════════ */
+  @media (max-width: 480px) {
+    .hf-stats {
+      gap: 1rem;
+    }
+
+    .hf-stat__val {
+      font-size: 1.125rem;
+    }
+
+    .hf-cta {
+      padding: 2rem 1.25rem;
+    }
+
+    .hf-item__q {
+      font-size: 0.875rem;
+    }
+  }
 </style>

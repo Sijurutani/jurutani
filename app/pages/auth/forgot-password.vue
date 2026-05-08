@@ -1,47 +1,73 @@
 <script setup lang="ts">
-// SEO Optimization
-useSeoOptimized('forgot-password')
+  // SEO Optimization
+  useSeoOptimized('forgot-password')
 
-definePageMeta({
-  layout: 'auth',
-  middleware: ['guest']
-})
+  definePageMeta({
+    layout: 'auth',
+    middleware: ['guest'],
+  })
 
-const toast = usejuruTaniToast()
-const authStore = useAuthStore()
+  const toast = usejuruTaniToast()
+  const authStore = useAuthStore()
 
-const email = ref('')
-const isSubmitted = ref(false)
-const isLoading = computed(() => authStore.loading)
+  const email = ref('')
+  const isSubmitted = ref(false)
+  const isLoading = computed(() => authStore.loading)
 
-const handleResetPassword = async () => {
-  if (!email.value) {
-    toast.warning('Email tidak boleh kosong ...')
-    return
+  const resetSubmissionState = () => {
+    isSubmitted.value = false
+    email.value = ''
   }
 
-  const { success, error } = await authStore.resetPassword(email.value)
+  const handleResetPassword = async () => {
+    if (!email.value) {
+      toast.warning('Email tidak boleh kosong ...')
+      return
+    }
 
-  if (success) {
-    isSubmitted.value = true
-    toast.success('Benih reset password telah dikirim ke email Anda! 🌱')
-  } else {
-    toast.error(error || 'Gagal mengirim benih reset password. Silakan coba lagi.')
+    const { success, error } = await authStore.resetPassword(email.value)
+
+    if (success) {
+      isSubmitted.value = true
+      toast.success('Benih reset password telah dikirim ke email Anda! 🌱')
+    } else {
+      toast.error(
+        error || 'Gagal mengirim benih reset password. Silakan coba lagi.',
+      )
+    }
   }
-}
 </script>
 
 <template>
-  <section class="app-reveal app-reveal--2 flex flex-col space-y-5 lg:space-y-7 pb-2">
+  <section class="flex flex-col space-y-5 lg:space-y-7 pb-2">
     <div v-if="!isSubmitted">
       <header class="space-y-1 lg:space-y-2 mb-5 lg:mb-7">
-        <p class="hidden text-sm font-medium text-emerald-600 dark:text-emerald-400 sm:block">Pemulihan Akun</p>
-        <h1 class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl lg:text-3xl font-sans">Lupa Password?</h1>
-        <p class="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">Masukkan email Anda dan kami akan mengirimkan link untuk mereset kata sandi.</p>
+        <p
+          class="hidden text-sm font-medium text-emerald-600 dark:text-emerald-400 sm:block"
+        >
+          Pemulihan Akun
+        </p>
+        <h1
+          class="text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl lg:text-3xl font-sans"
+        >
+          Lupa Password?
+        </h1>
+        <p class="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+          Masukkan email Anda dan kami akan mengirimkan link untuk mereset kata
+          sandi.
+        </p>
       </header>
-      
-      <form class="space-y-4 lg:space-y-5" @submit.prevent="handleResetPassword">
-        <UFormField label="Alamat Email" name="email" required class="font-medium text-neutral-700 dark:text-neutral-300">
+
+      <form
+        class="space-y-4 lg:space-y-5"
+        @submit.prevent="handleResetPassword"
+      >
+        <UFormField
+          label="Alamat Email"
+          name="email"
+          required
+          class="font-medium text-neutral-700 dark:text-neutral-300"
+        >
           <UInput
             v-model="email"
             type="email"
@@ -50,10 +76,17 @@ const handleResetPassword = async () => {
             autocomplete="email"
             :disabled="isLoading"
             class="w-full mt-1"
-            :ui="{ rounded: 'rounded-xl', color: { white: { outline: 'focus:ring-emerald-500 dark:focus:ring-emerald-400' } } }"
+            :ui="{
+              rounded: 'rounded-xl',
+              color: {
+                white: {
+                  outline: 'focus:ring-emerald-500 dark:focus:ring-emerald-400',
+                },
+              },
+            }"
           />
         </UFormField>
-        
+
         <UButton
           type="submit"
           block
@@ -69,17 +102,25 @@ const handleResetPassword = async () => {
 
     <!-- Success State -->
     <div v-else class="text-center space-y-5 py-4">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20 mb-2">
+      <div
+        class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-100 dark:ring-emerald-500/20 mb-2"
+      >
         <UIcon name="i-lucide-mail-check" class="h-8 w-8" />
       </div>
-      
-      <h2 class="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl font-sans">
+
+      <h2
+        class="text-xl font-bold text-neutral-900 dark:text-white sm:text-2xl font-sans"
+      >
         Cek Email Anda
       </h2>
-      <div class="space-y-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400">
+      <div
+        class="space-y-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400"
+      >
         <p>
-          Kami telah mengirimkan instruksi pemulihan ke <br/>
-          <span class="font-medium text-neutral-800 dark:text-neutral-200">{{ email }}</span>
+          Kami telah mengirimkan instruksi pemulihan ke <br />
+          <span class="font-medium text-neutral-800 dark:text-neutral-200">{{
+            email
+          }}</span>
         </p>
         <p>Silakan periksa kotak masuk atau folder spam Anda.</p>
       </div>
@@ -93,17 +134,22 @@ const handleResetPassword = async () => {
         >
           Kembali ke Login
         </UButton>
-        <button
+        <UButton
+          color="neutral"
+          variant="ghost"
           type="button"
           class="text-[11px] sm:text-xs font-medium text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
-          @click="isSubmitted = false; email = ''"
+          @click="resetSubmissionState"
         >
           Kirim ulang link reset
-        </button>
+        </UButton>
       </div>
     </div>
 
-    <div v-if="!isSubmitted" class="pt-2 text-center border-t border-neutral-100 dark:border-neutral-800/50 mt-6">
+    <div
+      v-if="!isSubmitted"
+      class="pt-2 text-center border-t border-neutral-100 dark:border-neutral-800/50 mt-6"
+    >
       <NuxtLink
         to="/auth/login"
         class="inline-flex items-center gap-1.5 text-[11px] sm:text-sm font-medium text-neutral-500 hover:text-emerald-600 dark:text-neutral-400 dark:hover:text-emerald-400 transition-colors"

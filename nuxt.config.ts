@@ -27,11 +27,6 @@ export default defineNuxtConfig({
     groqApiKey: process.env.GROQ_API_KEY,
     openrouterApiKey: process.env.OPENROUTER_API_KEY,
     geminiApiKey: process.env.GEMINI_API_KEY,
-    public: {
-      groqApiKey: process.env.GROQ_API_KEY,
-      openrouterApiKey: process.env.OPENROUTER_API_KEY,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-    },
   },
 
   // ─── App Head ────────────────────────────────────────────────────────────────
@@ -48,10 +43,19 @@ export default defineNuxtConfig({
 
       link: [
         { rel: 'icon', type: 'image/x-icon', href: favicon ?? '/favicon.ico' },
-        { rel: 'apple-touch-icon', href: appleTouchIcon ?? '/apple-touch-icon.png' },
-        // Preconnect ke domain eksternal yang paling sering dipakai
+        {
+          rel: 'apple-touch-icon',
+          href: appleTouchIcon ?? '/apple-touch-icon.png',
+        },
+        { rel: 'manifest', href: '/site.webmanifest' },
+        // Preconnect & Prefetch
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        {
+          rel: 'preconnect',
+          href: 'https://fonts.gstatic.com',
+          crossorigin: '',
+        },
+        { rel: 'dns-prefetch', href: 'https://cdn.jsdelivr.net' },
       ],
 
       meta: [
@@ -61,6 +65,13 @@ export default defineNuxtConfig({
         { name: 'author', content: siteMeta.author },
         { name: 'publisher', content: siteMeta.publisher },
         { name: 'theme-color', content: '#16a34a' }, // green-600 — sesuaikan dengan brand color JuruTani
+
+        // PWA & Mobile Web App
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        { name: 'apple-mobile-web-app-title', content: title },
+        { name: 'format-detection', content: 'telephone=no' },
 
         // ── Geo Meta Tags (penting untuk local SEO Yogyakarta/Jawa Tengah) ──
         { name: 'geo.region', content: 'ID-YO' },
@@ -96,7 +107,6 @@ export default defineNuxtConfig({
     '@vee-validate/nuxt',
     '@nuxtjs/sitemap',
     '@nuxtjs/robots',
-    'nuxt-og-image',
     'nuxt-schema-org',
     '@nuxt/eslint',
     '@nuxt/ui',
@@ -130,11 +140,16 @@ export default defineNuxtConfig({
     },
   },
 
+  icon: {
+    // Custom icon collections removed
+  },
+
   // ─── Nuxt Image ──────────────────────────────────────────────────────────────
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
     provider: 'ipx',
     quality: 85,
+
     presets: {
       avatar: {
         modifiers: {
@@ -166,8 +181,8 @@ export default defineNuxtConfig({
       'res.cloudinary.com',
       'avatars.githubusercontent.com',
       'gravatar.com',
-      // Supabase storage — ganti <project-ref> dengan ref project kamu
-      // 'xxxxxxxxxxx.supabase.co',
+      // Supabase storage
+      'gzklfxfrislzfuqlcgtr.supabase.co',
     ],
     alias: {
       unsplash: 'https://images.unsplash.com',
@@ -223,8 +238,12 @@ export default defineNuxtConfig({
     '/auth/**': { robots: false },
 
     // Static assets — cache immutable 1 tahun
-    '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
-    '/images/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+    '/_nuxt/**': {
+      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+    },
+    '/images/**': {
+      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
+    },
     '/og/**': { headers: { 'cache-control': 'public, max-age=86400' } }, // OG images: cache 1 hari
 
     // Security headers global
@@ -243,7 +262,8 @@ export default defineNuxtConfig({
           "media-src 'self' https:",
           "worker-src 'self' blob:",
         ].join('; '),
-        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+        'Strict-Transport-Security':
+          'max-age=31536000; includeSubDomains; preload',
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'SAMEORIGIN',
         'Cross-Origin-Opener-Policy': 'same-origin',
@@ -271,13 +291,7 @@ export default defineNuxtConfig({
   robots: {
     blockNonSeoBots: true,
     // Disallow halaman private secara eksplisit
-    disallow: [
-      '/auth/',
-      '/profile/',
-      '/setting/',
-      '/history/',
-      '/chat/',
-    ],
+    disallow: ['/auth/', '/profile/', '/setting/', '/history/', '/chat/'],
   },
 
   // ─── Sitemap ─────────────────────────────────────────────────────────────────
@@ -285,12 +299,7 @@ export default defineNuxtConfig({
     xsl: false,
     strictNuxtContentPaths: true,
     // Exclude private pages dari sitemap
-    exclude: [
-      '/auth/**',
-      '/profile/**',
-      '/setting/**',
-      '/history/**',
-    ],
+    exclude: ['/auth/**', '/profile/**', '/setting/**', '/history/**'],
   },
 
   // ─── Schema.org (nuxt-schema-org) ────────────────────────────────────────────
@@ -301,18 +310,6 @@ export default defineNuxtConfig({
       url,
       logo: organization.logo,
       sameAs: organization.sameAs,
-    },
-  },
-
-  // ─── OG Image (nuxt-og-image / Satoru) ───────────────────────────────────────
-  ogImage: {
-    // Komponen OgImage* di components/OgImage/ akan di-auto-discover
-    // Satoru akan pakai komponen yang di-define via defineOgImageComponent()
-    componentDirs: ['OgImage'],
-    defaults: {
-      width: 1200,
-      height: 630,
-      extension: 'jpg',
     },
   },
 

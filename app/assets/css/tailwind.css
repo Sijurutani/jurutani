@@ -46,7 +46,13 @@
     --text-badge: #a7f3d0;
 
     --auth-shell-bg: #1f2126;
-    --auth-pane-bg: linear-gradient(90deg, #343741 0%, #2f323b 34%, #292c34 66%, #24262d 100%);
+    --auth-pane-bg: linear-gradient(
+      90deg,
+      #343741 0%,
+      #2f323b 34%,
+      #292c34 66%,
+      #24262d 100%
+    );
     --auth-pane-border: rgba(100, 116, 139, 0.45);
     --auth-form-surface: rgba(26, 29, 36, 0.6);
     --auth-input-bg: rgba(33, 37, 45, 0.9);
@@ -130,25 +136,23 @@
   }
 }
 
-
 @layer components {
   .app-reveal {
+    --reveal-delay: 0s;
     opacity: 0;
     transform: translateY(14px) scale(0.99);
-    animation: app-reveal 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
 
   .app-reveal--2 {
-    animation-delay: 120ms;
+    --reveal-delay: 0.12s;
   }
 
   .app-reveal--3 {
-    animation-delay: 220ms;
+    --reveal-delay: 0.22s;
   }
 
   .ambient-orb {
     pointer-events: none;
-    animation: ambient-float 16s ease-in-out infinite;
     will-change: transform, opacity;
   }
 
@@ -186,29 +190,8 @@
   }
 }
 
-@keyframes app-reveal {
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes ambient-float {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.15;
-  }
-
-  50% {
-    transform: translate3d(0, -20px, 0) scale(1.04);
-    opacity: 0.3;
-  }
-
-  100% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.15;
-  }
-}
+/* ── Vue <Transition name="auth-panel"> ── */
+/* Animasi auth panel sekarang menggunakan prop enter-active-class dll langsung di <Transition> */
 
 @media (prefers-reduced-motion: reduce) {
   html {
@@ -216,6 +199,7 @@
   }
 
   .app-reveal,
+  .auth-content-reveal,
   .ambient-orb,
   .interactive-surface,
   .interactive-link {

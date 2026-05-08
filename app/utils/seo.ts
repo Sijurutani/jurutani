@@ -28,7 +28,11 @@ export type OgType =
   | 'video.tv_show'
   | 'video.other'
 
-export type TwitterCardType = 'summary' | 'summary_large_image' | 'app' | 'player'
+export type TwitterCardType =
+  | 'summary'
+  | 'summary_large_image'
+  | 'app'
+  | 'player'
 
 /** Semua page type yang tersedia di platform */
 export type StaticPageType =
@@ -71,13 +75,17 @@ export interface SEOMetaOptions {
   ogImage?: string
   ogUrl?: string
   ogType?: OgType
-  /** Nama komponen Nuxt Satoru OG Image (tanpa prefix 'OgImage') */
-  ogImageComponent?: string
   canonicalUrl?: string
   author?: string
   publisher?: string
   robots?: string
   locale?: string
+}
+
+const OG_IMAGE_FALLBACK_PATH = '/og-image.jpg'
+
+const getDefaultOgImageUrl = () => {
+  return siteMeta.ogImageUrl || OG_IMAGE_FALLBACK_PATH
 }
 
 // ─── Core Generator ───────────────────────────────────────────────────────────
@@ -93,7 +101,6 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
     ogImage,
     ogUrl,
     ogType = 'website',
-    ogImageComponent,
     canonicalUrl,
     author = siteMeta.author,
     publisher = siteMeta.publisher,
@@ -120,7 +127,7 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
     ? [...new Set([...pageKeywords, ...defaultKeywords])]
     : defaultKeywords
 
-  const finalOgImage = ogImage || siteMeta.ogImageUrl
+  const finalOgImage = ogImage || getDefaultOgImageUrl()
 
   const route = useRoute()
   const finalOgUrl = ogUrl || `${siteMeta.url}${route.path}`
@@ -150,8 +157,6 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
     twitterImage: finalOgImage,
     twitterImageAlt: fullTitle,
     canonicalUrl: finalCanonicalUrl,
-    // internal — dipakai oleh useSeoOptimized untuk defineOgImageComponent
-    _ogImageComponent: ogImageComponent,
   }
 }
 
@@ -163,7 +168,6 @@ export const generateSeoMeta = (options: SEOMetaOptions) => {
  * - title: intent-based, mengandung keyword utama
  * - description: actionable, 140-160 karakter ideal
  * - keywords: long-tail, berbasis semantic search
- * - ogImageComponent: nama komponen Satoru tanpa prefix "OgImage"
  */
 const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
   home: {
@@ -184,7 +188,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'pertanian peternakan perkebunan perikanan',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   news: {
@@ -205,7 +208,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'harga gabah hari ini',
     ],
     ogType: 'website',
-    ogImageComponent: 'News',
   },
 
   courses: {
@@ -226,7 +228,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'video tutorial budidaya peternakan',
     ],
     ogType: 'website',
-    ogImageComponent: 'Course',
   },
 
   discussions: {
@@ -247,7 +248,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'diskusi usaha tani agribisnis',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   educations: {
@@ -268,7 +268,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'edukasi pertanian agribisnis',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   markets: {
@@ -289,7 +288,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'jual komoditas pertanian online',
     ],
     ogType: 'website',
-    ogImageComponent: 'Market',
   },
 
   tools: {
@@ -310,7 +308,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'alat bantu petani peternak digital',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   'food-prices': {
@@ -331,7 +328,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'referensi harga hasil panen',
     ],
     ogType: 'website',
-    ogImageComponent: 'FoodPrice',
   },
 
   videos: {
@@ -352,7 +348,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'channel pertanian indonesia',
     ],
     ogType: 'website',
-    ogImageComponent: 'Video',
   },
 
   chat: {
@@ -370,7 +365,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'bantuan masalah tanaman online',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   meetings: {
@@ -388,7 +382,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'jadwal event agribisnis indonesia',
     ],
     ogType: 'website',
-    ogImageComponent: 'Meeting',
   },
 
   weathers: {
@@ -407,7 +400,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'ramalan cuaca lahan pertanian',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   // ─── Static/Info Pages ──────────────────────────────────────────────────────
@@ -425,7 +417,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'lembaga penyuluhan pertanian resmi',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   contact: {
@@ -440,7 +431,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'pengaduan platform pertanian',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   help: {
@@ -455,25 +445,29 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
       'bantuan teknis platform tani',
     ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   terms: {
     title: 'Syarat & Ketentuan Layanan',
     description:
       'Baca syarat & ketentuan layanan platform JuruTani. Ketahui dengan seksama berbagai perjanjian pengguna, aturan layanan, serta hak kewajiban Anda di sini.',
-    keywords: ['syarat ketentuan JuruTani', 'terms of service platform pertanian'],
+    keywords: [
+      'syarat ketentuan JuruTani',
+      'terms of service platform pertanian',
+    ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   privacy: {
     title: 'Kebijakan Privasi — Perlindungan Data Pengguna JuruTani',
     description:
       'Kebijakan privasi JuruTani menjelaskan cara komprehensif kami dalam mengumpulkan, memproses, dan senantiasa melindungi data pribadi pengguna platform ini.',
-    keywords: ['kebijakan privasi JuruTani', 'perlindungan data petani', 'privacy policy agribisnis'],
+    keywords: [
+      'kebijakan privasi JuruTani',
+      'perlindungan data petani',
+      'privacy policy agribisnis',
+    ],
     ogType: 'website',
-    ogImageComponent: 'Home',
   },
 
   // ─── Private Pages (noindex) ────────────────────────────────────────────────
@@ -485,7 +479,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
     keywords: [],
     ogType: 'website',
     robots: 'noindex, follow',
-    ogImageComponent: 'Home',
   },
 
   profile: {
@@ -495,7 +488,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
     keywords: [],
     ogType: 'website',
     robots: 'noindex, follow',
-    ogImageComponent: 'Home',
   },
 
   history: {
@@ -505,7 +497,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
     keywords: [],
     ogType: 'website',
     robots: 'noindex, follow',
-    ogImageComponent: 'Home',
   },
 
   setting: {
@@ -515,7 +506,6 @@ const PAGE_META_CONFIG: Record<StaticPageType, SEOMetaOptions> = {
     keywords: [],
     ogType: 'website',
     robots: 'noindex, follow',
-    ogImageComponent: 'Home',
   },
 }
 
@@ -527,7 +517,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Akses akun JuruTani untuk menikmati semua fasilitas penyuluhan digital kami. Mari bertumbuh bersama komunitas petani & peternak di seluruh Indonesia.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
   register: {
     title: 'Daftar Gratis',
@@ -535,7 +524,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Buat akun JuruTani secara gratis dan jadilah bagian dari komunitas tani digital. Nikmati ragam akses edukasi, fitur konsultasi ahli, dan info komoditas.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
   'forgot-password': {
     title: 'Lupa Kata Sandi',
@@ -543,7 +531,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Masukkan alamat email Anda untuk segera menerima panduan pemulihan kata sandi. Dapatkan kembali akses penuh ke fasilitas penyuluhan agribisnis JuruTani.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
   'reset-password': {
     title: 'Buat Kata Sandi Baru',
@@ -551,7 +538,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Buat kombinasi kata sandi baru yang kuat guna amankan kembali akun JuruTani Anda. Pastikan kerahasiaan data demi kelancaran memakai layanan penyuluhan.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
   'confirm-email': {
     title: 'Verifikasi Email',
@@ -559,7 +545,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Periksa inbox email Anda dan klik tautan verifikasi yang baru kami kirim. Langkah validasi ini amat diperlukan guna mengaktifkan akun platform JuruTani.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
   callback: {
     title: 'Memproses',
@@ -567,7 +552,6 @@ const AUTH_META_CONFIG: Record<AuthPageType, SEOMetaOptions> = {
       'Sistem JuruTani sedang memproses autentikasi akun Anda secara aman. Mohon tunggu beberapa saat selagi kami menyiapkan akses masuk ke beranda platform.',
     keywords: [],
     robots: 'noindex, nofollow',
-    ogImageComponent: 'Home',
   },
 }
 
@@ -598,12 +582,15 @@ export const getAuthPageSeoMeta = (pageType: AuthPageType) => {
 
 /**
  * Composable untuk static pages.
- * Auto-apply useSeoMeta + defineOgImageComponent (Satoru) + Schema.org untuk home.
+ * Auto-apply useSeoMeta + Schema.org untuk home.
  *
  * Usage: `useSeoOptimized('news')`
  */
-export const useSeoOptimized = (pageType: StaticPageType) => {
-  const config = PAGE_META_CONFIG[pageType] ?? PAGE_META_CONFIG.home
+export const useSeoOptimized = (pageType: AllPageType) => {
+  const config =
+    PAGE_META_CONFIG[pageType as StaticPageType] ??
+    AUTH_META_CONFIG[pageType as AuthPageType] ??
+    PAGE_META_CONFIG.home
   const seoMeta = generateSeoMeta(config)
 
   useSeoMeta({
@@ -616,6 +603,8 @@ export const useSeoOptimized = (pageType: StaticPageType) => {
     ogTitle: seoMeta.ogTitle,
     ogDescription: seoMeta.ogDescription,
     ogImage: seoMeta.ogImage,
+    twitterImage: seoMeta.twitterImage,
+    twitterImageAlt: seoMeta.twitterImageAlt,
     ogUrl: seoMeta.ogUrl,
     ogType: seoMeta.ogType as OgType,
     ogLocale: seoMeta.ogLocale,
@@ -625,55 +614,13 @@ export const useSeoOptimized = (pageType: StaticPageType) => {
     twitterCreator: seoMeta.twitterCreator,
     twitterTitle: seoMeta.twitterTitle,
     twitterDescription: seoMeta.twitterDescription,
-    twitterImage: seoMeta.twitterImage,
-    twitterImageAlt: seoMeta.twitterImageAlt,
   })
-
-  // OG Image per-halaman menggunakan komponen Satoru yang tepat
-  const ogImageComponent = seoMeta._ogImageComponent ?? 'Home'
-  defineOgImageComponent(`OgImage${ogImageComponent}`, {
-    title: seoMeta.title,
-    description: seoMeta.description,
-  })
-
-  // Schema.org global (WebSite + Organization) khusus home
-  if (pageType === 'home') {
-    useSchemaOrg([
-      defineWebSite({
-        name: siteMeta.title,
-        url: siteMeta.url,
-        description: siteMeta.description,
-        inLanguage: siteMeta.lang,
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: {
-            '@type': 'EntryPoint',
-            urlTemplate: `${siteMeta.url}/search?q={search_term_string}`,
-          },
-          'query-input': 'required name=search_term_string',
-        },
-      }),
-      defineOrganization({
-        name: siteMeta.organization.name,
-        alternateName: siteMeta.organization.alternateName,
-        logo: siteMeta.organization.logo,
-        url: siteMeta.organization.url,
-        sameAs: siteMeta.organization.sameAs,
-        email: siteMeta.organization.email,
-        telephone: siteMeta.organization.phone,
-        foundingDate: siteMeta.organization.foundingDate,
-        areaServed: siteMeta.organization.areaServed,
-        knowsAbout: siteMeta.organization.knowsAbout,
-      }),
-    ])
-  }
-
   return seoMeta
 }
 
 /**
  * Composable untuk halaman detail / dinamis (artikel berita, kursus, produk marketplace, dll).
- * Auto-apply useSeoMeta + optional Schema.org (Article / Product) + optional Satoru OG Image.
+ * Auto-apply useSeoMeta + optional Schema.org (Article / Product).
  *
  * Usage:
  * ```ts
@@ -683,8 +630,6 @@ export const useSeoOptimized = (pageType: StaticPageType) => {
  *   keywords: ['cabai merah', 'hama kutu daun'],
  *   image: artikel.thumbnail,
  *   type: 'article',
- *   ogImageComponent: 'News',
- *   ogImageProps: { category: 'Berita', date: artikel.tanggal },
  *   schema: {
  *     type: 'Article',
  *     data: {
@@ -703,8 +648,6 @@ export const useSeoDetail = (options: {
   image?: string
   url?: string
   type?: OgType
-  ogImageComponent?: string
-  ogImageProps?: Record<string, any>
   schema?: {
     type: 'Article' | 'Product'
     data: Record<string, any>
@@ -717,8 +660,6 @@ export const useSeoDetail = (options: {
     image,
     url,
     type = 'article',
-    ogImageComponent,
-    ogImageProps,
     schema,
   } = options
 
@@ -727,12 +668,19 @@ export const useSeoDetail = (options: {
   const fullTitle = pageTitle || siteTitle
   const fullDescription = pageDescription || siteMeta.description
 
-  const defaultKeywords = ['JuruTani', 'pertanian', 'peternakan', 'perikanan', 'penyuluhan', 'petani indonesia']
+  const defaultKeywords = [
+    'JuruTani',
+    'pertanian',
+    'peternakan',
+    'perikanan',
+    'penyuluhan',
+    'petani indonesia',
+  ]
   const combinedKeywords = pageKeywords
     ? [...new Set([...pageKeywords, ...defaultKeywords])]
     : defaultKeywords
 
-  const finalOgImage = image || siteMeta.ogImageUrl
+  const finalOgImage = image || getDefaultOgImageUrl()
 
   const route = useRoute()
   const finalOgUrl = url || `${siteMeta.url}${route.path}`
@@ -747,6 +695,8 @@ export const useSeoDetail = (options: {
     ogTitle: fullTitle,
     ogDescription: fullDescription,
     ogImage: finalOgImage,
+    twitterImage: finalOgImage,
+    twitterImageAlt: fullTitle,
     ogUrl: finalOgUrl,
     ogType: type as OgType,
     ogLocale: siteMeta.locale,
@@ -756,19 +706,7 @@ export const useSeoDetail = (options: {
     twitterCreator: siteMeta.twitter,
     twitterTitle: fullTitle,
     twitterDescription: fullDescription,
-    twitterImage: finalOgImage,
-    twitterImageAlt: fullTitle,
   })
-
-  // OG Image dinamis via Satoru
-  if (ogImageComponent) {
-    defineOgImageComponent(`OgImage${ogImageComponent}`, {
-      title: pageTitle,
-      description: pageDescription,
-      ...ogImageProps,
-    })
-  }
-
   // Schema.org dinamis
   if (schema) {
     if (schema.type === 'Article') {
@@ -844,5 +782,5 @@ export const getCanonicalUrl = (path: string): string => {
  * Resolve OG image URL dengan fallback ke default.
  */
 export const getOgImageUrl = (customImage?: string): string => {
-  return customImage || siteMeta.ogImageUrl
+  return customImage || getDefaultOgImageUrl()
 }

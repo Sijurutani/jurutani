@@ -24,9 +24,9 @@ export default {
     shortName: 'Polbangtan Yogyakarta-Magelang',
     alternateName: ['Polbangtan Yoma', 'JuruTani'],
     url: 'https://jurutani.com',
-    logo: 'https://jurutani.com/logo/jurutani.png',
+    logo: 'https://jurutani.com/logo/jurutani.webp',
     // OG image utama — rasio 1200x630 (rekomendasi WhatsApp/FB/Twitter)
-    image: 'https://jurutani.com/og/og-home.jpg',
+    image: 'https://jurutani.com/og-image.jpg',
     description:
       'Platform digital penyuluhan pertanian, peternakan, perkebunan, dan perikanan resmi Polbangtan Yogyakarta-Magelang untuk mendukung ketahanan pangan dan kesejahteraan petani Indonesia.',
     address: {
@@ -68,7 +68,7 @@ export default {
 
   // ─── Assets ────────────────────────────────────────────────────────────────
   // Fallback OG image (Nuxt Satoru akan override ini per-halaman)
-  ogImageUrl: '/og/og-home.jpg',
+  ogImageUrl: '/og-image.jpg',
   favicon: '/favicon.ico',
   appleTouchIcon: '/apple-touch-icon.png',
 

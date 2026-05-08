@@ -3,7 +3,7 @@ export function buildSystemPrompt(adminName?: string): string {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
 
   return `Kamu adalah **Asisten Admin Jurutani**, AI assistant khusus untuk tim admin platform pertanian digital JuruTani.

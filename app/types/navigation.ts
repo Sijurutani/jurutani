@@ -9,4 +9,3 @@ export type NavMenu = {
   primary: NavItem[]
   secondary: NavItem[]
 }
-

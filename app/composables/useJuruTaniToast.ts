@@ -1,6 +1,9 @@
 type ToastType = 'success' | 'error' | 'info' | 'warning'
 
-const toastColorMap: Record<ToastType, 'success' | 'error' | 'info' | 'warning'> = {
+const toastColorMap: Record<
+  ToastType,
+  'success' | 'error' | 'info' | 'warning'
+> = {
   success: 'success',
   error: 'error',
   info: 'info',
@@ -34,10 +37,14 @@ export const usejuruTaniToast = () => {
     remove: (_id: string | number) => {
       // no-op: Nuxt UI toast dikelola internal.
     },
-    success: (message: string, timeout?: number) => pushToast(message, 'success', timeout),
-    error: (message: string, timeout?: number) => pushToast(message, 'error', timeout),
-    info: (message: string, timeout?: number) => pushToast(message, 'info', timeout),
-    warning: (message: string, timeout?: number) => pushToast(message, 'warning', timeout),
+    success: (message: string, timeout?: number) =>
+      pushToast(message, 'success', timeout),
+    error: (message: string, timeout?: number) =>
+      pushToast(message, 'error', timeout),
+    info: (message: string, timeout?: number) =>
+      pushToast(message, 'info', timeout),
+    warning: (message: string, timeout?: number) =>
+      pushToast(message, 'warning', timeout),
   }
 }
 

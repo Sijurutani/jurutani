@@ -1,100 +1,116 @@
 <script setup lang="ts">
-definePageMeta({
-  middleware: ['auth'],
-  layout: 'default'
-})
+  definePageMeta({
+    middleware: ['auth'],
+    layout: 'default',
+  })
 
-const route = useRoute()
-const router = useRouter()
-const toast = useToast()
-const authStore = useAuthStore()
+  const route = useRoute()
+  const router = useRouter()
+  const toast = useToast()
+  const authStore = useAuthStore()
 
-const {
-  myId,
-  conversations,
-  unreadCounts,
-  loadingConversations,
-  fetchConversations,
-  markConversationRead,
-  deleteConversation,
-  createOrGetAdminConversation
-} = useMessages()
+  const {
+    myId,
+    conversations,
+    unreadCounts,
+    loadingConversations,
+    fetchConversations,
+    markConversationRead,
+    deleteConversation,
+    createOrGetAdminConversation,
+  } = useMessages()
 
-const selectedConversationId = computed(() => route.params.id as string | undefined)
-const showNewChatModal = ref(false)
+  const selectedConversationId = computed(
+    () => route.params.id as string | undefined,
+  )
+  const showNewChatModal = ref(false)
 
-const isMobile = computed(() => {
-  if (!import.meta.client) return false
-  return window.matchMedia('(max-width: 1023px)').matches
-})
+  const isMobile = computed(() => {
+    if (!import.meta.client) return false
+    return window.matchMedia('(max-width: 1023px)').matches
+  })
 
-const sidebarOpen = ref(true)
+  const sidebarOpen = ref(true)
 
-watchEffect(() => {
-  if (!import.meta.client) return
-  sidebarOpen.value = !selectedConversationId.value || !isMobile.value
-})
+  watchEffect(() => {
+    if (!import.meta.client) return
+    sidebarOpen.value = !selectedConversationId.value || !isMobile.value
+  })
 
-function openConversation(conversationId: string) {
-  router.push(`/messages/${conversationId}`)
-  sidebarOpen.value = false
-}
-
-async function handleMarkRead(conversationId: string) {
-  try {
-    await markConversationRead(conversationId)
-  } catch (e: any) {
-    toast.add({ title: 'Gagal', description: e?.message, color: 'error' })
+  function openConversation(conversationId: string) {
+    router.push(`/messages/${conversationId}`)
+    sidebarOpen.value = false
   }
-}
 
-async function handleDeleteConversation(conversationId: string) {
-  try {
-    await deleteConversation(conversationId)
-    toast.add({ title: 'Percakapan dihapus', color: 'success' })
-    if (selectedConversationId.value === conversationId) {
-      router.push('/messages')
+  async function handleMarkRead(conversationId: string) {
+    try {
+      await markConversationRead(conversationId)
+    } catch (e: any) {
+      toast.add({ title: 'Gagal', description: e?.message, color: 'error' })
     }
-  } catch (e: any) {
-    toast.add({ title: 'Gagal menghapus', description: e?.message, color: 'error' })
   }
-}
 
-async function handleChatAdmin() {
-  try {
-    const conversationId = await createOrGetAdminConversation()
-    await fetchConversations()
-    openConversation(conversationId)
-  } catch (e: any) {
-    toast.add({ title: 'Gagal membuka chat admin', description: e?.message, color: 'error' })
+  async function handleDeleteConversation(conversationId: string) {
+    try {
+      await deleteConversation(conversationId)
+      toast.add({ title: 'Percakapan dihapus', color: 'success' })
+      if (selectedConversationId.value === conversationId) {
+        router.push('/messages')
+      }
+    } catch (e: any) {
+      toast.add({
+        title: 'Gagal menghapus',
+        description: e?.message,
+        color: 'error',
+      })
+    }
   }
-}
 
-onMounted(async () => {
-  if (!authStore.isAuthenticated) return
-  try {
-    await fetchConversations()
-    if (route.query.admin === '1') {
+  async function handleChatAdmin() {
+    try {
       const conversationId = await createOrGetAdminConversation()
       await fetchConversations()
       openConversation(conversationId)
+    } catch (e: any) {
+      toast.add({
+        title: 'Gagal membuka chat admin',
+        description: e?.message,
+        color: 'error',
+      })
     }
-  } catch (e: any) {
-    toast.add({ title: 'Gagal memuat percakapan', description: e?.message, color: 'error' })
   }
-})
+
+  onMounted(async () => {
+    if (!authStore.isAuthenticated) return
+    try {
+      await fetchConversations()
+      if (route.query.admin === '1') {
+        const conversationId = await createOrGetAdminConversation()
+        await fetchConversations()
+        openConversation(conversationId)
+      }
+    } catch (e: any) {
+      toast.add({
+        title: 'Gagal memuat percakapan',
+        description: e?.message,
+        color: 'error',
+      })
+    }
+  })
 </script>
 
 <template>
   <div class="lg:pt-24 pt-20">
     <div class="mx-auto max-w-[1600px] w-full px-4">
-      <div class="h-[calc(100vh-5rem)] overflow-hidden rounded-2xl border border-default bg-default shadow-xl">
+      <div
+        class="h-[calc(100vh-5rem)] overflow-hidden rounded-2xl border border-default bg-default shadow-xl"
+      >
         <div class="flex h-full">
           <div
             class="w-full lg:w-96 border-r border-default h-full overflow-hidden"
             :class="selectedConversationId ? 'hidden lg:block' : ''"
           >
-            <MessagesSidebar
+            <FeaturesMessagesSidebar
               :conversations="conversations"
               :my-id="String(myId || '')"
               :unread-counts="unreadCounts"
@@ -121,11 +137,16 @@ onMounted(async () => {
       </div>
     </div>
 
-    <MessagesNewChatModal
+    <FeaturesMessagesNewChatModal
       v-model:open="showNewChatModal"
       :my-id="String(myId || '')"
-      @created="(id) => { showNewChatModal = false; fetchConversations(); openConversation(id) }"
+      @created="
+        (id) => {
+          showNewChatModal = false
+          fetchConversations()
+          openConversation(id)
+        }
+      "
     />
   </div>
 </template>
-

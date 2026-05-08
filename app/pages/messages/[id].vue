@@ -1,31 +1,36 @@
 <script setup lang="ts">
-import type { ConversationWithProfiles } from '~/composables/useMessages'
+  import type { ConversationWithProfiles } from '~/composables/useMessages'
 
-const props = defineProps<{
-  conversations: ConversationWithProfiles[]
-  myId: string
-}>()
+  const props = defineProps<{
+    conversations: ConversationWithProfiles[]
+    myId: string
+  }>()
 
-const emit = defineEmits<{
-  back: []
-  refreshList: []
-}>()
+  const emit = defineEmits<{
+    back: []
+    refreshList: []
+  }>()
 
-const route = useRoute()
-const conversationId = computed(() => route.params.id as string)
+  const route = useRoute()
+  const conversationId = computed(() => route.params.id as string)
 
-const conversation = computed(() => props.conversations.find(c => c.id === conversationId.value) || null)
+  const conversation = computed(
+    () =>
+      props.conversations.find((c) => c.id === conversationId.value) || null,
+  )
 
-const otherUser = computed(() => {
-  if (!conversation.value) return null
-  const selfId = props.myId
-  return conversation.value.participant1_id === selfId ? conversation.value.participant2 : conversation.value.participant1
-})
+  const otherUser = computed(() => {
+    if (!conversation.value) return null
+    const selfId = props.myId
+    return conversation.value.participant1_id === selfId
+      ? conversation.value.participant2
+      : conversation.value.participant1
+  })
 </script>
 
 <template>
   <div v-if="conversation && otherUser" class="h-full">
-    <MessagesChat
+    <FeaturesMessagesChat
       :conversation-id="conversationId"
       :other-user="otherUser"
       :my-id="myId"
@@ -44,4 +49,3 @@ const otherUser = computed(() => {
     />
   </div>
 </template>
-

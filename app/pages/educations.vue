@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-// SEO Optimization
-useSeoOptimized('educations')
+  // SEO Optimization
+  useSeoOptimized('educations')
 </script>
 
 <template>

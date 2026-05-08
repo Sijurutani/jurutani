@@ -1,0 +1,9 @@
+onlyBuiltDependencies:
+  - '@google/genai'
+  - '@parcel/watcher'
+  - esbuild
+  - protobufjs
+  - sharp
+  - supabase
+  - unrs-resolver
+  - vue-demi
