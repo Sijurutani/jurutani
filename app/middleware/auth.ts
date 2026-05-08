@@ -1,7 +1,7 @@
 /**
  * Auth Middleware — proteksi route yang memerlukan autentikasi.
  * Menggunakan useSupabaseUser() dari @nuxtjs/supabase (sudah reactive)
- * dan Pinia store untuk data profil.
+ * dan Global state composable untuk data profil.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   const user = useSupabaseUser()

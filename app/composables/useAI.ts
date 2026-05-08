@@ -1,7 +1,7 @@
 // composables/useClientChatbot.ts
 // State management chatbot client-side:
 //   - Riwayat sesi (localStorage)
-//   - Profil user dari Pinia auth store
+//   - Profil user dari auth composable
 //   - Kirim pesan ke server API chatbot
 
 import { type AIProvider } from '~/utils/ai'
