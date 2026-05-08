@@ -13,7 +13,7 @@
     NEWS_TIPTAP_SUGGESTION_ITEMS,
     getEmptyTiptapDoc,
   } from '~/composables/useTiptapContent'
-  import { useAuthStore } from '~/stores/auth'
+
   import { onMounted, reactive } from 'vue'
 
   const authStore = useAuthStore()

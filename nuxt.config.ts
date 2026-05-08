@@ -101,7 +101,7 @@ export default defineNuxtConfig({
   // ─── Modules ─────────────────────────────────────────────────────────────────
   modules: [
     '@nuxtjs/mdc',
-    '@pinia/nuxt',
+
     '@vueuse/nuxt',
     '@nuxt/image',
     '@vee-validate/nuxt',

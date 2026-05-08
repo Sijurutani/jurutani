@@ -1,20 +1,19 @@
-import { defineStore } from 'pinia'
 import type { Database } from '~/types/database.types'
 
 type UserProfile = Database['public']['Tables']['profiles']['Row']
 
-export const useAuthStore = defineStore('auth', () => {
+export const useAuthStore = () => {
   // ─── Supabase primitives (dari @nuxtjs/supabase) ─────────────────────────
   const client = useSupabaseClient()
   const user = useSupabaseUser()
   const session = useSupabaseSession()
 
   // ─── Local state ──────────────────────────────────────────────────────────
-  const profile = ref<UserProfile | null>(null)
-  const loading = ref(false)
-  const profileLoading = ref(false)
-  const error = ref<string | null>(null)
-  const avatarVersion = ref(Math.floor(Date.now() / (5 * 60 * 1000)))
+  const profile = useState<UserProfile | null>('auth-profile', () => null)
+  const loading = useState('auth-loading', () => false)
+  const profileLoading = useState('auth-profile-loading', () => false)
+  const error = useState<string | null>('auth-error', () => null)
+  const avatarVersion = useState('auth-avatar-version', () => Math.floor(Date.now() / (5 * 60 * 1000)))
 
   // ─── Computed ─────────────────────────────────────────────────────────────
   const isAuthenticated = computed(() => !!user.value)
@@ -408,7 +407,7 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   // ─── Exports ──────────────────────────────────────────────────────────────
-  return {
+  return reactive({
     // State (refs)
     user,
     session,
@@ -440,5 +439,5 @@ export const useAuthStore = defineStore('auth', () => {
     uploadAvatar,
     refreshAvatarCache,
     init,
-  }
-})
+  })
+}

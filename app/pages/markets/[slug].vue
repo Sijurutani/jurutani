@@ -4,7 +4,7 @@
   import { extractTiptapText } from '~/composables/useTiptapContent'
   import { formatDateLong } from '~/utils/dateFormatter'
   import { Enum } from '~/utils/enum'
-  import { useAuthStore } from '~/stores/auth'
+
   const auth = useAuthStore()
   const canEditProduct = computed(
     () =>
