@@ -17,8 +17,9 @@ export interface SharePlatform {
 export function useSocialShare() {
   const isSharing = ref(false)
 
-  // Copy to clipboard
+  // Copy to clipboard — client only
   const copyToClipboard = async (text: string): Promise<boolean> => {
+    if (!import.meta.client) return false
     try {
       await navigator.clipboard.writeText(text)
       return true
@@ -28,8 +29,9 @@ export function useSocialShare() {
     }
   }
 
-  // Share to WhatsApp
+  // Share to WhatsApp — client only
   const shareToWhatsApp = (options: ShareOptions) => {
+    if (!import.meta.client) return
     const text = encodeURIComponent(
       `${options.title}\n\n${options.description || ''}\n\n${options.url}`,
     )
@@ -37,8 +39,9 @@ export function useSocialShare() {
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
-  // Share to Facebook
+  // Share to Facebook — client only
   const shareToFacebook = (options: ShareOptions) => {
+    if (!import.meta.client) return
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(options.url)}`
     window.open(url, '_blank', 'noopener,noreferrer,width=600,height=400')
   }
@@ -125,8 +128,9 @@ export function useSocialShare() {
     }
   }
 
-  // Native share (if available)
+  // Native share (if available) — client only
   const nativeShare = async (options: ShareOptions) => {
+    if (!import.meta.client) return
     if (navigator.share) {
       try {
         await navigator.share({

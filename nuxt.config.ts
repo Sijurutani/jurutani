@@ -92,6 +92,11 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: true,
     },
+    // Pastikan 'ws' tidak di-bundle tapi digunakan dari node_modules
+    // Ini mencegah error "Cannot find module 'ws'" di Nitro ESM runtime
+    externals: {
+      inline: ['ws'],
+    },
   },
 
   features: {
@@ -320,6 +325,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-01-14',
 
   devtools: {
-    enabled: true,
+    // Matikan devtools di production untuk performa & keamanan
+    enabled: process.env.NODE_ENV !== 'production',
   },
 })

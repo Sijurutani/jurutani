@@ -98,12 +98,10 @@
       : null,
   )
 
-  // ─── Share URL ─────────────────────────────────────────────────────────────────
-  const shareUrl = computed(() => {
-    const path = `/videos/${slugParam.value}`
-    if (typeof window !== 'undefined') return `${window.location.origin}${path}`
-    return `https://jurutani.com${path}`
-  })
+  // ─── Share URL — SSR-safe via useRequestURL() ─────────────────────────────────
+  const { origin: reqOrigin } = useRequestURL()
+  const shareUrl = computed(() => `${reqOrigin}/videos/${slugParam.value}`)
+
 
   // ─── Related Videos ────────────────────────────────────────────────────────────
   const { data: relatedVideos } = await useAsyncData(

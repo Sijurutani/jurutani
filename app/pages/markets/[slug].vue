@@ -103,6 +103,7 @@
   }
 
   const downloadAttachment = (attachment: { url: string; name: string }) => {
+    if (!import.meta.client) return
     const link = document.createElement('a')
     link.href = getAttachmentUrl(attachment.url)
     link.download = attachment.name
@@ -338,8 +339,9 @@
     navigateTo('/markets')
   }
 
-  // Open WhatsApp
+  // Open WhatsApp — client only
   const openWhatsApp = (): void => {
+    if (!import.meta.client) return
     if (whatsappLink.value !== '#') {
       window.open(whatsappLink.value, '_blank', 'noopener,noreferrer')
     }
@@ -368,13 +370,11 @@
       : [],
   )
 
-  // Share URL
+  // Share URL — SSR-safe via useRequestURL()
+  const { origin: reqOrigin } = useRequestURL()
   const shareUrl = computed(() => {
     const slug = slugParam.value || ''
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/markets/${slug}`
-    }
-    return `https://jurutani.com/markets/${slug}`
+    return `${reqOrigin}/markets/${slug}`
   })
 
   // Update SEO after product is loaded

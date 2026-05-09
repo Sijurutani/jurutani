@@ -82,6 +82,7 @@
   }
 
   const downloadAttachment = (attachment: { url: string; name: string }) => {
+    if (!import.meta.client) return
     const url = getAttachmentUrl(attachment.url)
     if (!url) return
 
@@ -205,13 +206,11 @@
     return imagePath ? getImagePathUrl(imagePath) : '/placeholder.webp'
   })
 
-  // SEO
+  // SEO — gunakan useRequestURL() agar SSR-safe
+  const { origin: reqOrigin } = useRequestURL()
   const shareUrl = computed(() => {
     const slug = slugParam.value || ''
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/update/${slug}`
-    }
-    return `https://jurutani.com/update/${slug}`
+    return `${reqOrigin}/update/${slug}`
   })
 
   useSeoDetail({

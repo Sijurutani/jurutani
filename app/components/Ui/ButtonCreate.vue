@@ -56,6 +56,7 @@
   }
 
   const openAdminChat = () => {
+    if (!import.meta.client) return
     isModalOpen.value = false
     window.open(adminWhatsappLink, '_blank', 'noopener,noreferrer')
   }

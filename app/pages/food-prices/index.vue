@@ -482,8 +482,11 @@
 
   const handlePageChange = (page: number) => {
     currentPage.value = page
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (import.meta.client) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
+
 
   // SEO
   useSeoOptimized('food-prices')

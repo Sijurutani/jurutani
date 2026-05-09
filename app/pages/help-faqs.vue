@@ -39,8 +39,10 @@
     },
   ]
 
-  const scrollToFaqs = () =>
+  const scrollToFaqs = () => {
+    if (!import.meta.client) return
     document.getElementById('faq-content')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   const pageRef = ref<HTMLElement | null>(null)
   let ctx: gsap.Context
