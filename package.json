@@ -45,7 +45,6 @@
     "@vueuse/router": "^14.2.1",
     "date-fns": "^4.1.0",
     "gsap": "^3.13.0",
-    "ws": "^8.20.0",
     "zod": "^3.25.56"
   },
   "devDependencies": {

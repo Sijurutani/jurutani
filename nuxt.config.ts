@@ -92,9 +92,6 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: false,  // dinonaktifkan — .br files menyebabkan ENOENT 500 di production
     },
-    alias: {
-      ws: '~/server/utils/mock-ws.ts',
-    },
   },
 
   features: {

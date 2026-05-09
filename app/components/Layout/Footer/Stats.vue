@@ -80,33 +80,6 @@
     }
   }
 
-  const onlineUsersCount = ref(0)
-  let presenceChannel: any = null
-
-  function setupRealtimePresence() {
-    if (import.meta.server) return
-    const sessionId = `user_${Math.random().toString(36).substring(2, 15)}`
-    presenceChannel = supabase.channel('online_users', {
-      config: { presence: { key: sessionId } },
-    })
-    presenceChannel
-      .on('presence', { event: 'sync' }, () => {
-        onlineUsersCount.value = Object.keys(
-          presenceChannel.presenceState(),
-        ).length
-      })
-      .subscribe(async (status: string) => {
-        if (status === 'SUBSCRIBED')
-          await presenceChannel.track({ online_at: new Date().toISOString() })
-      })
-  }
-
-  function cleanupRealtimePresence() {
-    if (presenceChannel) {
-      supabase.removeChannel(presenceChannel)
-      presenceChannel = null
-    }
-  }
 
   async function getIPAddress() {
     try {
@@ -120,7 +93,6 @@
   const stats = ref<StatItem[]>([])
 
   onMounted(async () => {
-    setupRealtimePresence()
     const [stat, ip] = await Promise.all([getStats(), getIPAddress()])
     stats.value = [
       {
@@ -153,18 +125,10 @@
         value: stat.totalUsers.toLocaleString(),
         icon: 'i-lucide-users',
       },
-      {
-        label: 'Online',
-        value: onlineUsersCount.value,
-        icon: 'i-lucide-users',
-      },
       { label: 'IP Anda', value: ip, icon: 'i-lucide-network' },
     ]
   })
 
-  onBeforeUnmount(() => {
-    cleanupRealtimePresence()
-  })
 </script>
 
 <template>

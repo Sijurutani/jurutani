@@ -74,9 +74,6 @@ importers:
       gsap:
         specifier: ^3.13.0
         version: 3.15.0
-      ws:
-        specifier: ^8.20.0
-        version: 8.20.0
       zod:
         specifier: ^3.25.56
         version: 3.25.76

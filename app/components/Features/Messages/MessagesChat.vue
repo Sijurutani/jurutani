@@ -63,71 +63,22 @@
     emit('refreshList')
   }
 
-  let channel: ReturnType<typeof supabase.channel> | null = null
+  let pollInterval: ReturnType<typeof setInterval> | null = null
 
-  function subscribeRealtime() {
-    channel = supabase
-      .channel(`messages-${props.conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${props.conversationId}`,
-        },
-        async (payload) => {
-          const { data } = await supabase
-            .from('messages')
-            .select(
-              '*, sender:profiles!sender_id(id, full_name, username, email, avatar_url, role, is_admin)',
-            )
-            .eq('id', payload.new.id)
-            .single()
-          if (data) {
-            messages.value.push(data as unknown as MessageWithSender)
-            if ((data as any).sender_id !== props.myId) await markRead()
-            await nextTick()
-            if (isNearBottom.value) scrollToBottom()
-            else newMessageCount.value++
-          }
-          emit('refreshList')
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${props.conversationId}`,
-        },
-        (payload) => {
-          const idx = messages.value.findIndex(
-            (m) => m.id === (payload.new as MessageRow).id,
-          )
-          if (idx !== -1)
-            messages.value[idx] = {
-              ...messages.value[idx]!,
-              ...(payload.new as MessageRow),
-            }
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${props.conversationId}`,
-        },
-        (payload) => {
-          messages.value = messages.value.filter(
-            (m) => m.id !== (payload.old as { id: string }).id,
-          )
-        },
-      )
-      .subscribe()
+  function startPolling() {
+    if (import.meta.server) return
+    pollInterval = setInterval(async () => {
+      const newMessages = await fetchMessages(props.conversationId, 200)
+      if (newMessages.length !== messages.value.length) {
+        messages.value = newMessages
+        await markRead()
+        if (isNearBottom.value) scrollToBottom()
+        else newMessageCount.value++
+        emit('refreshList')
+      } else {
+        messages.value = newMessages
+      }
+    }, 5000)
   }
 
   const scrollEl = ref<HTMLElement | null>(null)
@@ -355,11 +306,11 @@
     await markRead()
     await nextTick()
     scrollToBottom(false)
-    subscribeRealtime()
+    startPolling()
   })
 
   onUnmounted(() => {
-    if (channel) supabase.removeChannel(channel)
+    if (pollInterval) clearInterval(pollInterval)
     pendingFiles.value.forEach((f) => {
       if (f.preview) URL.revokeObjectURL(f.preview)
     })
