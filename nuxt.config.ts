@@ -92,10 +92,12 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: true,
     },
-    // Pastikan 'ws' tidak di-bundle tapi digunakan dari node_modules
-    // Ini mencegah error "Cannot find module 'ws'" di Nitro ESM runtime
+    // 'ws' harus EXTERNAL (tidak di-bundle) agar CJS default export-nya tetap
+    // sebagai class constructor, bukan ESM namespace object.
+    // inline: ['ws'] adalah SALAH — menyebabkan Rollup bundle CJS ke ESM
+    // sehingga `class X extends ws` crash dengan "Class extends value [object Module]".
     externals: {
-      inline: ['ws'],
+      external: ['ws'],
     },
   },
 
