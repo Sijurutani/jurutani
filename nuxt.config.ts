@@ -90,7 +90,7 @@ export default defineNuxtConfig({
     preset: 'node-server',
     compressPublicAssets: {
       gzip: true,
-      brotli: true,
+      brotli: false,  // dinonaktifkan — .br files menyebabkan ENOENT 500 di production
     },
     // 'ws' harus EXTERNAL (tidak di-bundle) agar CJS default export-nya tetap
     // sebagai class constructor, bukan ESM namespace object.
