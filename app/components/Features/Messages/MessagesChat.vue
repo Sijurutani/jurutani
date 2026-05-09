@@ -279,10 +279,12 @@
     editingMsgId.value = msg.id
     editText.value = msg.content
     await nextTick()
-    const el = document.querySelector(
-      `[data-edit-id="${msg.id}"] textarea`,
-    ) as HTMLTextAreaElement | null
-    el?.focus()
+    if (import.meta.client) {
+      const el = document.querySelector(
+        `[data-edit-id="${msg.id}"] textarea`,
+      ) as HTMLTextAreaElement | null
+      el?.focus()
+    }
   }
 
   function cancelEdit() {
