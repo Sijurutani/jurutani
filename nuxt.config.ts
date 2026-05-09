@@ -92,12 +92,8 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: false,  // dinonaktifkan — .br files menyebabkan ENOENT 500 di production
     },
-    // 'ws' harus EXTERNAL (tidak di-bundle) agar CJS default export-nya tetap
-    // sebagai class constructor, bukan ESM namespace object.
-    // inline: ['ws'] adalah SALAH — menyebabkan Rollup bundle CJS ke ESM
-    // sehingga `class X extends ws` crash dengan "Class extends value [object Module]".
-    externals: {
-      external: ['ws'],
+    alias: {
+      ws: '~/server/utils/mock-ws.ts',
     },
   },
 
