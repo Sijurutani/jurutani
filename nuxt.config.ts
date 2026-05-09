@@ -138,6 +138,11 @@ export default defineNuxtConfig({
     classSuffix: '',
   },
 
+  // ─── Experimental ────────────────────────────────────────────────────────────
+  experimental: {
+    appManifest: false, // Menonaktifkan appManifest mencegah error ENOENT builds/meta/UUID.json di VPS
+  },
+
   // ─── CSS ─────────────────────────────────────────────────────────────────────
   css: ['@/assets/css/tailwind.css'],
 
