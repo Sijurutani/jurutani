@@ -174,7 +174,7 @@ export async function callGemini(
   tools?: Record<string, unknown>[],
 ): Promise<AIResponse> {
   const config = useRuntimeConfig()
-  const apiKey = config.geminiApiKey || process.env.GEMINI_API_KEY
+  const apiKey = config.geminiApiKey
   if (!apiKey) throw new Error('GEMINI_API_KEY is not configured')
 
   return callOpenAICompatible(

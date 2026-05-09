@@ -696,7 +696,7 @@ export async function executeChatTool(
     }
 
     case 'get_user': {
-      const args = JSON.parse(_args || '{}') as { query?: string }
+      const args = safeParseArgs(_args) as { query?: string }
       const query = args.query?.trim() || ''
       if (!query) return { error: 'Parameter query diperlukan.' }
       const { data, error } = await supabase
@@ -883,7 +883,7 @@ export async function executeChatTool(
     }
 
     case 'search_learning_course': {
-      const args = JSON.parse(_args || '{}') as { query?: string }
+      const args = safeParseArgs(_args) as { query?: string }
       const query = args.query?.trim() || ''
       if (!query) return { error: 'Parameter query diperlukan.' }
       const { data, error } = await supabase
@@ -952,7 +952,7 @@ export async function executeChatTool(
     }
 
     case 'get_food_by_category': {
-      const args = JSON.parse(_args || '{}') as { category?: string }
+      const args = safeParseArgs(_args) as { category?: string }
       const category = args.category?.trim() || ''
       if (!category) return { error: 'Parameter category diperlukan.' }
       const { data, error } = await supabase.rpc(
@@ -973,7 +973,7 @@ export async function executeChatTool(
     }
 
     case 'search_food': {
-      const args = JSON.parse(_args || '{}') as { query?: string }
+      const args = safeParseArgs(_args) as { query?: string }
       const query = args.query?.trim() || ''
       if (!query) return { error: 'Parameter query diperlukan.' }
       const { data, error } = await supabase.rpc('search_foods', {
@@ -1344,7 +1344,7 @@ export async function executeChatTool(
     }
 
     case 'get_expert_by_category': {
-      const args = JSON.parse(_args || '{}') as { category?: string }
+      const args = safeParseArgs(_args) as { category?: string }
       const category = args.category?.trim() || ''
       if (!category) return { error: 'Parameter category diperlukan.' }
       const { data, error } = await supabase
@@ -1365,7 +1365,7 @@ export async function executeChatTool(
     }
 
     case 'get_instructor_by_province': {
-      const args = JSON.parse(_args || '{}') as { province?: string }
+      const args = safeParseArgs(_args) as { province?: string }
       const province = args.province?.trim() || ''
       if (!province) return { error: 'Parameter province diperlukan.' }
       const { data, error } = await supabase
@@ -1401,7 +1401,7 @@ export async function executeChatTool(
     }
 
     case 'get_user_growth': {
-      const args = JSON.parse(_args || '{}') as { days?: number }
+      const args = safeParseArgs(_args) as { days?: number }
       const days = Math.min(Math.max(args.days ?? 7, 1), 90)
       const since = new Date()
       since.setDate(since.getDate() - days)

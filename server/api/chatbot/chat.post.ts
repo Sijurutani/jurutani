@@ -4,19 +4,37 @@ import { callAI, type AIMessage, type AIResponse } from '../../utils/ai'
 
 type Provider = 'gemini' | 'groq' | 'openrouter'
 
-// In-memory rate limiting per IP: 30 requests / minute.
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
+type RateLimitRecord = { count: number; resetAt: number }
+
+// In-memory rate limiter dengan self-cleaning.
+// Entry lama (resetAt sudah lewat) dibersihkan secara otomatis agar tidak memory leak.
+const rateLimitStore = new Map<string, RateLimitRecord>()
+const RATE_LIMIT_MAX = 30
+const RATE_LIMIT_WINDOW_MS = 60_000
+
+// Bersihkan entry yang sudah expired (jalan setiap N request, bukan setiap saat)
+let cleanupCounter = 0
+function cleanupExpiredEntries() {
+  cleanupCounter++
+  if (cleanupCounter < 100) return // Bersihkan setiap 100 request
+  cleanupCounter = 0
+  const now = Date.now()
+  for (const [key, record] of rateLimitStore) {
+    if (now > record.resetAt) rateLimitStore.delete(key)
+  }
+}
 
 function checkRateLimit(key: string): boolean {
+  cleanupExpiredEntries()
   const now = Date.now()
   const record = rateLimitStore.get(key)
 
   if (!record || now > record.resetAt) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + 60_000 })
+    rateLimitStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
     return true
   }
 
-  if (record.count >= 30) return false
+  if (record.count >= RATE_LIMIT_MAX) return false
   record.count += 1
   return true
 }
@@ -51,6 +69,8 @@ function isFallbackError(err: unknown): boolean {
     msg.includes('does not exist')
   )
     return true
+  // Timeout dari runWithProvider — coba provider berikutnya
+  if (msg.includes('timeout setelah')) return true
   return false
 }
 
@@ -99,11 +119,27 @@ const chatRequestSchema = z.object({
   userLocation: z.string().max(160).optional(),
 })
 
+// Timeout per-provider: 25 detik sebelum AbortController membatalkan request.
+// Mencegah Nitro worker hang jika AI provider tidak merespons.
+const PROVIDER_TIMEOUT_MS = 25_000
+
 async function runWithProvider(
   messages: AIMessage[],
   provider: Provider,
 ): Promise<AIResponse> {
-  return callAI(messages, provider)
+  const ac = new AbortController()
+  const timer = setTimeout(() => ac.abort(), PROVIDER_TIMEOUT_MS)
+  try {
+    return await callAI(messages, provider)
+  } catch (err: unknown) {
+    // Jika abort karena timeout, wrap menjadi error yang jelas
+    if (ac.signal.aborted) {
+      throw new Error(`Provider ${provider} timeout setelah ${PROVIDER_TIMEOUT_MS / 1000}s`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export default defineEventHandler(async (event) => {
