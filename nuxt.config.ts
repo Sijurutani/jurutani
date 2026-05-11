@@ -96,6 +96,16 @@ export default defineNuxtConfig({
       gzip: true,
       brotli: false,  // dinonaktifkan — .br files menyebabkan ENOENT 500 di production
     },
+    externals: {
+      inline: [
+        'virtual/global-sources.mjs',
+        '@nuxtjs/mdc'
+      ]
+    }
+  },
+
+  build: {
+    transpile: ['@nuxtjs/mdc']
   },
 
   features: {
