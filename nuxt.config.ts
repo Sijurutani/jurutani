@@ -150,7 +150,7 @@ export default defineNuxtConfig({
   },
 
   icon: {
-    // Custom icon collections removed
+    serverBundle: 'remote',
   },
 
   // ─── Nuxt Image ──────────────────────────────────────────────────────────────
