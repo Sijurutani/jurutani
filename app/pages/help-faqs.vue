@@ -1,91 +1,27 @@
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted } from 'vue'
-  import gsap from 'gsap'
-  import { faqData } from '~/data/faq'
+  import { faqCategories, faqData } from '~/data/faq'
+  import { useReveal } from '~/composables/useReveal'
 
   useSeoOptimized('help')
+  useReveal()
 
-  // ── Categories ──────────────────────────────────────────────
-  const categories = [
-    {
-      id: 'general',
-      number: '01',
-      label: 'Informasi Umum',
-      icon: 'i-lucide-info',
-    },
-    {
-      id: 'account',
-      number: '02',
-      label: 'Akun & Pendaftaran',
-      icon: 'i-lucide-user-circle',
-    },
-    {
-      id: 'farming',
-      number: '03',
-      label: 'Kajian & Fitur Pertanian',
-      icon: 'i-lucide-leaf',
-    },
-    {
-      id: 'marketplace',
-      number: '04',
-      label: 'Pemasaran & Marketplace',
-      icon: 'i-lucide-shopping-bag',
-    },
-    {
-      id: 'technical',
-      number: '05',
-      label: 'Bantuan Teknis',
-      icon: 'i-lucide-settings',
-    },
-  ]
+  // Menggunakan faqCategories langsung dari data/faq.ts
+  // Menambahkan 'number' untuk tampilan, karena data asli tidak memilikinya.
+  const categories = faqCategories.map((cat, index) => ({
+    ...cat,
+    id: cat.id,
+    label: cat.name,
+    number: `0${index + 1}`,
+  }))
 
   const scrollToFaqs = () => {
     if (!import.meta.client) return
     document.getElementById('faq-content')?.scrollIntoView({ behavior: 'smooth' })
   }
-
-  const pageRef = ref<HTMLElement | null>(null)
-  let ctx: gsap.Context
-
-  onMounted(() => {
-    ctx = gsap.context(() => {
-      // Light sweep effect exactly like HeroSection.vue
-      const sweeps = gsap.utils.toArray<HTMLElement>('.hf-badge__sweep')
-      sweeps.forEach((sweep) => {
-        const sweepTl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 })
-        sweepTl
-          .set(sweep, { xPercent: -200, opacity: 0 })
-          .to(sweep, { opacity: 1, duration: 0.25, ease: 'power1.out' })
-          .to(sweep, {
-            xPercent: 280,
-            opacity: 1,
-            duration: 1.6,
-            ease: 'power1.inOut',
-          })
-          .to(sweep, { opacity: 0, duration: 0.2, ease: 'power1.out' })
-      })
-
-      // Badge dot pulsing effect exactly like HeroSection.vue
-      const dots = gsap.utils.toArray<HTMLElement>('.hf-badge__dot')
-      dots.forEach((dot) => {
-        gsap.to(dot, {
-          opacity: 0.4,
-          duration: 1.8,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      })
-    }, pageRef.value || undefined)
-  })
-
-  onUnmounted(() => {
-    ctx?.revert()
-  })
 </script>
 
 <template>
-  <div ref="pageRef" class="hf-page">
+  <div class="hf-page">
     <!-- ════════════════════════════════════════════════
          HERO — matches HeroSection & page header patterns
          Uses bg-linear-to-r emerald gradient like other pages
@@ -94,11 +30,11 @@
       <div class="hf-hero__inner">
         <!-- Eyebrow badge — matches hero-badge token style -->
         <div class="hf-badge">
-          <span class="hf-badge__dot" />
+          <span class="hf-badge__dot animate-pulse-subtle" />
           <UIcon name="i-lucide-help-circle" class="w-3.5 h-3.5 text-[--text-badge]" />
           <span class="hf-badge__text">Pusat Bantuan</span>
-          <!-- Light sweep — identical to PageHeroSection badge-sweep -->
-          <span class="hf-badge__sweep" aria-hidden="true" />
+          <!-- Light sweep — kini menggunakan animasi CSS -->
+          <span class="hf-badge__sweep animate-sweep-light" aria-hidden="true" />
         </div>
 
         <!-- H1 — matches hero-heading token style -->
@@ -261,10 +197,8 @@
       transparent 100%
     );
     border-radius: inherit;
-    /* translateX dari -200% ke 280% di-animate via GSAP */
-    transform: translateX(-200%);
     pointer-events: none;
-    will-change: transform;
+    will-change: transform, opacity;
   }
 
   .hf-badge__dot {

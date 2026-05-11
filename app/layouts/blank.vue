@@ -1,9 +1,26 @@
 <script setup lang="ts">
   import { onClickOutside } from '@vueuse/core'
-  import gsap from 'gsap'
+  import { useReveal } from '~/composables/useReveal'
 
   const router = useRouter()
-  const { isScrolled } = useNavbarScroll()
+  
+  const isScrolled = ref(false)
+
+  const handleScroll = () => {
+    isScrolled.value = window.scrollY > 20
+  }
+
+  onMounted(() => {
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
+  })
+
+  // Initialize the new reveal-on-scroll composable
+  useReveal()
 
   const handleBack = () => {
     // Jika ada history sebelumnya di router (tidak buka tab baru/refresh langsung di halaman ini)
@@ -14,47 +31,6 @@
       router.push('/')
     }
   }
-
-  let layoutAnimContext: gsap.Context | null = null
-
-  const getRevealDelay = (el: HTMLElement) => {
-    const delayValue = getComputedStyle(el)
-      .getPropertyValue('--reveal-delay')
-      .trim()
-    const parsed = Number.parseFloat(delayValue)
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set('.app-reveal', { opacity: 1, clearProps: 'transform' })
-      return
-    }
-
-    layoutAnimContext = gsap.context(() => {
-      const reveals = gsap.utils.toArray<HTMLElement>('.app-reveal')
-      reveals.forEach((el) => {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 14, scale: 0.99 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.7,
-            ease: 'power3.out',
-            delay: getRevealDelay(el),
-            clearProps: 'transform',
-          },
-        )
-      })
-    })
-  })
-
-  onUnmounted(() => {
-    layoutAnimContext?.revert()
-    layoutAnimContext = null
-  })
 </script>
 
 <template>

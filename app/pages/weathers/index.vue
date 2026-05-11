@@ -1,6 +1,4 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
-
   definePageMeta({ layout: 'default' })
 
   useSeoOptimized('weathers')
@@ -24,7 +22,6 @@
 
   const orbRef = ref<HTMLElement | null>(null)
   const floatIconRef = ref<HTMLElement | null>(null)
-  let weatherAnimContext: gsap.Context | null = null
 
   // ─── Helpers ───────────────────────────────────────────────────
   const fmtTime = (ts: number, tz: number) =>
@@ -333,39 +330,10 @@
     getLocation()
     nextTick(() => updateChartWidth())
     window.addEventListener('resize', updateChartWidth, { passive: true })
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    weatherAnimContext = gsap.context(() => {
-      if (orbRef.value) {
-        gsap.to(orbRef.value, {
-          scale: 1.25,
-          opacity: 1,
-          duration: 7,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      }
-
-      if (floatIconRef.value) {
-        gsap.to(floatIconRef.value, {
-          y: -10,
-          duration: 4,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      }
-    })
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', updateChartWidth)
-    weatherAnimContext?.revert()
-    weatherAnimContext = null
   })
 </script>
 
@@ -395,7 +363,16 @@
       <!-- Subtle bottom darkening so lower content stays readable -->
       <div class="wx-fixed-bg__bottom" />
       <!-- Ambient orb — inside fixed-bg so it’s clipped by overflow:hidden -->
-      <div ref="orbRef" class="wx-orb" />
+      <div
+        ref="orbRef"
+        class="wx-orb animate-weather-orb"
+        style="
+          --orb-duration: 7s;
+          --orb-scale: 1.25;
+          --orb-opacity: 1;
+          --orb-y: 0;
+        "
+      />
     </div>
 
     <!-- ════════════════════════════════════════════
@@ -465,7 +442,11 @@
           >
             <!-- Left: temp -->
             <div class="flex items-center gap-5">
-              <div ref="floatIconRef" class="wx-float-icon">
+              <div
+                ref="floatIconRef"
+                class="wx-float-icon animate-weather-float"
+                style="--float-y: -10px; --float-duration: 4s"
+              >
                 <NuxtImg
                   :src="`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@4x.png`"
                   :alt="weatherData.weather[0].description"
@@ -605,8 +586,8 @@
           </div>
 
           <div class="wx-chart-card">
-            <LoadingData v-if="isHourlyLoading" message="Memuat grafik..." />
-            <NotFoundData v-else-if="hourlyError" :message="hourlyError" />
+            <UiLoadingData v-if="isHourlyLoading" message="Memuat grafik..." />
+            <UiNotFoundData v-else-if="hourlyError" :message="hourlyError" />
             <div v-else-if="hourlyData?.length">
               <!-- Weather icons row -->
               <div class="wx-chart-icons">
@@ -763,8 +744,8 @@
               </div>
             </div>
 
-            <LoadingData v-if="isForecastLoading" message="Memuat ramalan..." />
-            <NotFoundData v-else-if="forecastError" :message="forecastError" />
+            <UiLoadingData v-if="isForecastLoading" message="Memuat ramalan..." />
+            <UiNotFoundData v-else-if="forecastError" :message="forecastError" />
             <div v-else-if="forecastData?.length" class="flex flex-col gap-2">
               <div
                 v-for="(day, idx) in forecastData"

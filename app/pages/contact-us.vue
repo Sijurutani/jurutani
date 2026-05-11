@@ -1,35 +1,9 @@
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted } from 'vue'
-  import gsap from 'gsap'
   import { officeInfo } from '~/data/contact'
+  import { useReveal } from '~/composables/useReveal'
 
   useSeoOptimized('contact')
-
-  const pageRef = ref<HTMLElement | null>(null)
-  let ctx: gsap.Context | null = null
-
-  onMounted(() => {
-    ctx = gsap.context(() => {
-      // Animate cards on load
-      const cards = gsap.utils.toArray<HTMLElement>('.cu-anim-card')
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 30 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: 'power3.out',
-          stagger: 0.1,
-          clearProps: 'transform',
-        }
-      )
-    }, pageRef.value || undefined)
-  })
-
-  onUnmounted(() => {
-    ctx?.revert()
-  })
+  useReveal()
 
   const socialLinks = [
     {
@@ -38,7 +12,7 @@
       desc: 'Foto inspiratif & aktivitas pertanian',
       href: 'https://www.instagram.com/jurutani_/',
       bg: 'from-purple-500 via-pink-500 to-orange-500',
-      borderHover: 'hover:border-purple-200 dark:hover:border-purple-800'
+      borderHover: 'hover:border-purple-200 dark:hover:border-purple-800',
     },
     {
       icon: 'i-lucide-youtube',
@@ -46,7 +20,7 @@
       desc: 'Video tutorial & edukasi',
       href: 'https://www.youtube.com/@Juru_Tani',
       bg: 'from-red-400 to-red-600',
-      borderHover: 'hover:border-red-200 dark:hover:border-red-800'
+      borderHover: 'hover:border-red-200 dark:hover:border-red-800',
     },
     {
       icon: 'i-lucide-message-circle', // WhatsApp
@@ -54,7 +28,7 @@
       desc: 'Layanan pesan cepat 24/7',
       href: 'https://api.whatsapp.com/send/?phone=6285669000010',
       bg: 'from-green-500 to-green-600',
-      borderHover: 'hover:border-green-200 dark:hover:border-green-800'
+      borderHover: 'hover:border-green-200 dark:hover:border-green-800',
     },
     {
       icon: 'i-lucide-mail',
@@ -62,13 +36,13 @@
       desc: 'Pertanyaan bisnis & kemitraan',
       href: 'mailto:si.jurutani@gmail.com',
       bg: 'from-blue-500 to-blue-600',
-      borderHover: 'hover:border-blue-200 dark:hover:border-blue-800'
+      borderHover: 'hover:border-blue-200 dark:hover:border-blue-800',
     },
   ]
 </script>
 
 <template>
-  <div ref="pageRef" class="min-h-screen">
+  <div class="min-h-screen">
     <!-- Hero -->
     <CommonPageHeroSection
       title="Hubungi Tim"
@@ -82,6 +56,7 @@
         { value: '< 24h', label: 'Respons' },
         { value: '98%', label: 'Kepuasan' },
       ]"
+      class="app-reveal"
     />
 
     <div class="cu-wrap">
@@ -91,17 +66,18 @@
           title="Saluran Komunikasi"
           subtitle="Pilih metode yang paling nyaman untuk Anda terhubung dengan kami"
           align="center"
-          class="mb-10 cu-anim-card"
+          class="mb-10 app-reveal"
         />
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <NuxtLink
-            v-for="s in socialLinks"
+            v-for="(s, i) in socialLinks"
             :key="s.label"
             :to="s.href"
             external
             target="_blank"
-            class="cu-anim-card social-media-card group bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm p-6 flex flex-col items-center text-center hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-gray-100 dark:border-gray-700"
+            class="app-reveal social-media-card group bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm p-6 flex flex-col items-center text-center hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-gray-100 dark:border-gray-700"
             :class="s.borderHover"
+            :style="{ '--delay': `${i * 100}ms` }"
           >
             <div
               class="icon-wrapper p-4 rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300 bg-linear-to-br"
@@ -131,9 +107,9 @@
           title="Lokasi Kantor"
           subtitle="Mari datang dan berdiskusi dengan tim JuruTani secara langsung"
           align="center"
-          class="mb-10 cu-anim-card"
+          class="mb-10 app-reveal"
         />
-        <div class="cu-anim-card cu-map-card bg-white dark:bg-gray-800/80 rounded-3xl shadow-lg overflow-hidden border border-green-100 dark:border-gray-700">
+        <div class="app-reveal cu-map-card bg-white dark:bg-gray-800/80 rounded-3xl shadow-lg overflow-hidden border border-green-100 dark:border-gray-700">
           <div class="grid lg:grid-cols-3">
             <!-- Sidebar Office Info -->
             <div class="p-8 lg:p-10 flex flex-col justify-center bg-gray-50/50 dark:bg-gray-800/30">

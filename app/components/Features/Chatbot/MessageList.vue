@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
   import type { ChatMessage } from '~/composables/useAI'
 
   interface Props {
@@ -29,17 +28,10 @@
     const items = container.value.querySelectorAll<HTMLElement>('.msg-item')
     const last = items[items.length - 1]
     if (!last) return
-    gsap.fromTo(
-      last,
-      { opacity: 0, y: 12 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.3,
-        ease: 'power2.out',
-        clearProps: 'transform',
-      },
-    )
+    last.classList.add('item-appear')
+    last.addEventListener('animationend', () => {
+      last.classList.remove('item-appear')
+    })
   }
 
   watch(

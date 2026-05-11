@@ -9,7 +9,7 @@
 
   const toast = usejuruTaniToast()
   const route = useRoute()
-  const authStore = useAuthStore()
+  const auth = useAuth()
 
   const form = ref({
     email: '',
@@ -29,7 +29,7 @@
       return
     }
 
-    const { success, error, data } = await authStore.signIn(
+    const { success, error, data } = await auth.signIn(
       form.value.email,
       form.value.password,
     )
@@ -50,14 +50,14 @@
 
   const handleSocialLogin = async () => {
     const { success, error } =
-      await authStore.signInWithSocialProvider('google')
+      await auth.signInWithSocialProvider('google')
     if (!success) {
       toast.error(error || 'Login dengan Google gagal.', 3000)
     }
   }
 
   // Expose loading for template
-  const isLoading = computed(() => authStore.loading)
+  const isLoading = computed(() => auth.loading.value)
 </script>
 
 <template>

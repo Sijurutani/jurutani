@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import type { DropdownMenuItem } from '@nuxt/ui'
   import { onClickOutside } from '@vueuse/core'
-  import gsap from 'gsap'
   import siteMeta from '@/site'
   import { toastStore } from '~/composables/useJuruTaniToast'
 
@@ -11,7 +10,22 @@
     handleKeydown,
     menuRef,
   } = useMobileMenu()
-  const { isScrolled } = useNavbarScroll()
+  
+  const isScrolled = ref(false)
+
+  const handleScroll = () => {
+    isScrolled.value = window.scrollY > 20
+  }
+
+  onMounted(() => {
+    handleScroll()
+    window.addEventListener('scroll', handleScroll, { passive: true })
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('scroll', handleScroll)
+  })
+
   const { navsPrimary, navsSecondary } = useNavMenu()
   const authStore = useAuthStore()
   const route = useRoute()
@@ -19,38 +33,13 @@
   // --- Lifecycle ---
   const desktopNavRef = ref<HTMLElement | null>(null)
   const mobileNavRef = ref<HTMLElement | null>(null)
-  let navAnimContext: gsap.Context | null = null
 
   onMounted(() => {
     document.addEventListener('keydown', handleKeydown)
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    navAnimContext = gsap.context(() => {
-      const targets = [desktopNavRef.value, mobileNavRef.value].filter(Boolean)
-      if (targets.length === 0) return
-
-      gsap.fromTo(
-        targets,
-        { opacity: 0, y: -12 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          stagger: 0.05,
-          clearProps: 'transform',
-        },
-      )
-    })
   })
 
   onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown)
-    navAnimContext?.revert()
-    navAnimContext = null
   })
 
   // --- Router Helpers ---

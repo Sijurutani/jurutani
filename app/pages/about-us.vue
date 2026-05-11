@@ -1,7 +1,5 @@
 <script setup lang="ts">
-  import { ref, onMounted, onUnmounted } from 'vue'
-  import gsap from 'gsap'
-  import { ScrollTrigger } from 'gsap/ScrollTrigger'
+  import { ref, onMounted } from 'vue'
   import {
     galleryData,
     innovationPoints,
@@ -10,68 +8,14 @@
     institutionHighlights,
     teamCategories,
   } from '~/data/about'
+  import { useReveal } from '~/composables/useReveal'
 
   useSeoOptimized('about')
-
-  const pageRef = ref<HTMLElement | null>(null)
-  let ctx: gsap.Context
-
-  onMounted(() => {
-    gsap.registerPlugin(ScrollTrigger)
-    
-    ctx = gsap.context(() => {
-      // 1. ScrollTrigger for .app-reveal elements
-      const reveals = gsap.utils.toArray<HTMLElement>('.app-reveal')
-      reveals.forEach((el) => {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 30 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }
-        )
-      })
-
-      // 2. Light sweep for badges
-      const sweeps = gsap.utils.toArray<HTMLElement>('.ab-badge__sweep')
-      sweeps.forEach((sweep) => {
-        const sweepTl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 })
-        sweepTl
-          .set(sweep, { xPercent: -200, opacity: 0 })
-          .to(sweep, { opacity: 1, duration: 0.25, ease: 'power1.out' })
-          .to(sweep, { xPercent: 280, opacity: 1, duration: 1.6, ease: 'power1.inOut' })
-          .to(sweep, { opacity: 0, duration: 0.2, ease: 'power1.out' })
-      })
-
-      // 3. Dot pulsing for badges
-      const dots = gsap.utils.toArray<HTMLElement>('.ab-badge__dot')
-      dots.forEach((dot) => {
-        gsap.to(dot, {
-          opacity: 0.4,
-          duration: 1.8,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      })
-    }, pageRef.value || undefined)
-  })
-
-  onUnmounted(() => {
-    ctx?.revert()
-  })
+  useReveal()
 </script>
 
 <template>
-  <main ref="pageRef" class="min-h-screen">
+  <main class="min-h-screen">
     <!-- ── Hero ── -->
     <CommonPageHeroSection
       title="Si JuruTani"
@@ -124,7 +68,7 @@
             </p>
           </div>
 
-          <div class="ab-split__grid app-reveal app-reveal--2">
+          <div class="ab-split__grid app-reveal">
             <p class="ab-grid-label">Inovasi Penyuluhan Digital</p>
             <div class="ab-feat-grid">
               <div
@@ -151,7 +95,7 @@
           title="Visi & Misi"
           subtitle="Arah dan komitmen JuruTani dalam memajukan pertanian Indonesia"
           align="center"
-          class="mb-10"
+          class="mb-10 app-reveal"
         />
         <div class="ab-vm-grid">
           <div
@@ -171,7 +115,7 @@
             <p class="ab-body">{{ visionMission.vision.content }}</p>
           </div>
           <div
-            class="ab-vm-card app-reveal app-reveal--2 bg-white dark:bg-gray-900/60"
+            class="ab-vm-card app-reveal bg-white dark:bg-gray-900/60"
           >
             <div class="ab-vm-card__head">
               <div class="ab-vm-icon ab-vm-icon--em">
@@ -206,13 +150,14 @@
           title="Keunggulan Kompetitif"
           subtitle="Fitur unggulan yang dirancang khusus untuk kebutuhan petani Indonesia"
           align="center"
-          class="mb-10"
+          class="mb-10 app-reveal"
         />
         <div class="ab-adv-grid">
           <div
-            v-for="f in platformAdvantages"
+            v-for="(f, i) in platformAdvantages"
             :key="f.title"
             class="ab-adv-card app-reveal bg-white dark:bg-gray-900/60"
+            :style="{ '--delay': `${i * 100}ms` }"
           >
             <div class="ab-adv-icon">
               <UIcon :name="f.icon" class="w-5 h-5 text-white" />
@@ -229,9 +174,9 @@
           title="Galeri Inovasi"
           subtitle="Perjalanan pengembangan JuruTani sebagai platform penyuluhan digital"
           align="center"
-          class="mb-10"
+          class="mb-10 app-reveal"
         />
-        <div class="ab-gallery">
+        <div class="ab-gallery app-reveal">
           <div
             v-for="(item, i) in galleryData"
             :key="i"
@@ -294,7 +239,7 @@
           title="Tim Pengembang"
           subtitle="Mahasiswa dan Dosen Polbangtan Yogyakarta Magelang"
           align="center"
-          class="mb-10"
+          class="mb-10 app-reveal"
         />
         <div class="ab-team-wrap app-reveal">
           <div class="ab-team-grid">
@@ -358,6 +303,26 @@
 </template>
 
 <style scoped>
+  @keyframes sweep-light {
+    0% { transform: translateX(-200%) skewX(-25deg); opacity: 0.1; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { transform: translateX(280%) skewX(-25deg); opacity: 0.1; }
+  }
+
+  .ab-badge__sweep {
+    animation: sweep-light 3s ease-in-out infinite 1.5s;
+  }
+
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .ab-badge__dot {
+    animation: pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
   .ab-wrap {
     max-width: 72rem;
     margin: 0 auto;

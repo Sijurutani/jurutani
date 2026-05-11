@@ -1,6 +1,4 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
-
   const authStore = useAuthStore()
 
   function getGreeting() {
@@ -15,21 +13,6 @@
   const playStoreUrl =
     'https://play.google.com/store/apps/details?id=com.jurutani.app'
 
-  const sphereRef = ref<HTMLElement | null>(null)
-  const gridRef = ref<HTMLElement | null>(null)
-  const orbitRef = ref<HTMLElement | null>(null)
-  const glowRef = ref<HTMLElement | null>(null)
-  const dotRefs = ref<HTMLElement[]>([])
-  let globeAnimContext: gsap.Context | null = null
-
-  const setDotRef = (el: HTMLElement | null) => {
-    if (el) dotRefs.value.push(el)
-  }
-
-  onBeforeUpdate(() => {
-    dotRefs.value = []
-  })
-
   let greetingInterval: ReturnType<typeof setInterval> | null = null
   onMounted(() => {
     greetingInterval = setInterval(() => {
@@ -38,76 +21,6 @@
   })
   onBeforeUnmount(() => {
     if (greetingInterval) clearInterval(greetingInterval)
-  })
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    globeAnimContext = gsap.context(() => {
-      if (sphereRef.value) {
-        gsap.to(sphereRef.value, {
-          rotation: 360,
-          duration: 25,
-          ease: 'none',
-          repeat: -1,
-          transformOrigin: '50% 50%',
-        })
-      }
-
-      if (gridRef.value) {
-        gsap.to(gridRef.value, {
-          rotation: -360,
-          duration: 35,
-          ease: 'none',
-          repeat: -1,
-          transformOrigin: '50% 50%',
-        })
-      }
-
-      if (orbitRef.value) {
-        gsap.to(orbitRef.value, {
-          opacity: 0.8,
-          scale: 1.02,
-          duration: 5,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      }
-
-      dotRefs.value.forEach((dot, index) => {
-        gsap.fromTo(
-          dot,
-          { opacity: 0.3, scale: 0.8 },
-          {
-            opacity: 1,
-            scale: 1.4,
-            duration: 1.6,
-            ease: 'sine.inOut',
-            repeat: -1,
-            yoyo: true,
-            delay: index * 1,
-          },
-        )
-      })
-
-      if (glowRef.value) {
-        gsap.to(glowRef.value, {
-          opacity: 0.9,
-          duration: 4,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      }
-    })
-  })
-
-  onBeforeUnmount(() => {
-    globeAnimContext?.revert()
-    globeAnimContext = null
   })
 
   const handleImageError = (event: Event) => {
@@ -193,19 +106,26 @@
       </div>
 
       <!-- Right: Globe -->
+            <!-- Right: Globe -->
       <div class="cta-globe-area hidden sm:flex">
         <div class="globe">
-          <div ref="sphereRef" class="globe__sphere">
-            <div ref="gridRef" class="globe__grid" />
+          <div class="globe__sphere animate-globe-spin--normal">
+            <div class="globe__grid animate-globe-spin--reverse" />
             <div class="globe__highlight" />
           </div>
           <div class="globe__orbit globe__orbit--1" />
-          <div ref="orbitRef" class="globe__orbit globe__orbit--2" />
+          <div class="globe__orbit globe__orbit--2 animate-globe-orbit" />
           <div class="globe__orbit globe__orbit--3" />
-          <div :ref="setDotRef" class="globe__dot globe__dot--1" />
-          <div :ref="setDotRef" class="globe__dot globe__dot--2" />
-          <div :ref="setDotRef" class="globe__dot globe__dot--3" />
-          <div ref="glowRef" class="globe__glow" />
+          <div class="globe__dot globe__dot--1 animate-globe-dot" />
+          <div
+            class="globe__dot globe__dot--2 animate-globe-dot"
+            style="animation-delay: 1s"
+          />
+          <div
+            class="globe__dot globe__dot--3 animate-globe-dot"
+            style="animation-delay: 2s"
+          />
+          <div class="globe__glow animate-globe-glow" />
         </div>
       </div>
     </div>

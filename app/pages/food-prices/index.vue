@@ -1,17 +1,19 @@
 <script setup lang="ts">
   import { h, resolveComponent } from 'vue'
   import { watchDebounced } from '@vueuse/core'
-  import gsap from 'gsap'
 
   import { Enum } from '~/utils/enum'
   import { formatCurrency } from '~/utils/currency'
   import { getFoodPublicUrl } from '~/utils/storage'
   import type { Database } from '~/types/database.types'
   import { useRoute, useRouter, useSupabaseClient } from '#imports'
+  import { useReveal } from '~/composables/useReveal'
 
   definePageMeta({
     layout: 'default',
   })
+
+  useReveal()
 
   const UIcon = resolveComponent('UIcon')
   const UBadge = resolveComponent('UBadge')
@@ -19,9 +21,6 @@
 
   const route = useRoute()
   const router = useRouter()
-
-  const pageRef = ref<HTMLElement | null>(null)
-  let pageAnimContext: gsap.Context | null = null
 
   // --- Food Price Utilities ---
   const supabase = useSupabaseClient<Database>()
@@ -100,32 +99,6 @@
       return ''
     }
   }
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    pageAnimContext = gsap.context(() => {
-      if (!pageRef.value) return
-      gsap.fromTo(
-        pageRef.value,
-        { opacity: 0, y: 10 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.4,
-          ease: 'power3.out',
-          clearProps: 'transform',
-        },
-      )
-    })
-  })
-
-  onUnmounted(() => {
-    pageAnimContext?.revert()
-    pageAnimContext = null
-  })
 
   const getCategoryIcon = (categoryValue: string) => {
     const icons: Record<string, string> = {
@@ -493,7 +466,7 @@
 </script>
 
 <template>
-  <main ref="pageRef" class="food-prices-page container mx-auto px-4 py-12">
+  <main class="food-prices-page container mx-auto px-4 py-12 app-reveal">
     <!-- Hero Section -->
     <header class="mx-auto mb-12 max-w-4xl text-center">
       <div

@@ -227,9 +227,9 @@
         Daftar Video Edukasi Pertanian
       </h2>
 
-      <LoadingData v-if="pending" />
-      <ErrorData v-else-if="error" :error="error.message" />
-      <NotFoundData v-else-if="!hasData" />
+      <UiLoadingData v-if="pending" />
+      <UiErrorData v-else-if="error" :error="error.message" />
+      <UiNotFoundData v-else-if="!hasData" />
 
       <div
         v-else

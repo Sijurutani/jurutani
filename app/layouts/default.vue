@@ -1,63 +1,11 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
+  import { useReveal } from '~/composables/useReveal'
 
-  let layoutAnimContext: gsap.Context | null = null
+  // Initialize the new reveal-on-scroll composable
+  useReveal()
 
-  const getRevealDelay = (el: HTMLElement) => {
-    const delayValue = getComputedStyle(el)
-      .getPropertyValue('--reveal-delay')
-      .trim()
-    const parsed = Number.parseFloat(delayValue)
-    return Number.isNaN(parsed) ? 0 : parsed
-  }
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set('.app-reveal', { opacity: 1, clearProps: 'transform' })
-      return
-    }
-
-    layoutAnimContext = gsap.context(() => {
-      const reveals = gsap.utils.toArray<HTMLElement>('.app-reveal')
-      reveals.forEach((el) => {
-        gsap.fromTo(
-          el,
-          { opacity: 0, y: 14, scale: 0.99 },
-          {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.7,
-            ease: 'power3.out',
-            delay: getRevealDelay(el),
-            clearProps: 'transform',
-          },
-        )
-      })
-
-      const orbs = gsap.utils.toArray<HTMLElement>('.ambient-orb')
-      orbs.forEach((orb) => {
-        const isSlow = orb.classList.contains('ambient-orb--slow')
-        const isReverse = orb.classList.contains('ambient-orb--reverse')
-        const drift = isReverse ? 16 : -20
-
-        gsap.to(orb, {
-          y: drift,
-          scale: 1.04,
-          opacity: 0.3,
-          duration: isSlow ? 21 : 16,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
-        })
-      })
-    })
-  })
-
-  onUnmounted(() => {
-    layoutAnimContext?.revert()
-    layoutAnimContext = null
-  })
+  // All GSAP related code has been removed.
+  // The ambient orb animation is now handled by pure CSS in tailwind.css.
 </script>
 
 <template>
@@ -69,13 +17,13 @@
 
     <!-- Decorative blur circles -->
     <div
-      class="ambient-orb pointer-events-none fixed top-20 left-10 h-72 w-72 rounded-full bg-green-200 opacity-20 blur-3xl dark:bg-green-800"
+      class="ambient-orb animate-orb-drift pointer-events-none fixed top-20 left-10 h-72 w-72 rounded-full bg-green-200 opacity-20 blur-3xl dark:bg-green-800"
     />
     <div
-      class="ambient-orb ambient-orb--slow pointer-events-none fixed right-10 bottom-20 h-96 w-96 rounded-full bg-blue-200 opacity-20 blur-3xl dark:bg-blue-800"
+      class="ambient-orb ambient-orb--slow animate-orb-drift pointer-events-none fixed right-10 bottom-20 h-96 w-96 rounded-full bg-blue-200 opacity-20 blur-3xl dark:bg-blue-800"
     />
     <div
-      class="ambient-orb ambient-orb--reverse pointer-events-none fixed top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-green-100 opacity-10 blur-2xl dark:bg-green-700"
+      class="ambient-orb ambient-orb--reverse animate-orb-drift pointer-events-none fixed top-1/2 left-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-green-100 opacity-10 blur-2xl dark:bg-green-700"
     />
 
     <div

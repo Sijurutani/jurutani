@@ -1,7 +1,9 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
   import type { Database } from '~/types/database.types'
   import { getMarketPublicUrl } from '~/utils/storage'
+  import { useReveal } from '~/composables/useReveal'
+
+  useReveal()
 
   type ProductMarket = Database['public']['Tables']['product_markets']['Row']
 
@@ -48,8 +50,7 @@
   const bannerIndex = ref(0)
   const bannerTransitioning = ref(false)
   const bannerProgressRef = ref<HTMLElement | null>(null)
-  let bannerProgressTween: gsap.core.Tween | null = null
-
+  
   const getBannerUrl = (path: string) => {
     if (!path) return '/placeholder.webp'
     if (path.startsWith('http')) return path
@@ -115,13 +116,12 @@
 
   const animateBannerProgress = () => {
     if (!bannerProgressRef.value) return
-    bannerProgressTween?.kill()
-    gsap.set(bannerProgressRef.value, { scaleX: 0, transformOrigin: 'left' })
-    bannerProgressTween = gsap.to(bannerProgressRef.value, {
-      scaleX: 1,
-      duration: 4,
-      ease: 'none',
-    })
+    bannerProgressRef.value.style.transition = 'none'
+    bannerProgressRef.value.style.transform = 'scaleX(0)'
+    // Force reflow
+    void bannerProgressRef.value.offsetWidth
+    bannerProgressRef.value.style.transition = 'transform 4s linear'
+    bannerProgressRef.value.style.transform = 'scaleX(1)'
   }
 
   // Touch swipe for banner
@@ -300,8 +300,6 @@
   onBeforeUnmount(() => {
     stopBannerAutoplay()
     window.removeEventListener('resize', updateProductPerPage)
-    bannerProgressTween?.kill()
-    bannerProgressTween = null
   })
 </script>
 

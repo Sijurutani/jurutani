@@ -4,8 +4,6 @@
    * Responsive grid with customizable columns and variants
    */
 
-  import gsap from 'gsap'
-
   import type { IconCard } from '~/data/types'
 
   interface Props {
@@ -40,37 +38,9 @@
   })
 
   const gridRef = ref<HTMLElement | null>(null)
-  let gridAnimContext: gsap.Context | null = null
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    gridAnimContext = gsap.context(() => {
-      if (!gridRef.value) return
-      const cards = Array.from(gridRef.value.children) as HTMLElement[]
-      if (cards.length === 0) return
-
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          stagger: 0.08,
-          clearProps: 'transform',
-        },
-      )
-    })
-  })
-
-  onUnmounted(() => {
-    gridAnimContext?.revert()
-    gridAnimContext = null
-  })
+  const {
+    bindings: { 'v-reveal': vReveal },
+  } = useReveal()
 </script>
 
 <template>
@@ -78,6 +48,8 @@
     <IconInfoCard
       v-for="(card, index) in cards"
       :key="index"
+      v-reveal
+      :style="{ '--reveal-delay': `${index * 80}ms` }"
       :icon="card.icon"
       :title="card.title"
       :description="card.description"

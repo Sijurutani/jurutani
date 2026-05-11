@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import { ref } from 'vue'
-  import gsap from 'gsap'
   import type { FaqItem } from '~/data/types'
 
   interface Props {
@@ -36,35 +35,6 @@
   }
 
   const isOpen = (index: number) => openItems.value.includes(index)
-
-  // GSAP Smooth Animations
-  const onEnter = (el: Element, done: () => void) => {
-    gsap.fromTo(
-      el,
-      { height: 0, opacity: 0 },
-      {
-        height: 'auto',
-        opacity: 1,
-        duration: 0.35,
-        ease: 'power3.out',
-        onComplete: () => {
-          // ensure height is set to auto to avoid layout issues if window resizes
-          gsap.set(el, { height: 'auto' })
-          done()
-        },
-      },
-    )
-  }
-
-  const onLeave = (el: Element, done: () => void) => {
-    gsap.to(el, {
-      height: 0,
-      opacity: 0,
-      duration: 0.3,
-      ease: 'power3.inOut',
-      onComplete: done,
-    })
-  }
 </script>
 
 <template>
@@ -101,7 +71,14 @@
         </span>
       </button>
 
-      <Transition @enter="onEnter" @leave="onLeave" :css="false">
+      <Transition
+        enter-active-class="transition-all duration-300 ease-out"
+        leave-active-class="transition-all duration-200 ease-in"
+        enter-from-class="grid-rows-[0] opacity-0"
+        enter-to-class="grid-rows-[1fr] opacity-100"
+        leave-from-class="grid-rows-[1fr] opacity-100"
+        leave-to-class="grid-rows-[0] opacity-0"
+      >
         <div v-if="isOpen(index)" class="overflow-hidden">
           <div
             class="px-[1.125rem] pb-[1.125rem] border-t border-[var(--border-badge)] dark:border-[#6ee7b7]/15"

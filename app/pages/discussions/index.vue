@@ -1,13 +1,14 @@
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, onMounted } from 'vue'
   import { useIntersectionObserver } from '@vueuse/core'
-  import gsap from 'gsap'
   import {
     discussionServices,
     discussionStatsFallback,
   } from '~/data/discussion'
+  import { useReveal } from '~/composables/useReveal'
 
   useSeoOptimized('discussions')
+  useReveal()
 
   const supabase = useSupabaseClient()
 
@@ -83,39 +84,12 @@
     setTimeout(() => animateCounter('experts', counts.value.experts), 300)
   }
 
-  const revealStatsItems = () => {
-    if (!statsRef.value) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      statsRef.value
-        .querySelectorAll<HTMLElement>('.stats-item')
-        .forEach((el) => {
-          el.style.opacity = '1'
-          el.style.transform = 'none'
-        })
-      return
-    }
-
-    gsap.fromTo(
-      statsRef.value.querySelectorAll('.stats-item'),
-      { opacity: 0, y: 20 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.6,
-        ease: 'power3.out',
-        stagger: 0.1,
-        clearProps: 'transform',
-      },
-    )
-  }
-
   // ─── Intersection Observer (VueUse) ────────────────────────────────────
   useIntersectionObserver(
     statsRef,
     ([entry]) => {
       if (entry.isIntersecting && !statsVisible.value) {
         statsVisible.value = true
-        revealStatsItems()
         startAnimations()
       }
     },
@@ -347,11 +321,6 @@
     -webkit-transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-  }
-
-  .stats-item {
-    opacity: 0;
-    transform: translateY(20px);
   }
 
   .stats-item .text-2xl {

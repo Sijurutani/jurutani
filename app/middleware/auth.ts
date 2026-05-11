@@ -14,8 +14,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   }
 
   // Pastikan profil tersedia (lazy-load)
-  const authStore = useAuthStore()
-  if (!authStore.profile) {
-    await authStore.fetchProfile()
+  const profileState = useProfile()
+  if (!profileState.profile.value) {
+    await profileState.fetchProfile()
   }
 })

@@ -9,7 +9,8 @@
 
   useSeoOptimized('callback')
 
-  const authStore = useAuthStore()
+  const auth = useAuth()
+  const profileState = useProfile()
   const loading = ref(true)
   const statusMessage = ref('Memproses login...')
 
@@ -24,7 +25,7 @@
         new Promise<void>((resolve) => {
           const check = async () => {
             attempts++
-            const user = authStore.user
+            const user = auth.user.value
 
             if (user) {
               resolve()
@@ -44,7 +45,7 @@
       statusMessage.value = 'Memverifikasi akun...'
       await waitForSession()
 
-      const user = authStore.user
+      const user = auth.user.value
 
       if (!user) {
         toastStore.error(
@@ -56,10 +57,10 @@
       }
 
       statusMessage.value = 'Memuat profil...'
-      await authStore.fetchProfile(user.sub ?? user.id)
+      await profileState.fetchProfile(user.sub ?? user.id)
 
       const fullName =
-        authStore.displayName || user.email?.split('@')[0] || 'Petani Hebat'
+        profileState.displayName.value || user.email?.split('@')[0] || 'Petani Hebat'
       toastStore.success(`Selamat datang, ${fullName}!`, 3000)
 
       statusMessage.value = 'Mengarahkan...'

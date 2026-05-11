@@ -1,36 +1,7 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
-
-  const gridRef = ref<HTMLElement | null>(null)
-  let gridAnimContext: gsap.Context | null = null
-
-  onMounted(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return
-    }
-
-    gridAnimContext = gsap.context(() => {
-      if (!gridRef.value) return
-      const cards = Array.from(gridRef.value.children) as HTMLElement[]
-      gsap.fromTo(
-        cards,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: 'power3.out',
-          stagger: 0.1,
-          clearProps: 'transform',
-        },
-      )
-    })
-  })
-
-  onUnmounted(() => {
-    gridAnimContext?.revert()
-    gridAnimContext = null
-  })
+  import { useReveal } from '~/composables/useReveal'
+  
+  useReveal()
 </script>
 
 <template>
@@ -102,13 +73,13 @@
       </div>
 
       <!-- Social Media Grid - Mobile First 2x2 -->
-      <div ref="gridRef" class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <!-- YouTube -->
         <NuxtLink
           to="https://www.youtube.com/@Juru_Tani"
           external
           target="_blank"
-          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-red-100 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800"
+          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-red-100 dark:border-gray-700 hover:border-red-200 dark:hover:border-red-800 app-reveal"
         >
           <div
             class="icon-wrapper bg-linear-to-br from-red-400 to-red-600 p-4 rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300"
@@ -144,7 +115,8 @@
           to="https://www.tiktok.com/@juru_tani"
           external
           target="_blank"
-          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 app-reveal"
+          style="--delay: 100ms"
         >
           <div
             class="icon-wrapper bg-linear-to-br from-gray-800 to-black p-4 rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300"
@@ -180,7 +152,8 @@
           to="https://www.instagram.com/jurutani_/"
           external
           target="_blank"
-          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-purple-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800"
+          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-purple-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 app-reveal"
+          style="--delay: 200ms"
         >
           <div
             class="icon-wrapper bg-linear-to-br from-purple-500 via-pink-500 to-orange-500 p-4 rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300"
@@ -216,7 +189,8 @@
           to="https://api.whatsapp.com/send/?phone=6285669000010&text=Saya+ingin+bergabung+dengan+grup+Juru+Tani&type=phone_number&app_absent=0"
           external
           target="_blank"
-          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-green-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800"
+          class="social-media-card group bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 active:scale-95 transition-all duration-300 border border-green-100 dark:border-gray-700 hover:border-green-200 dark:hover:border-green-800 app-reveal"
+          style="--delay: 300ms"
         >
           <div
             class="icon-wrapper bg-linear-to-br from-green-500 to-green-600 p-4 rounded-2xl mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300"

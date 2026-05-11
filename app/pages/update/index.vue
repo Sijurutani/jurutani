@@ -267,6 +267,6 @@
       />
     </nav>
 
-    <UIButtonCreate />
+    <UiButtonCreate />
   </div>
 </template>

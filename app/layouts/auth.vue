@@ -1,39 +1,15 @@
 <script setup lang="ts">
-  import gsap from 'gsap'
-
   const sweepRef = ref<HTMLElement | null>(null)
-  let sweepAnim: gsap.Context | null = null
   const route = useRoute()
 
-  onMounted(() => {
-    if (!sweepRef.value) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-
-    // Hanya sweep badge — visibility & transition handled by CSS
-    sweepAnim = gsap.context(() => {
-      const tl = gsap.timeline({ repeat: -1, repeatDelay: 1.5 })
-      tl.set(sweepRef.value!, { xPercent: -220, opacity: 0 })
-        .to(sweepRef.value!, { opacity: 1, duration: 0.25, ease: 'power1.out' })
-        .to(sweepRef.value!, {
-          xPercent: 280,
-          opacity: 1,
-          duration: 1.6,
-          ease: 'power1.inOut',
-        })
-        .to(sweepRef.value!, { opacity: 0, duration: 0.2, ease: 'power1.out' })
-    })
-  })
-
-  onUnmounted(() => {
-    sweepAnim?.revert()
-    sweepAnim = null
-  })
+  // GSAP is removed. The animation is now handled by CSS.
+  // The sweep badge animation is defined in tailwind.css.
 </script>
 
 <template>
   <!-- auth-shell: full height, overflow hidden, bg dari CSS var -->
   <div
-    class="relative h-dvh w-full overflow-hidden bg-[var(--auth-shell-bg)] text-[var(--text-base)]"
+    class="relative h-dvh w-full overflow-hidden bg-(--auth-shell-bg) text-[var(--text-base)]"
   >
     <!-- Background Image — full on mobile, half on desktop -->
     <div class="absolute inset-0 lg:w-1/2">
@@ -78,7 +54,11 @@
           class="sweep-badge inline-flex rounded-full border border-white/40 bg-white/10 px-3 py-1 text-xs tracking-wide backdrop-blur-sm"
         >
           JuruTani Indonesia
-          <span ref="sweepRef" class="sweep-badge__sweep" aria-hidden="true" />
+          <span
+            ref="sweepRef"
+            class="sweep-badge__sweep animate-sweep-light"
+            aria-hidden="true"
+          />
         </span>
         <h2
           class="mt-4 max-w-md text-3xl font-semibold leading-tight lg:text-4xl"
