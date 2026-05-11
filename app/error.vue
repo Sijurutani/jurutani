@@ -2,6 +2,13 @@
   // Deteksi apakah sedang di mode development
   const isDev = import.meta.dev
 
+  // SEO meta — tampilkan judul ramah, bukan pesan error
+  useSeoMeta({
+    title: 'Selamat Datang di JuruTani',
+    description: 'Platform penyuluhan pertanian, peternakan, perkebunan, dan perikanan digital Indonesia.',
+    robots: 'noindex, nofollow',
+  })
+
   // Props error otomatis dikirim oleh Nuxt saat ada error
   const props = defineProps<{
     error: {
@@ -9,14 +16,28 @@
       statusMessage?: string
       message?: string
       stack?: string
-      data?: any // Terkadang Nuxt Nitro melempar data tambahan di sini
+      data?: any
     }
   }>()
 
-  // Default values untuk error
   const statusCode = computed(() => props.error?.statusCode ?? 500)
-  
-  // Judul error sesuai kode status (Untuk UI Production)
+
+  // Aksi tombol
+  const handleClearError = () => clearError({ redirect: '/' })
+
+  // Auto-redirect untuk semua error — tampil sebagai loading
+  onMounted(() => {
+    const delay = statusCode.value === 404 ? 3000 : 2500
+    setTimeout(() => {
+      handleClearError()
+    }, delay)
+  })
+
+  /*
+  ──────────────────────────────────────────────────
+  TAMPILAN ERROR (dikomen — sekarang pakai loading)
+  ──────────────────────────────────────────────────
+
   const errorTitle = computed(() => {
     switch (statusCode.value) {
       case 400: return 'Permintaan Tidak Valid'
@@ -26,11 +47,10 @@
       case 500: return 'Kesalahan Server'
       case 502: return 'Bad Gateway'
       case 503: return 'Layanan Tidak Tersedia'
-      default: return 'Terjadi Kesalahan'
+      default:  return 'Terjadi Kesalahan'
     }
   })
 
-  // Deskripsi error sesuai kode status (Untuk UI Production)
   const errorDescription = computed(() => {
     switch (statusCode.value) {
       case 400: return 'Permintaan yang Anda kirim tidak dapat dipahami oleh server.'
@@ -40,104 +60,88 @@
       case 500: return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.'
       case 502: return 'Server tidak dapat terhubung dengan layanan yang diperlukan.'
       case 503: return 'Layanan sedang dalam perbaikan. Silakan coba lagi nanti.'
-      default: return 'Terjadi kesalahan yang tidak terduga. Silakan coba lagi.'
+      default:  return 'Terjadi kesalahan yang tidak terduga. Silakan coba lagi.'
     }
   })
 
-  // Aksi tombol
-  const handleClearError = () => clearError({ redirect: '/' })
   const handleReload = () => window.location.reload()
 
-  // Strategi Auto-Redirect Khusus Error 500 (Server-side crash)
-  onMounted(() => {
-    // Kita hanya mengalihkan otomatis JIKA errornya adalah 500
-    // Biarkan error 404 (Not Found) tetap tampil agar user bisa membacanya
-    if (statusCode.value === 500) {
-      setTimeout(() => {
-        handleClearError()
-      }, 2500) // Beri waktu 2.5 detik agar user sempat membaca ada error
-    }
-  })
-</script>
+  Template error (diganti loading di bawah):
 
-<template>
   <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gray-50 dark:bg-gray-900">
     <div class="max-w-lg w-full text-center">
       <div class="mb-8">
         <NuxtImg src="/jurutani.webp" alt="Jurutani Logo" class="w-40 mx-auto" />
       </div>
-
       <div class="mb-6">
-        <h1 class="text-6xl font-extrabold text-red-600 dark:text-red-400 mb-4">
-          {{ statusCode }}
-        </h1>
-        <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">
-          {{ errorTitle }}
-        </h2>
-        <p class="text-gray-500 dark:text-gray-400">
-          {{ errorDescription }}
-        </p>
+        <h1 class="text-6xl font-extrabold text-red-600 dark:text-red-400 mb-4">{{ statusCode }}</h1>
+        <h2 class="text-2xl font-semibold text-gray-700 dark:text-gray-200 mb-2">{{ errorTitle }}</h2>
+        <p class="text-gray-500 dark:text-gray-400">{{ errorDescription }}</p>
       </div>
-
       <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <UButton
-          size="lg"
-          color="primary"
-          icon="i-lucide-home"
-          @click="handleClearError"
-        >
-          Kembali ke Beranda
-        </UButton>
-
-        <UButton
-          size="lg"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-refresh-cw"
-          @click="handleReload"
-        >
-          Muat Ulang Halaman
-        </UButton>
+        <UButton size="lg" color="primary" icon="i-lucide-home" @click="handleClearError">Kembali ke Beranda</UButton>
+        <UButton size="lg" color="neutral" variant="outline" icon="i-lucide-refresh-cw" @click="handleReload">Muat Ulang Halaman</UButton>
       </div>
     </div>
+  </div>
+  */
+</script>
 
-    <div 
-      v-if="isDev" 
-      class="w-full max-w-4xl mt-16 text-left"
+<template>
+  <!-- Loading screen — ditampilkan sebagai pengganti halaman error -->
+  <div
+    class="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-neutral-950"
+  >
+    <div class="flex flex-col items-center gap-6">
+      <!-- Logo -->
+      <NuxtImg
+        src="/jurutani.webp"
+        alt="JuruTani"
+        class="w-20 h-20 object-contain animate-pulse"
+      />
+
+      <!-- Animated dots -->
+      <div class="flex items-center gap-2">
+        <span
+          class="w-2.5 h-2.5 rounded-full bg-green-500 animate-bounce"
+          style="animation-delay: 0ms"
+        />
+        <span
+          class="w-2.5 h-2.5 rounded-full bg-green-500 animate-bounce"
+          style="animation-delay: 150ms"
+        />
+        <span
+          class="w-2.5 h-2.5 rounded-full bg-green-500 animate-bounce"
+          style="animation-delay: 300ms"
+        />
+      </div>
+
+      <!-- Teks -->
+      <p class="text-sm text-gray-400 dark:text-gray-500 tracking-wide">
+        Memuat halaman...
+      </p>
+    </div>
+
+    <!-- Dev debug panel — hanya lokal -->
+    <div
+      v-if="isDev"
+      class="fixed bottom-0 left-0 right-0 w-full max-w-4xl mx-auto p-4"
     >
-      <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-6 overflow-hidden">
-        <div class="flex items-center gap-2 mb-4 border-b border-red-200 dark:border-red-900 pb-3">
-          <UIcon name="i-lucide-bug" class="w-5 h-5 text-red-600 dark:text-red-400" />
-          <h3 class="text-lg font-bold text-red-800 dark:text-red-400">Developer Debug Panel</h3>
-          <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded dark:bg-red-900 dark:text-red-300 ml-auto">
-            Hanya tampil di Local Dev
+      <div
+        class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg p-4 overflow-hidden"
+      >
+        <div class="flex items-center gap-2 mb-3 border-b border-red-200 dark:border-red-900 pb-2">
+          <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded dark:bg-red-900 dark:text-red-300 font-mono font-bold">
+            DEV · Error {{ statusCode }}
           </span>
         </div>
-
-        <div class="space-y-4 font-mono text-sm">
-          <div>
-            <p class="text-gray-500 dark:text-gray-400 font-semibold mb-1">Raw Error Message:</p>
-            <div class="bg-white dark:bg-gray-900 p-3 rounded border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
-              {{ error?.message || 'No specific message provided' }}
-            </div>
-          </div>
-
-          <div v-if="error?.data">
-            <p class="text-gray-500 dark:text-gray-400 font-semibold mb-1">Error Data / API Response:</p>
-            <div class="bg-white dark:bg-gray-900 p-3 rounded border border-red-100 dark:border-red-800 text-gray-700 dark:text-gray-300 overflow-x-auto">
-              <pre>{{ JSON.stringify(error?.data, null, 2) }}</pre>
-            </div>
-          </div>
-
-          <div v-if="error?.stack">
-            <p class="text-gray-500 dark:text-gray-400 font-semibold mb-1">Stack Trace:</p>
-            <div class="bg-gray-900 text-green-400 p-4 rounded overflow-x-auto text-xs leading-relaxed">
-              <pre><code>{{ error?.stack }}</code></pre>
-            </div>
-          </div>
+        <div class="font-mono text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap break-words">
+          {{ error?.message || 'No message' }}
+        </div>
+        <div v-if="error?.stack" class="mt-2 bg-gray-900 text-green-400 p-3 rounded text-[11px] overflow-x-auto">
+          <pre><code>{{ error?.stack }}</code></pre>
         </div>
       </div>
     </div>
-
   </div>
 </template>
