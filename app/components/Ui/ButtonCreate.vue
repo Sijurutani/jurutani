@@ -85,7 +85,8 @@
 </script>
 
 <template>
-  <Teleport to="body">
+  <ClientOnly>
+    <Teleport to="body">
     <div>
       <Transition name="teaser-float">
         <div
@@ -178,6 +179,7 @@
       </UModal>
     </div>
   </Teleport>
+  </ClientOnly>
 </template>
 
 <style scoped>

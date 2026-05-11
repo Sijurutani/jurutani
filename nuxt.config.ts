@@ -46,6 +46,25 @@ export default defineNuxtConfig({
     appManifest: false, 
   },
 
+  sitemap: {
+    // Disable global sources and auto lastmod which often cause virtual file errors during Nitro build
+    sources: [],
+    autoLastmod: false,
+  },
+
+  build: {
+    transpile: ['@nuxtjs/seo', '@nuxtjs/sitemap', 'unhead', '@unhead/vue', '@unhead/ssr'],
+  },
+
+  nitro: {
+    prerender: {
+      routes: ['/sitemap.xml']
+    },
+    externals: {
+      inline: ['@nuxtjs/seo', '@nuxtjs/sitemap', 'unhead', '@unhead/vue', '@unhead/ssr']
+    }
+  },
+
   css: ['@/assets/css/tailwind.css'],
 
   image: {

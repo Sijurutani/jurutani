@@ -47,6 +47,17 @@
   // Aksi tombol
   const handleClearError = () => clearError({ redirect: '/' })
   const handleReload = () => window.location.reload()
+
+  // Strategi Auto-Redirect Khusus Error 500 (Server-side crash)
+  onMounted(() => {
+    // Kita hanya mengalihkan otomatis JIKA errornya adalah 500
+    // Biarkan error 404 (Not Found) tetap tampil agar user bisa membacanya
+    if (statusCode.value === 500) {
+      setTimeout(() => {
+        handleClearError()
+      }, 2500) // Beri waktu 2.5 detik agar user sempat membaca ada error
+    }
+  })
 </script>
 
 <template>
