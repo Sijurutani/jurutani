@@ -1,5 +1,4 @@
-import { serverSupabaseServiceRole } from '#supabase/server'
-import { serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
 import type { H3Event } from 'h3'
 
 export const CHAT_TOOLS = [

@@ -90,7 +90,7 @@
       <Transition name="teaser-float">
         <div
           v-if="showTeaser && !isModalOpen"
-          class="fixed right-24 bottom-7 z-[70] w-[240px] max-w-[calc(100vw-7rem)]"
+          class="fixed right-24 bottom-7 z-70 w-[240px] max-w-[calc(100vw-7rem)]"
         >
           <UButton
             color="neutral"
@@ -121,7 +121,7 @@
         color="neutral"
         variant="ghost"
         type="button"
-        class="main-fab fixed right-6 bottom-6 z-[71]"
+        class="main-fab fixed right-6 bottom-6 z-71"
         aria-label="Menu Tambah"
         @click="openModal"
       >

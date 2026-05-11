@@ -27,6 +27,10 @@ export default defineNuxtConfig({
     groqApiKey: process.env.GROQ_API_KEY,
     openrouterApiKey: process.env.OPENROUTER_API_KEY,
     geminiApiKey: process.env.GEMINI_API_KEY,
+    public: {
+      openweatherApiKey: process.env.OPENWEATHER_API_KEY,
+      openweatherBaseUrl: process.env.OPENWEATHER_BASE_URL,
+    },
   },
 
   // ─── App Head ────────────────────────────────────────────────────────────────

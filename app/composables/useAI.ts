@@ -4,7 +4,7 @@
 //   - Profil user dari auth composable
 //   - Kirim pesan ke server API chatbot
 
-import { type AIProvider } from '~/utils/ai'
+import type { AIProvider } from '~/utils/ai'
 import { useLocalStorage } from '@vueuse/core'
 
 // --- Types -------------------------------------------------------------------

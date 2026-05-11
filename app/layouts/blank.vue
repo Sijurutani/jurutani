@@ -35,7 +35,7 @@
 
 <template>
   <div
-    class="relative min-h-screen bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/20 dark:from-neutral-950 dark:via-emerald-950/10 dark:to-teal-950/10 flex flex-col font-sans"
+    class="relative min-h-screen bg-linear-to-br from-white via-emerald-50/30 to-teal-50/20 dark:from-neutral-950 dark:via-emerald-950/10 dark:to-teal-950/10 flex flex-col font-sans"
   >
     <!-- ═══════════════════════ FLOATING NAVBAR ═══════════════════════ -->
     <div

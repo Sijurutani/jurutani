@@ -1,12 +1,10 @@
 <script setup lang="ts">
-
-
   const supabase = useSupabaseClient()
   const authStore = useAuthStore()
   const toast = useToast()
 
   // ── Cuaca ──────────────────────────────────────────────────────────────────
-  const { weatherData, isLoading: weatherLoading, error: weatherError, requestLocation } = useWeatherData()
+  const { weatherData, isLoading: weatherLoading, error: weatherError, requestLocation, fetchDefault } = useWeatherData()
   const currentTime = ref('')
   const tick = () => {
     currentTime.value = new Intl.DateTimeFormat('id-ID', {
@@ -15,14 +13,14 @@
   }
 
   const farmingSuitable = computed(() => {
-    if (!weatherData.value) return true
+    if (!weatherData.value || !weatherData.value.weather || !weatherData.value.weather[0] || !weatherData.value.main) return true
     const main = (weatherData.value.weather[0].main as string).toLowerCase()
     const temp = weatherData.value.main.temp as number
     return !main.includes('rain') && !main.includes('thunder') && temp >= 15 && temp <= 35
   })
 
   const weatherGradient = computed(() => {
-    if (!weatherData.value) return 'from-slate-700 to-slate-900'
+    if (!weatherData.value || !weatherData.value.weather || !weatherData.value.weather[0] || !weatherData.value.main) return 'from-slate-700 to-slate-900'
     const main = (weatherData.value.weather[0].main as string).toLowerCase()
     const temp = weatherData.value.main.temp as number
     if (main.includes('thunder')) return 'from-slate-900 via-purple-950 to-slate-900'
@@ -61,7 +59,7 @@
         .limit(4)
       return (data || []) as unknown as Expert[]
     },
-    { maxAge: 120, dedupe: 'defer' },
+    { dedupe: 'defer' },
   )
 
   const { data: instructorsData } = await useAsyncData(
@@ -74,7 +72,7 @@
         .limit(4)
       return (data || []) as unknown as Instructor[]
     },
-    { maxAge: 120, dedupe: 'defer' },
+    { dedupe: 'defer' },
   )
 
   const experts = computed(() => expertsData.value || [])
@@ -97,7 +95,7 @@
   }
 
   onMounted(() => {
-    requestLocation()
+    fetchDefault()
     tick()
     setInterval(tick, 30_000)
   })
@@ -137,22 +135,27 @@
         <NuxtLink
           v-if="weatherData && !weatherLoading && !weatherError"
           to="/weathers"
-          class="relative flex-1 rounded-2xl overflow-hidden no-underline block h-64 lg:h-full bg-gradient-to-br shadow-xl shadow-black/5 hover:shadow-2xl hover:scale-[1.01] transition-all duration-500"
+          class="relative flex-1 rounded-2xl overflow-hidden no-underline block h-64 lg:h-full bg-linear-to-br shadow-xl shadow-black/5 hover:shadow-2xl hover:scale-[1.01] transition-all duration-500"
           :class="weatherGradient"
         >
           <!-- Ornaments -->
           <div class="absolute -top-20 -right-10 w-64 h-64 rounded-full opacity-30 blur-[60px] bg-white pointer-events-none" />
           <div class="absolute -bottom-16 -left-10 w-48 h-48 rounded-full opacity-30 blur-[50px] bg-black/40 pointer-events-none" />
-          <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+          <div class="absolute inset-x-0 bottom-0 h-1/2 bg-linear-to-t from-black/50 to-transparent pointer-events-none" />
           
           <div class="relative z-10 flex flex-col justify-between h-full p-6 lg:p-8">
             <!-- Top Section -->
             <div class="flex items-start justify-between w-full">
               <div class="flex flex-col gap-1">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold text-white shadow-sm w-fit">
-                  <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5" />
-                  {{ weatherData.name }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/20 text-xs font-semibold text-white shadow-sm w-fit">
+                    <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5" />
+                    {{ weatherData.name }}
+                  </span>
+                  <button class="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-colors" aria-label="Gunakan Lokasi Saya" title="Gunakan Lokasi Saya" @click.prevent="requestLocation">
+                    <UIcon name="i-lucide-crosshair" class="w-4 h-4" />
+                  </button>
+                </div>
                 <span class="text-3xl lg:text-4xl font-black text-white tracking-wide drop-shadow-md mt-2">
                   {{ currentTime }}
                 </span>

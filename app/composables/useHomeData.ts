@@ -39,7 +39,6 @@ export const useHomeData = () => {
       },
       {
         default: () => ({ profiles: 500, instructors: 400, experts: 200 }),
-        maxAge: 3600,
         dedupe: 'defer',
       },
     )

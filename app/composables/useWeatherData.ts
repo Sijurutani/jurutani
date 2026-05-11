@@ -7,10 +7,13 @@ export const useWeatherData = () => {
   const isLoading = ref(true)
   const error = ref('')
 
-  const BASE = 'https://api.openweathermap.org/data/2.5/weather'
-  const KEY = '416f0ed0bb28d3110beedecf5fa9cf85'
+  const config = useRuntimeConfig()
+  const BASE = (config.public.openweatherBaseUrl || 'https://api.openweathermap.org/data/2.5') + '/weather'
+  const KEY = config.public.openweatherApiKey || ''
 
   const fetchByCoords = async (lat: number, lon: number) => {
+    isLoading.value = true
+    error.value = ''
     try {
       const params = new URLSearchParams({
         lat: String(lat),
@@ -23,7 +26,6 @@ export const useWeatherData = () => {
       const json = await res.json()
       if (!res.ok) throw new Error(json?.message || 'Gagal mengambil data cuaca')
       weatherData.value = json
-      error.value = ''
     } catch (e) {
       weatherData.value = null
       error.value = e instanceof Error ? e.message : 'Gagal mengambil data cuaca'
@@ -32,21 +34,35 @@ export const useWeatherData = () => {
     }
   }
 
+  const fetchDefault = () => {
+    // Default fetch ke Jakarta Pusat
+    fetchByCoords(-6.2088, 106.8456)
+  }
+
   const requestLocation = () => {
     if (!import.meta.client) return
     if (!navigator.geolocation) {
-      isLoading.value = false
       error.value = 'Geolocation tidak didukung browser ini'
+      isLoading.value = false
       return
     }
+    
+    isLoading.value = true
+    error.value = ''
+    
     navigator.geolocation.getCurrentPosition(
       (pos) => fetchByCoords(pos.coords.latitude, pos.coords.longitude),
-      () => {
+      (err) => {
         isLoading.value = false
-        error.value = 'Izin lokasi ditolak'
+        if (err.code === err.PERMISSION_DENIED) {
+           error.value = 'Izin lokasi ditolak. Menampilkan cuaca default.'
+           fetchDefault() // Fallback
+        } else {
+           error.value = 'Gagal mendapatkan lokasi'
+        }
       },
     )
   }
 
-  return { weatherData, isLoading, error, requestLocation }
+  return { weatherData, isLoading, error, requestLocation, fetchDefault }
 }
