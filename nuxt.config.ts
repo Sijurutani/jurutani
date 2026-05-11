@@ -7,6 +7,10 @@ export default defineNuxtConfig({
     defaultLocale: 'id',
   },
 
+  future: {
+    compatibilityVersion: 4,
+  },
+
   modules: [
     '@pinia/nuxt',
     '@nuxt/image',
