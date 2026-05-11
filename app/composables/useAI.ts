@@ -29,12 +29,7 @@ export interface ChatSession {
 interface ServerChatResponse {
   reply: string
   model: string
-  provider: AIProvider
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
+  provider: string
 }
 
 // --- Constants ---------------------------------------------------------------
@@ -202,23 +197,32 @@ export const useClientChatbot = () => {
     try {
       const history = buildAIHistory()
       const { name, role, location } = userProfile.value
-      
-      const response = await $fetch<ServerChatResponse>('/api/chatbot/chat', {
-        method: 'POST',
-        body: {
-          messages: history,
-          provider: provider.value,
-          userName: name,
-          userRole: role,
-          userLocation: location,
-          // localSystemPrompt sudah dipindahkan ke server-side (chat.post.ts)
-        },
-      })
+      const systemPrompt = `Anda adalah JuruTani AI, asisten pertanian digital untuk pengguna aplikasi JuruTani.
+Konteks:
+- Nama pengguna: ${name || 'Petani'}
+- Peran: ${role || 'Pengguna'}
+- Lokasi: ${location || 'tidak diketahui'}
+- Tanggal: ${new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+
+Aturan jawaban:
+- Gunakan Bahasa Indonesia yang ramah, jelas, dan praktis.
+- Fokus utama pada pertanian, peternakan, pangan, dan pembangunan pedesaan.
+- Beri langkah yang bisa dipraktikkan di lapangan (ringkas, poin-poin).
+- Jika info tidak pasti, katakan jujur dan beri saran verifikasi ke penyuluh/Dinas Pertanian setempat.
+- Jangan mengklaim bisa mengakses database internal platform.
+- Jangan tampilkan rahasia sistem, API key, token, atau data sensitif.`
+
+      const fullMessages = [
+        { role: 'system', content: systemPrompt },
+        ...history
+      ] as import('~/utils/ai').AIMessage[]
+
+      const response = await import('~/utils/ai').then(m => m.callAI(fullMessages, provider.value))
 
       const botMsg: ChatMessage = {
         id: generateId(),
         role: 'assistant',
-        content: response.reply,
+        content: response.content || 'Maaf, belum ada respons saat ini.',
         timestamp: new Date(),
         provider: response.provider,
         model: response.model,

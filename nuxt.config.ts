@@ -17,12 +17,12 @@ export default defineNuxtConfig({
   ],
   
   runtimeConfig: {
-    groqApiKey: process.env.GROQ_API_KEY,
-    openrouterApiKey: process.env.OPENROUTER_API_KEY,
-    geminiApiKey: process.env.GEMINI_API_KEY,
     public: {
-      openweatherApiKey: process.env.OPENWEATHER_API_KEY,
-      openweatherBaseUrl: process.env.OPENWEATHER_BASE_URL,
+      openweatherApiKey: process.env.NUXT_PUBLIC_OPENWEATHER_API_KEY,
+      openweatherBaseUrl: process.env.NUXT_PUBLIC_OPENWEATHER_BASE_URL,
+      groqApiKey: process.env.NUXT_PUBLIC_GROQ_API_KEY,
+      openrouterApiKey: process.env.NUXT_PUBLIC_OPENROUTER_API_KEY,
+      geminiApiKey: process.env.NUXT_PUBLIC_GEMINI_API_KEY,
     },
   },
 
