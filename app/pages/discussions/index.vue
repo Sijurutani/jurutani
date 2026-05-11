@@ -1,13 +1,15 @@
 <script setup lang="ts">
-  import { ref, reactive, onMounted } from 'vue'
-  import { useIntersectionObserver } from '@vueuse/core'
+  import { ref, reactive, onMounted, onUnmounted } from 'vue'
   import {
     discussionServices,
     discussionStatsFallback,
   } from '~/data/discussion'
   import { useReveal } from '~/composables/useReveal'
 
-  useSeoOptimized('discussions')
+  useSeoMeta({
+    title: 'Forum Konsultasi Petani, Peternak & Nelayan',
+    description: 'Forum diskusi gratis seputar masalah budidaya, penyakit tanaman & ternak. Tanya langsung kendala agribisnis Anda dengan penyuluh ahli JuruTani di sini.'
+  })
   useReveal()
 
   const supabase = useSupabaseClient()
@@ -84,17 +86,31 @@
     setTimeout(() => animateCounter('experts', counts.value.experts), 300)
   }
 
-  // ─── Intersection Observer (VueUse) ────────────────────────────────────
-  useIntersectionObserver(
-    statsRef,
-    ([entry]) => {
-      if (entry.isIntersecting && !statsVisible.value) {
-        statsVisible.value = true
-        startAnimations()
-      }
-    },
-    { threshold: 0.5 },
-  )
+  // ─── Intersection Observer (Native) ────────────────────────────────────
+  let observer: IntersectionObserver | null = null
+
+  onMounted(() => {
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !statsVisible.value) {
+          statsVisible.value = true
+          startAnimations()
+          if (statsRef.value) observer?.unobserve(statsRef.value)
+        }
+      },
+      { threshold: 0.5 }
+    )
+
+    if (statsRef.value) {
+      observer.observe(statsRef.value)
+    }
+  })
+
+  onUnmounted(() => {
+    if (observer) {
+      observer.disconnect()
+    }
+  })
 
   // ─── UI Helpers ────────────────────────────────────────────────────────
   const getBentoVariant = (index: number) => {

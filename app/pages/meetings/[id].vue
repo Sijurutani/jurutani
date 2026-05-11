@@ -90,11 +90,11 @@
     (data) => {
       if (!data) return
 
-      useSeoDetail({
+      useSeoMeta({
         title: data.title,
         description: data.content || 'Jadwal kegiatan dan meeting JuruTani.',
         url: `https://jurutani.com/meetings/${routeId.value}`,
-        type: 'article',
+        ogType: 'article',
       })
     },
     {

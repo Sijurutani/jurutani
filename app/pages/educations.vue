@@ -1,6 +1,9 @@
 <script lang="ts" setup>
   // SEO Optimization
-  useSeoOptimized('educations')
+  useSeoMeta({
+    title: 'Panduan Budidaya Pertanian, Peternakan & Perikanan',
+    description: 'Panduan budidaya tanaman pangan, peternakan & perikanan. Temukan ragam tips pertanian organik, solusi hama penyakit, dan strategi tingkatkan hasil panen.'
+  })
 </script>
 
 <template>

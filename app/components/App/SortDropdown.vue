@@ -1,7 +1,6 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import { onClickOutside } from '@vueuse/core'
-  import type { SortOption } from '~/composables/useContentList'
+  import { ref, onMounted, onUnmounted } from 'vue'
+  import type { SortOption } from '~/utils/enum'
 
   interface Props {
     sortOptions: SortOption[]
@@ -17,9 +16,20 @@
   const isOpen = ref(false)
   const dropdownRef = ref(null)
 
-  // Close dropdown when clicking outside
-  onClickOutside(dropdownRef, () => {
-    isOpen.value = false
+  const containerRef = ref<HTMLElement | null>(null)
+
+  const handleOutsideClick = (event: MouseEvent) => {
+    if (isOpen.value && containerRef.value && !containerRef.value.contains(event.target as Node)) {
+      isOpen.value = false
+    }
+  }
+
+  onMounted(() => {
+    document.addEventListener('click', handleOutsideClick)
+  })
+
+  onUnmounted(() => {
+    document.removeEventListener('click', handleOutsideClick)
   })
 
   const handleSortChange = (value: string) => {
@@ -36,7 +46,7 @@
 </script>
 
 <template>
-  <div class="relative">
+  <div ref="containerRef" class="relative">
     <UButton
       color="neutral"
       variant="ghost"

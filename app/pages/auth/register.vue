@@ -1,7 +1,10 @@
 <!-- pages/auth/register.vue -->
 <script setup lang="ts">
   // SEO Optimization
-  useSeoOptimized('register')
+  useSeoMeta({
+    title: 'Daftar Gratis',
+    description: 'Buat akun JuruTani secara gratis dan jadilah bagian dari komunitas tani digital. Nikmati ragam akses edukasi, fitur konsultasi ahli, dan info komoditas.'
+  })
 
   definePageMeta({
     layout: 'auth',

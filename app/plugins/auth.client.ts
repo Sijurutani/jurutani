@@ -1,6 +1,6 @@
 export default defineNuxtPlugin(async () => {
   if (import.meta.server) return
 
-  const profile = useProfile()
-  await profile.initProfile()
+  const authStore = useAuthStore()
+  await authStore.initProfile()
 })

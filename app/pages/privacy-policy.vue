@@ -1,6 +1,9 @@
 <script setup lang="ts">
   // SEO Optimization
-  useSeoOptimized('privacy')
+  useSeoMeta({
+    title: 'Kebijakan Privasi — Perlindungan Data Pengguna JuruTani',
+    description: 'Kebijakan privasi JuruTani menjelaskan cara komprehensif kami dalam mengumpulkan, memproses, dan senantiasa melindungi data pribadi pengguna platform ini.'
+  })
 
   definePageMeta({
     layout: 'blank',

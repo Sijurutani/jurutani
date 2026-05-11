@@ -213,14 +213,14 @@
     return `${reqOrigin}/update/${slug}`
   })
 
-  useSeoDetail({
+  useSeoMeta({
     title: news.value.title,
     description: news.value.sub_title || getExcerpt(news.value.content, 160),
-    image: coverImageUrl.value,
+    ogImage: coverImageUrl.value,
     url: shareUrl.value,
-    type: 'article',
+    ogType: 'article',
     schema: {
-      type: 'Article',
+      ogType: 'Article',
       data: {
         headline: news.value.title,
         datePublished: news.value.published_at || news.value.created_at,

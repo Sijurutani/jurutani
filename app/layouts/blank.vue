@@ -1,5 +1,4 @@
 <script setup lang="ts">
-  import { onClickOutside } from '@vueuse/core'
   import { useReveal } from '~/composables/useReveal'
 
   const router = useRouter()

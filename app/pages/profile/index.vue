@@ -5,7 +5,10 @@
   const authStore = useAuthStore()
   const supabase = useSupabaseClient<Database>()
 
-  useSeoOptimized('profile')
+  useSeoMeta({
+    title: 'Profil Saya',
+    description: 'Kelola profil petani, peternak, atau nelayan Anda di JuruTani. Edit informasi pribadi, atur preferensi komoditas, dan perbarui data usaha tani.'
+  })
 
   const userData = computed(() => authStore.profile)
   const loading = computed(() => authStore.profileLoading)
@@ -98,9 +101,11 @@
   })
 
   const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement
-    console.error('Profile image failed to load:', target.src)
-    target.src = '/profile.webp'
+    const target = event?.target as HTMLImageElement | null
+    if (target) {
+      console.error('Profile image failed to load:', target.src)
+      target.src = '/profile.webp'
+    }
   }
 
   const handleProfileUpdate = async () => {
@@ -201,7 +206,7 @@
                   class="w-32 h-32 rounded-full overflow-hidden bg-white dark:bg-gray-800 p-1 shadow-lg dark:shadow-black/50"
                 >
                   <NuxtImg
-                    :src="userData.avatar_url || 'profile.webp'"
+                    :src="userData.avatar_url || '/profile.webp'"
                     :alt="userData.full_name || 'User'"
                     class="w-full h-full object-cover rounded-full"
                     @error="handleImageError"
@@ -562,7 +567,7 @@
       description="Perbarui informasi data diri Anda di bawah ini."
     >
       <template #body>
-        <ProfileForm
+        <FeaturesProfileForm
           v-if="showEditPersonalModal && userData"
           :user-data="userData"
           @update="handleProfileUpdate"
@@ -578,12 +583,12 @@
     >
       <template #body>
         <div v-if="showEditProfessionalModal">
-          <ProfileExpertForm
+          <FeaturesProfileExpertForm
             v-if="isPakar"
             @update="handleProfessionalUpdate"
             @cancel="showEditProfessionalModal = false"
           />
-          <ProfileInstructorForm
+          <FeaturesProfileInstructorForm
             v-if="isPenyuluh"
             @update="handleProfessionalUpdate"
             @cancel="showEditProfessionalModal = false"

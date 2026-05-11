@@ -1,5 +1,6 @@
 <script setup lang="ts">
   import type { ChatMessage } from '~/composables/useAI'
+  import snarkdown from 'snarkdown'
 
   interface Props {
     messages: ChatMessage[]
@@ -117,8 +118,8 @@
             <div
               v-else
               class="prose prose-sm dark:prose-invert max-w-none prose-headings:text-green-800 dark:prose-headings:text-green-300 prose-a:text-green-600 dark:prose-a:text-green-400 prose-code:bg-green-50 dark:prose-code:bg-green-900/30 prose-blockquote:border-green-400 prose-strong:text-gray-900 dark:prose-strong:text-gray-100"
+              v-html="snarkdown(msg.content)"
             >
-              <MDC :value="msg.content" />
             </div>
           </div>
           <span class="text-[10px] text-gray-400 dark:text-gray-500 px-1">{{

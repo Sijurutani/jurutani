@@ -1,4 +1,5 @@
 <script setup lang="ts">
+  import { useDebounceFn } from '@vueuse/core'
   import type { Database } from '~/types/database.types'
 
   type ProfileLite = Pick<

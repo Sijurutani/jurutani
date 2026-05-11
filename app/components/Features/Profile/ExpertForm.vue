@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted } from 'vue'
+  import { z } from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
   import { toastStore } from '~/composables/useJuruTaniToast'
   import type { Database } from '~/types/database.types'
 
@@ -10,8 +11,15 @@
   const authStore = useAuthStore()
   const supabase = useSupabaseClient<Database>()
 
+  const schema = z.object({
+    category: z.string().min(1, 'Kategori keahlian wajib dipilih'),
+    note: z.string().max(500, 'Catatan maksimal 500 karakter').optional().or(z.literal('')),
+  })
+
+  type Schema = z.output<typeof schema>
+
   // Form state
-  const formData = reactive({
+  const state = reactive<Schema>({
     category: '',
     note: '',
   })
@@ -29,7 +37,7 @@
   })
 
   const isFormValid = computed(() => {
-    return formData.category && formData.category.trim().length > 0
+    return state.category && state.category.trim().length > 0
   })
 
   // Load data
@@ -53,13 +61,13 @@
       const { data: expertData } = await supabase
         .from('experts')
         .select('*')
-        .eq('user_id', authStore.user.sub)
+        .eq('user_id', authStore.user.id)
         .is('deleted_at', null)
         .maybeSingle()
 
       if (expertData) {
-        formData.category = expertData.category || ''
-        formData.note = expertData.note || ''
+        state.category = expertData.category || ''
+        state.note = expertData.note || ''
       }
     } catch (error) {
       console.error('Failed to fetch expert data', error)
@@ -69,16 +77,16 @@
   }
 
   // Submit handler
-  const handleSubmit = async () => {
-    if (!authStore.user?.id || !isFormValid.value) return
+  const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
+    if (!authStore.user?.id) return
 
     isSubmitting.value = true
 
     try {
       const updates = {
         user_id: authStore.user.id,
-        category: formData.category || null,
-        note: formData.note || null,
+        category: event.data.category || null,
+        note: event.data.note || null,
         updated_at: new Date().toISOString(),
       }
 
@@ -86,7 +94,7 @@
       const { data: existingData } = await supabase
         .from('experts')
         .select('id')
-        .eq('user_id', authStore.user.sub)
+        .eq('user_id', authStore.user.id)
         .is('deleted_at', null)
         .maybeSingle()
 
@@ -95,7 +103,7 @@
         const { error: updErr } = await supabase
           .from('experts')
           .update(updates)
-          .eq('user_id', authStore.user.sub)
+          .eq('user_id', authStore.user.id)
         error = updErr
       } else {
         const { error: insErr } = await supabase
@@ -146,51 +154,36 @@
     </div>
 
     <!-- Form -->
-    <form v-else class="space-y-6" @submit.prevent="handleSubmit">
+    <UForm v-else :schema="schema" :state="state" class="space-y-6" @submit="handleSubmit">
       <!-- Category -->
-      <div>
-        <label
-          for="expert-category"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Kategori Keahlian *
-        </label>
+      <UFormField label="Kategori Keahlian" name="category" required>
         <USelect
           id="expert-category"
-          v-model="formData.category"
+          v-model="state.category"
           :items="categoryOptions"
           placeholder="Pilih kategori keahlian"
           size="lg"
           :disabled="categoryOptions.length === 0"
           class="w-full"
         />
-        <p
-          v-if="categoryOptions.length === 0"
-          class="text-xs text-amber-600 dark:text-amber-400 mt-1"
-        >
+        <p v-if="categoryOptions.length === 0" class="text-xs text-amber-600 dark:text-amber-400 mt-1">
           Tidak ada kategori tersedia. Hubungi admin untuk menambahkan kategori.
         </p>
-      </div>
+      </UFormField>
 
       <!-- Note -->
-      <div>
-        <label
-          for="expert-note"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Catatan / Deskripsi
-        </label>
-        <textarea
+      <UFormField label="Catatan / Deskripsi" name="note">
+        <UTextarea
           id="expert-note"
-          v-model="formData.note"
-          rows="5"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none transition-colors"
+          v-model="state.note"
+          :rows="5"
           placeholder="Ceritakan tentang keahlian dan pengalaman Anda di bidang ini..."
+          class="w-full"
         />
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {{ formData.note?.length || 0 }}/500 karakter
+          {{ (state.note || '').length }}/500 karakter
         </p>
-      </div>
+      </UFormField>
 
       <!-- Info Box -->
       <div
@@ -212,23 +205,19 @@
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <div
-        class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors"
-      >
+      <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors">
         <UButton
           type="submit"
           color="success"
           variant="solid"
           size="lg"
           :loading="isSubmitting"
-          :disabled="isSubmitting || !isFormValid"
           icon="i-lucide-save"
         >
           Simpan Perubahan
         </UButton>
       </div>
-    </form>
+    </UForm>
   </div>
 </template>
 

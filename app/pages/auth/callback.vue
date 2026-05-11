@@ -7,10 +7,12 @@
     ssr: false,
   })
 
-  useSeoOptimized('callback')
+  useSeoMeta({
+    title: 'Memproses',
+    description: 'Sistem JuruTani sedang memproses autentikasi akun Anda secara aman. Mohon tunggu beberapa saat selagi kami menyiapkan akses masuk ke beranda platform.'
+  })
 
-  const auth = useAuth()
-  const profileState = useProfile()
+  const authStore = useAuthStore()
   const loading = ref(true)
   const statusMessage = ref('Memproses login...')
 
@@ -25,7 +27,7 @@
         new Promise<void>((resolve) => {
           const check = async () => {
             attempts++
-            const user = auth.user.value
+            const user = authStore.user
 
             if (user) {
               resolve()
@@ -45,7 +47,7 @@
       statusMessage.value = 'Memverifikasi akun...'
       await waitForSession()
 
-      const user = auth.user.value
+      const user = authStore.user
 
       if (!user) {
         toastStore.error(
@@ -57,10 +59,10 @@
       }
 
       statusMessage.value = 'Memuat profil...'
-      await profileState.fetchProfile(user.sub ?? user.id)
+      await authStore.fetchProfile(user.id)
 
       const fullName =
-        profileState.displayName.value || user.email?.split('@')[0] || 'Petani Hebat'
+        authStore.displayName || user.email?.split('@')[0] || 'Petani Hebat'
       toastStore.success(`Selamat datang, ${fullName}!`, 3000)
 
       statusMessage.value = 'Mengarahkan...'

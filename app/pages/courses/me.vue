@@ -41,7 +41,7 @@
   // ─── Computed ─────────────────────────────────────────────────────────────────
   // userId: user dari authStore adalah useSupabaseUser() → Ref<User | null>
   // jadi akses langsung authStore.user?.id (bukan .value?.id)
-  const userId = computed(() => authStore.user?.sub)
+  const userId = computed(() => authStore.user?.id)
 
   const getCoverUrl = (path: string | null | undefined) => {
     if (!path) return null

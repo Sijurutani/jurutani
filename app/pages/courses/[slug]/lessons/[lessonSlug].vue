@@ -63,7 +63,7 @@
 
   // ─── Computed ─────────────────────────────────────────────────────────────────
   const isLoggedIn = computed(() => !!authStore.user)
-  const userId = computed(() => authStore.user?.sub)
+  const userId = computed(() => authStore.user?.id)
 
   // Embeds dari lesson
   const embeds = computed(() => parseEmbeds(lesson.value?.embeds))
@@ -126,10 +126,7 @@
   })
 
   const getAvatarUrl = (avatarPath: string | null | undefined) => {
-    if (!avatarPath) return null
-    if (avatarPath.startsWith('http')) return avatarPath
-    const { data } = supabase.storage.from('avatars').getPublicUrl(avatarPath)
-    return data.publicUrl
+    return avatarPath || null
   }
 
   const formattedDate = (date: string) =>
@@ -226,11 +223,11 @@
       // 4. Comments
       await fetchComments(courseData.id, found.id)
 
-      useSeoDetail({
+      useSeoMeta({
         title: `${lessonFull.title} – ${courseData.title}`,
         description: 'Lesson dari course JuruTani.',
         url: `https://jurutani.com/courses/${slug}/lessons/${lessonSlug}`,
-        type: 'article',
+        ogType: 'article',
       })
 
       if (smoothScroll && import.meta.client) {

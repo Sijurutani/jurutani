@@ -127,7 +127,7 @@
     () => expert.value,
     (newVal) => {
       if (newVal) {
-        useSeoDetail({
+        useSeoMeta({
           title: newVal.profiles?.full_name || 'Pakar Pertanian',
           description: `Konsultasi dengan ${newVal.profiles?.full_name || 'Pakar Pertanian'} - Spesialis ${newVal.category || 'Pertanian'}. Dapatkan solusi terbaik untuk masalah pertanian Anda.`,
           keywords: [
@@ -137,9 +137,9 @@
             'ahli tani',
             'expert advisor',
           ],
-          image: newVal.profiles?.avatar_url || '/jurutani.webp',
+          ogImage: newVal.profiles?.avatar_url || '/jurutani.webp',
           url: `https://jurutani.com/discussions/expert/${route.params.id}`,
-          type: 'profile',
+          ogType: 'profile',
         })
       }
     },

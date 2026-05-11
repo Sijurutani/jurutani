@@ -1,12 +1,12 @@
 <script setup lang="ts">
   import { onMounted, onUnmounted, ref } from 'vue'
-  import siteMeta from '~/site'
+
 
   const isModalOpen = ref(false)
   const showTeaser = ref(false)
   const hasDismissedTeaser = ref(false)
 
-  const adminPhone = siteMeta.organization.phone.replace(/\D/g, '')
+  const adminPhone = '+6285669000010'.replace(/\D/g, '')
   const adminWhatsappLink = `https://api.whatsapp.com/send/?phone=${adminPhone}&text=${encodeURIComponent(
     'Halo Admin JuruTani, saya tertarik untuk kontribusi. Mohon info lebih lanjut ya.',
   )}&type=phone_number&app_absent=0`

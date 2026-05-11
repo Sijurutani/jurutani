@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import type { DropdownMenuItem } from '@nuxt/ui'
-  import { onClickOutside } from '@vueuse/core'
-  import siteMeta from '@/site'
+
+
   import { toastStore } from '~/composables/useJuruTaniToast'
 
   const {
@@ -36,10 +36,12 @@
 
   onMounted(() => {
     document.addEventListener('keydown', handleKeydown)
+    document.addEventListener('click', handleOutsideClick)
   })
 
   onUnmounted(() => {
     document.removeEventListener('keydown', handleKeydown)
+    document.removeEventListener('click', handleOutsideClick)
   })
 
   // --- Router Helpers ---
@@ -66,13 +68,17 @@
   const desktopProfileDropdownRef = ref<HTMLElement | null>(null)
   const mobileProfileDropdownRef = ref<HTMLElement | null>(null)
 
-  onClickOutside(desktopProfileDropdownRef, () => {
-    isProfileOpen.value = false
-  })
-
-  onClickOutside(mobileProfileDropdownRef, () => {
-    isProfileOpen.value = false
-  })
+  const handleOutsideClick = (event: MouseEvent) => {
+    const target = event.target as Node
+    if (isProfileOpen.value) {
+      const isDesktopOutside = desktopProfileDropdownRef.value && !desktopProfileDropdownRef.value.contains(target)
+      const isMobileOutside = mobileProfileDropdownRef.value && !mobileProfileDropdownRef.value.contains(target)
+      
+      if (isDesktopOutside && isMobileOutside) {
+        isProfileOpen.value = false
+      }
+    }
+  }
 
   watch(isMobileMenuOpen, (open) => {
     if (open) {
@@ -108,10 +114,10 @@
     }
   }
 
-  // Handle image error for avatar
+  // Handle image error for avatar — dengan null guard (NuxtImg kadang tidak meneruskan event.target)
   const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement
-    target.src = '/profile.webp'
+    const target = event?.target as HTMLImageElement | null
+    if (target) target.src = '/profile.webp'
   }
 </script>
 
@@ -136,11 +142,11 @@
           <NuxtLink
             to="/"
             class="flex items-center shrink-0 transition-all duration-300 hover:scale-105 focus-visible:outline-2 focus-visible:outline-green-500 focus-visible:outline-offset-2 rounded-xl px-1"
-            :aria-label="`${siteMeta.title} - Kembali ke beranda`"
+            :aria-label="`JuruTani - Kembali ke beranda`"
           >
             <NuxtImg
               src="/jurutani_long_logo.webp"
-              :alt="`Logo ${siteMeta.title}`"
+              :alt="`Logo JuruTani`"
               class="h-8 w-auto logo-img"
               loading="eager"
               preload
@@ -417,11 +423,11 @@
             <NuxtLink
               to="/"
               class="flex items-center shrink-0 transition-all duration-300 hover:scale-105 focus-visible:outline-2 focus-visible:outline-green-500 focus-visible:outline-offset-2 rounded-xl px-1"
-              :aria-label="`${siteMeta.title} - Kembali ke beranda`"
+              :aria-label="`JuruTani - Kembali ke beranda`"
             >
               <NuxtImg
                 src="/jurutani_long_logo.webp"
-                :alt="`Logo ${siteMeta.title}`"
+                :alt="`Logo JuruTani`"
                 class="h-7 w-auto logo-img"
                 loading="eager"
                 preload

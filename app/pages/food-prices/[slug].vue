@@ -277,13 +277,13 @@
 
   // SEO
   const { formatCurrency: fmt } = { formatCurrency }
-  useSeoDetail({
+  useSeoMeta({
     title: food.value?.name || 'Komoditas',
     description:
       food.value?.description ||
       `Harga ${food.value?.name} terkini per ${food.value?.satuan} di DIY.`,
-    image: getFoodImage(food.value?.image_url) || undefined,
-    type: 'article',
+    ogImage: getFoodImage(food.value?.image_url) || undefined,
+    ogType: 'article',
   })
   useHead({
     title: computed(() =>

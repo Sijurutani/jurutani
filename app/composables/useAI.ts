@@ -5,7 +5,7 @@
 //   - Kirim pesan ke server API chatbot
 
 import type { AIProvider } from '~/utils/ai'
-import { useLocalStorage } from '@vueuse/core'
+
 
 // --- Types -------------------------------------------------------------------
 
@@ -55,6 +55,29 @@ function buildSessionTitle(messages: ChatMessage[]): string {
   return first.content.slice(0, 50) + (first.content.length > 50 ? '...' : '')
 }
 
+function useCustomLocalStorage<T>(key: string, initialValue: T, options: { serializer: { read: (v: string) => T, write: (v: T) => string } }) {
+  const data = ref<T>(initialValue) as Ref<T>
+  
+  if (typeof window !== 'undefined') {
+    const stored = window.localStorage.getItem(key)
+    if (stored !== null) {
+      data.value = options.serializer.read(stored)
+    }
+    
+    watch(data, (newValue) => {
+      window.localStorage.setItem(key, options.serializer.write(newValue))
+    }, { deep: true })
+    
+    window.addEventListener('storage', (e) => {
+      if (e.key === key && e.newValue) {
+        data.value = options.serializer.read(e.newValue)
+      }
+    })
+  }
+  
+  return data
+}
+
 // --- Composable --------------------------------------------------------------
 
 export const useClientChatbot = () => {
@@ -68,8 +91,7 @@ export const useClientChatbot = () => {
 
   const provider = ref<AIProvider>('gemini')
 
-  // Menggunakan useLocalStorage untuk otomatis sync dengan localStorage tanpa boilerplate
-  const sessions = useLocalStorage<ChatSession[]>(STORAGE_KEY, [], {
+  const sessions = useCustomLocalStorage<ChatSession[]>(STORAGE_KEY, [], {
     serializer: {
       read: (v: string) => {
         try {

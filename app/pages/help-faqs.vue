@@ -2,7 +2,10 @@
   import { faqCategories, faqData } from '~/data/faq'
   import { useReveal } from '~/composables/useReveal'
 
-  useSeoOptimized('help')
+  useSeoMeta({
+    title: 'Pusat Bantuan & Panduan Penggunaan',
+    description: 'Pusat bantuan platform JuruTani. Temukan kumpulan FAQ, panduan tutorial fitur, serta kontak bantuan teknis bagi seluruh pengguna layanan penyuluhan kami.'
+  })
   useReveal()
 
   // Menggunakan faqCategories langsung dari data/faq.ts

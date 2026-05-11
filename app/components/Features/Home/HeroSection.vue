@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { useIntervalFn, useIntersectionObserver } from '@vueuse/core'
+
 
   const supabase = useSupabaseClient()
   const { getHeroData, getHomeStats } = useHomeData()
@@ -50,17 +50,64 @@
     setTimeout(() => { isTransitioning.value = false }, 600)
   }
 
-  const { pause, resume } = useIntervalFn(nextSlide, 5000, { immediate: false })
+  let intervalId: ReturnType<typeof setInterval> | null = null
+
+  const pause = () => {
+    if (intervalId) {
+      clearInterval(intervalId)
+      intervalId = null
+    }
+  }
+
+  const resume = () => {
+    pause()
+    if (typeof window !== 'undefined') {
+      intervalId = setInterval(nextSlide, 5000)
+    }
+  }
 
   const resetAutoplay = () => {
     pause()
     if (itemsCount.value > 1) resume()
   }
 
-  watch(itemsCount, (val) => { val > 1 ? resetAutoplay() : pause() })
+  watch(itemsCount, (val) => { 
+    if (val > 1) resetAutoplay() 
+    else pause() 
+  })
 
-  onMounted(() => { if (itemsCount.value > 1) resetAutoplay() })
-  onBeforeUnmount(() => pause())
+  let observer: IntersectionObserver | null = null
+
+  const stopStatsObserver = () => {
+    if (observer) {
+      observer.disconnect()
+      observer = null
+    }
+  }
+
+  onMounted(() => { 
+    if (itemsCount.value > 1) resetAutoplay() 
+    
+    if (statsRef.value && typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        ([{ isIntersecting }]) => {
+          if (isIntersecting) {
+            startStats()
+            stopStatsObserver()
+          }
+        },
+        { threshold: 0.3 }
+      )
+      observer.observe(statsRef.value)
+    } else {
+      startStats()
+    }
+  })
+  
+  onBeforeUnmount(() => {
+    pause()
+    stopStatsObserver()
+  })
 
   // ── Stats counter animation ────────────────────────────────────────────────
   const displayCounts = reactive({ profiles: 0, instructors: 0, experts: 0 })
@@ -86,11 +133,7 @@
     setTimeout(() => animateCounter('experts', counts.value!.experts), 300)
   }
 
-  const { stop: stopStatsObserver } = useIntersectionObserver(
-    statsRef,
-    ([{ isIntersecting }]) => { if (isIntersecting) { startStats(); stopStatsObserver() } },
-    { threshold: 0.3 },
-  )
+
 
   // ── Quick menus ────────────────────────────────────────────────────────────
   const quickMenus = [
@@ -214,7 +257,7 @@
         <div v-if="!loading && (error || carouselItems.length === 0)" class="carousel-placeholder">
           <div v-if="error" class="flex flex-col items-center gap-3">
             <UIcon name="i-lucide-triangle-alert" class="w-10 h-10 text-red-400" />
-            <UButton color="error" size="sm" @click="fetchHeroData">Coba Lagi</UButton>
+            <UButton color="error" size="sm" @click="() => fetchHeroData()">Coba Lagi</UButton>
           </div>
           <div v-else class="flex flex-col items-center gap-2">
             <UIcon name="i-lucide-image" class="w-10 h-10 text-white/30" />

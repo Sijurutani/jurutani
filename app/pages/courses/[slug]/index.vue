@@ -40,7 +40,7 @@
 
   // ─── Computed ─────────────────────────────────────────────────────────────────
   const isLoggedIn = computed(() => !!authStore.user)
-  const userId = computed(() => authStore.user?.sub)
+  const userId = computed(() => authStore.user?.id)
 
   const avgRating = computed(() => {
     if (!ratings.value.length) return 0
@@ -111,10 +111,7 @@
   }
 
   const getAvatarUrl = (avatarPath: string | null | undefined) => {
-    if (!avatarPath) return null
-    if (avatarPath.startsWith('http')) return avatarPath
-    const { data } = supabase.storage.from('avatars').getPublicUrl(avatarPath)
-    return data.publicUrl
+    return avatarPath || null
   }
 
   // ─── Fetch ────────────────────────────────────────────────────────────────────
@@ -177,12 +174,12 @@
         }
       }
 
-      useSeoDetail({
+      useSeoMeta({
         title: courseData.title,
         description: 'Course pertanian dari JuruTani.',
-        image: getCoverUrl(courseData.cover_image) || '/jurutani.webp',
+        ogImage: getCoverUrl(courseData.cover_image) || '/jurutani.webp',
         url: `https://jurutani.com/courses/${slug}`,
-        type: 'article',
+        ogType: 'article',
       })
     }
   } catch (e: any) {

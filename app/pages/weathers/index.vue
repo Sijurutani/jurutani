@@ -1,7 +1,10 @@
 <script setup lang="ts">
   definePageMeta({ layout: 'default' })
 
-  useSeoOptimized('weathers')
+  useSeoMeta({
+    title: 'Cuaca Pertanian & Prakiraan Hujan untuk Petani',
+    description: 'Pantau cuaca pertanian harian & prakiraan hujan akurat. Ketahui kondisi paling ideal untuk aktivitas tanam, semprot pupuk, serta panen di wilayah Anda.'
+  })
 
   // ─── State ─────────────────────────────────────────────────────
   const weatherData = ref<any>(null)

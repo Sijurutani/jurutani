@@ -1,9 +1,12 @@
 <script setup lang="ts">
-  import { watchDebounced } from '@vueuse/core'
+
   import { Enum } from '~/utils/enum'
   import type { Database } from '~/types/database.types'
 
-  useSeoOptimized('news')
+  useSeoMeta({
+    title: 'Berita Pertanian, Peternakan & Perikanan Terkini',
+    description: 'Update berita agribisnis, info harga komoditas & inovasi pertanian terbaru. Informasi dikurasi ahli JuruTani untuk majukan petani & peternak Indonesia.'
+  })
 
   type NewsRow = Database['public']['Tables']['news_updated']['Row'] & {
     author?: {
@@ -19,10 +22,25 @@
   const pageSize = 9
 
   // 1. Reactive Route Queries (State URL) - Diadaptasi dari pola Admin
-  const search = useRouteQuery<string | undefined>('search', undefined)
-  const category = useRouteQuery<string>('category', 'all')
-  const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
-  const page = useRouteQuery<number>('page', 1)
+  const route = useRoute()
+  const router = useRouter()
+
+  const search = ref<string | undefined>((route.query.search as string) || undefined)
+  const category = ref<string>((route.query.category as string) || 'all')
+  const sortValue = ref<string>((route.query.sort as string) || 'created_at-desc')
+  const page = ref<number>(Number(route.query.page) || 1)
+
+  watch([search, category, sortValue, page], ([newSearch, newCategory, newSort, newPage]) => {
+    router.replace({
+      query: {
+        ...route.query,
+        search: newSearch || undefined,
+        category: newCategory === 'all' ? undefined : newCategory,
+        sort: newSort === 'created_at-desc' ? undefined : newSort,
+        page: newPage === 1 ? undefined : String(newPage),
+      }
+    })
+  })
 
   // ─── Data Kategori ────────────────────────────────────────────────────────────
   const { data: categories } = await useAsyncData(
@@ -97,14 +115,14 @@
   )
 
   // 4. Debounce Search & Category Handler
-  watchDebounced(
-    [search, category],
-    async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>
+  watch([search, category], () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(async () => {
       page.value = 1
       await refresh()
-    },
-    { debounce: 400, deep: true },
-  )
+    }, 400)
+  }, { deep: true })
 
   // 5. Helper Computed & Functions
   const sortOptions = Enum.SortOptions.map((option) => {

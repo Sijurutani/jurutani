@@ -1,5 +1,8 @@
 <script setup lang="ts">
-  useSeoOptimized('chat')
+  useSeoMeta({
+    title: 'Chat Langsung dengan Penyuluh Pertanian',
+    description: 'Konsultasi chat dengan penyuluh pertanian, dokter hewan & pakar perikanan. Dapatkan solusi cepat untuk atasi penyakit tanaman dan masalah hewan ternak.'
+  })
   defineProps<{
     myId: string
   }>()

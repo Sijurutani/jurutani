@@ -93,7 +93,7 @@
                   class="w-4 h-4 animate-spin"
                 />
                 <UIcon v-else name="i-lucide-log-out" class="w-4 h-4" />
-                {{ loading ? 'Keluar...' : 'Ya, Logout' }}
+                {{ loading ? 'Keluar...' : 'Logout' }}
               </UButton>
             </div>
           </div>

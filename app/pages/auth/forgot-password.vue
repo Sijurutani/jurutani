@@ -1,6 +1,9 @@
 <script setup lang="ts">
   // SEO Optimization
-  useSeoOptimized('forgot-password')
+  useSeoMeta({
+    title: 'Lupa Kata Sandi',
+    description: 'Masukkan alamat email Anda untuk segera menerima panduan pemulihan kata sandi. Dapatkan kembali akses penuh ke fasilitas penyuluhan agribisnis JuruTani.'
+  })
 
   definePageMeta({
     layout: 'auth',

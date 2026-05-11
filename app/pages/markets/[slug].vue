@@ -382,20 +382,20 @@
     () => product.value,
     (newVal) => {
       if (newVal) {
-        useSeoDetail({
+        useSeoMeta({
           title: seoTitle.value,
           description: seoDescription.value,
           keywords: seoKeywords.value,
-          image: seoImage.value,
+          ogImage: seoImage.value,
           url: shareUrl.value,
-          type: 'website',
+          ogType: 'website',
           schema: {
-            type: 'Product',
+            ogType: 'Product',
             data: {
               name: product.value.name,
               description:
                 product.value.excerpt || getExcerpt(product.value.content, 160),
-              image: seoImage.value,
+              ogImage: seoImage.value,
               offers: {
                 priceCurrency: 'IDR',
                 price: product.value.price || 0,

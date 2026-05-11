@@ -23,9 +23,10 @@
     if (greetingInterval) clearInterval(greetingInterval)
   })
 
+
   const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement
-    target.src = '/profile.webp'
+    const target = event?.target as HTMLImageElement | null
+    if (target) target.src = '/profile.webp'
   }
 </script>
 

@@ -127,7 +127,7 @@
     () => instructor.value,
     (newVal) => {
       if (newVal) {
-        useSeoDetail({
+        useSeoMeta({
           title: newVal.profiles?.full_name || 'Penyuluh Pertanian',
           description: `Konsultasi dengan ${newVal.profiles?.full_name || 'Penyuluh Pertanian'} - Penyuluh berpengalaman untuk solusi pertanian Anda. Dapatkan panduan praktis untuk budidaya tanaman.`,
           keywords: [
@@ -137,9 +137,9 @@
             'expert agriculture',
             'konsultasi pertanian',
           ],
-          image: newVal.profiles?.avatar_url || '/jurutani.webp',
+          ogImage: newVal.profiles?.avatar_url || '/jurutani.webp',
           url: `https://jurutani.com/discussions/instructor/${instructorId.value}`,
-          type: 'profile',
+          ogType: 'profile',
         })
       }
     },

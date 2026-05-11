@@ -78,13 +78,13 @@
       : '/video.png',
   )
 
-  useSeoDetail({
+  useSeoMeta({
     title: video.value.title,
     description:
       video.value.description ||
       `Tonton ${video.value.title} - Video edukasi pertanian dari JuruTani`,
-    image: thumbnailForSeo.value,
-    type: 'article',
+    ogImage: thumbnailForSeo.value,
+    ogType: 'article',
   })
 
   // ─── YouTube Embed ─────────────────────────────────────────────────────────────

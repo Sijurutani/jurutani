@@ -1,22 +1,49 @@
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { z } from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
   import { toastStore } from '@/composables/useJuruTaniToast'
 
   const supabase = useSupabaseClient()
 
   // SEO Meta
-  useSeoOptimized('security')
+  useSeoMeta({
+    title: 'Keamanan Akun',
+    description: 'Kelola keamanan akun JuruTani Anda. Atur verifikasi dua langkah, ganti kata sandi, dan lindungi akses ke layanan penyuluhan digital Anda.'
+  })
 
-  // Form data
-  const newPassword = ref('')
-  const confirmPassword = ref('')
+  const schema = z.object({
+    newPassword: z.string()
+      .min(6, 'Password minimal 6 karakter')
+      .refine(val => {
+        let score = 0
+        if (val.length >= 8) score++
+        if (/[a-z]/.test(val)) score++
+        if (/[A-Z]/.test(val)) score++
+        if (/[0-9]/.test(val)) score++
+        if (/[^A-Za-z0-9]/.test(val)) score++
+        return score >= 3
+      }, 'Password terlalu lemah. Gunakan kombinasi huruf besar, kecil, angka, dan simbol.'),
+    confirmPassword: z.string().min(1, 'Konfirmasi password wajib diisi'),
+  }).refine(data => data.newPassword === data.confirmPassword, {
+    message: 'Password tidak cocok',
+    path: ['confirmPassword'],
+  })
+
+  type Schema = z.output<typeof schema>
+
+  // Form state
+  const state = reactive<Schema>({
+    newPassword: '',
+    confirmPassword: '',
+  })
+
   const loading = ref(false)
   const showNewPassword = ref(false)
   const showConfirmPassword = ref(false)
 
   // Password strength calculation
   const passwordStrength = computed(() => {
-    const password = newPassword.value
+    const password = state.newPassword
     let score = 0
 
     if (password.length >= 8) score += 1
@@ -57,39 +84,14 @@
   })
 
   // Form validation
-  const isFormValid = computed(() => {
-    return (
-      newPassword.value.length >= 6 &&
-      newPassword.value === confirmPassword.value &&
-      passwordStrength.value >= 3
-    )
-  })
+  const isFormValid = computed(() => state.newPassword.length >= 6 && state.newPassword === state.confirmPassword)
 
-  // Form submission
-  const handleChangePassword = async () => {
-    // Validation
-    if (newPassword.value !== confirmPassword.value) {
-      toastStore.error('Password tidak cocok')
-      return
-    }
-
-    if (newPassword.value.length < 6) {
-      toastStore.error('Password harus minimal 6 karakter')
-      return
-    }
-
-    if (passwordStrength.value < 3) {
-      toastStore.error(
-        'Password terlalu lemah. Gunakan kombinasi huruf besar, kecil, angka, dan simbol.',
-      )
-      return
-    }
-
+  const handleChangePassword = async (event: FormSubmitEvent<Schema>) => {
     loading.value = true
 
     try {
       const { error } = await supabase.auth.updateUser({
-        password: newPassword.value,
+        password: event.data.newPassword,
       })
 
       if (error) {
@@ -107,13 +109,9 @@
 
         toastStore.error(errorMessage)
       } else {
-        toastStore.success(
-          'Password berhasil diperbarui! Akun Anda sekarang lebih aman.',
-        )
-
-        // Clear form
-        newPassword.value = ''
-        confirmPassword.value = ''
+        toastStore.success('Password berhasil diperbarui! Akun Anda sekarang lebih aman.')
+        state.newPassword = ''
+        state.confirmPassword = ''
 
         // Optional: redirect after success
         // setTimeout(() => {
@@ -160,7 +158,7 @@
         class="bg-white dark:bg-gray-900 rounded-2xl shadow-xl dark:shadow-2xl dark:shadow-black/50 border border-gray-100 dark:border-gray-800 overflow-hidden transition-all duration-200"
       >
         <div class="p-6">
-          <form class="space-y-6" @submit.prevent="handleChangePassword">
+      <UForm :schema="schema" :state="state" class="space-y-6" @submit="handleChangePassword">
             <!-- Password Strength Info -->
             <div
               class="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-blue-400 dark:border-blue-600 transition-colors duration-200"
@@ -188,160 +186,89 @@
             </div>
 
             <!-- New Password Input -->
-            <div class="space-y-2">
-              <label
-                for="newPassword"
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >
-                Password Baru
-              </label>
+            <UFormField label="Password Baru" name="newPassword" required>
               <UInput
                 id="newPassword"
-                v-model="newPassword"
+                v-model="state.newPassword"
                 :type="showNewPassword ? 'text' : 'password'"
                 placeholder="Masukkan password baru"
                 leading-icon="i-lucide-lock"
-                required
                 class="w-full"
               >
                 <template #trailing>
                   <UButton
                     color="neutral"
                     variant="ghost"
-                    :icon="
-                      showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                    "
+                    :icon="showNewPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                     size="xs"
                     @click="showNewPassword = !showNewPassword"
                   />
                 </template>
               </UInput>
               <!-- Password Strength Indicator -->
-              <div v-if="newPassword" class="mt-2">
+              <div v-if="state.newPassword" class="mt-2">
                 <div class="flex items-center space-x-2">
-                  <div
-                    class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2"
-                  >
+                  <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
                       class="h-2 rounded-full transition-all duration-300"
                       :class="passwordStrengthColor"
                       :style="{ width: passwordStrengthWidth }"
                     />
                   </div>
-                  <span
-                    class="text-sm font-medium dark:text-gray-300"
-                    :class="passwordStrengthTextColor"
-                  >
+                  <span class="text-sm font-medium dark:text-gray-300" :class="passwordStrengthTextColor">
                     {{ passwordStrengthText }}
                   </span>
                 </div>
               </div>
-            </div>
+            </UFormField>
 
             <!-- Confirm Password Input -->
-            <div class="space-y-2">
-              <label
-                for="confirmPassword"
-                class="block text-sm font-semibold text-gray-700 dark:text-gray-300"
-              >
-                Konfirmasi Password
-              </label>
+            <UFormField label="Konfirmasi Password" name="confirmPassword" required>
               <UInput
                 id="confirmPassword"
-                v-model="confirmPassword"
+                v-model="state.confirmPassword"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 placeholder="Ulangi password baru"
                 leading-icon="i-lucide-lock"
-                required
                 class="w-full"
-                :class="{
-                  'ring-red-500':
-                    confirmPassword && newPassword !== confirmPassword,
-                  'ring-green-500':
-                    confirmPassword && newPassword === confirmPassword,
-                }"
               >
                 <template #trailing>
                   <UButton
                     color="neutral"
                     variant="ghost"
-                    :icon="
-                      showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'
-                    "
+                    :icon="showConfirmPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
                     size="xs"
                     @click="showConfirmPassword = !showConfirmPassword"
                   />
                 </template>
               </UInput>
               <!-- Password Match Indicator -->
-              <div v-if="confirmPassword" class="flex items-center mt-2">
+              <div v-if="state.confirmPassword" class="flex items-center mt-2">
                 <UIcon
-                  :name="
-                    newPassword === confirmPassword
-                      ? 'i-lucide-check-circle'
-                      : 'i-lucide-x-circle'
-                  "
-                  :class="
-                    newPassword === confirmPassword
-                      ? 'text-green-500 dark:text-green-400'
-                      : 'text-red-500 dark:text-red-400'
-                  "
+                  :name="state.newPassword === state.confirmPassword ? 'i-lucide-check-circle' : 'i-lucide-x-circle'"
+                  :class="state.newPassword === state.confirmPassword ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'"
                   class="w-4 h-4 mr-2"
                 />
                 <span
-                  :class="
-                    newPassword === confirmPassword
-                      ? 'text-green-600 dark:text-green-400'
-                      : 'text-red-600 dark:text-red-400'
-                  "
+                  :class="state.newPassword === state.confirmPassword ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'"
                   class="text-sm font-medium"
                 >
-                  {{
-                    newPassword === confirmPassword
-                      ? 'Password cocok'
-                      : 'Password tidak cocok'
-                  }}
+                  {{ state.newPassword === state.confirmPassword ? 'Password cocok' : 'Password tidak cocok' }}
                 </span>
               </div>
-            </div>
+            </UFormField>
 
             <!-- Submit Button -->
             <UButton
-              color="neutral"
-              variant="ghost"
+              color="success"
               type="submit"
-              :disabled="loading || !isFormValid"
-              class="w-full bg-linear-to-r from-green-600 to-emerald-600 dark:from-green-700 dark:to-emerald-700 hover:from-green-700 hover:to-emerald-700 dark:hover:from-green-600 dark:hover:to-emerald-600 disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-600 dark:disabled:to-gray-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:transform-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950 shadow-lg hover:shadow-xl dark:shadow-green-900/50"
+              :loading="loading"
+              icon="i-lucide-shield-check"
+              class="w-full"
             >
-              <span v-if="loading" class="flex items-center justify-center">
-                <svg
-                  class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Memproses...
-              </span>
-              <span v-else class="flex items-center justify-center">
-                <UIcon name="i-lucide-shield-check" class="w-5 h-5 mr-2" />
-                Simpan Password
-              </span>
+              Simpan Password
             </UButton>
-          </form>
+          </UForm>
         </div>
 
         <!-- Footer -->

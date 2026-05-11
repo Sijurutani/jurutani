@@ -5,7 +5,10 @@
     middleware: ['guest'],
   })
 
-  useSeoOptimized('confirm-email')
+  useSeoMeta({
+    title: 'Verifikasi Email',
+    description: 'Periksa inbox email Anda dan klik tautan verifikasi yang baru kami kirim. Langkah validasi ini amat diperlukan guna mengaktifkan akun platform JuruTani.'
+  })
 
   const toast = usejuruTaniToast()
   const authStore = useAuthStore()

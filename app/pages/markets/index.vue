@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { watchDebounced } from '@vueuse/core'
+
   import type { JSONContent } from '@tiptap/vue-3'
   import type { Database } from '~/types/database.types'
   import { Enum } from '~/utils/enum'
@@ -8,7 +8,10 @@
     layout: 'default',
   })
 
-  useSeoOptimized('markets')
+  useSeoMeta({
+    title: 'Marketplace Pertanian — Jual Beli Hasil Panen & Saprotan',
+    description: 'Jual beli hasil panen, bibit unggul, pakan ternak & alat pertanian online. Transaksi aman langsung dari produsen terpercaya di marketplace JuruTani.'
+  })
 
   // ─── Types ─────────────────────────────────────────────────────────────────────
   type ProductMarketRow = Database['public']['Tables']['product_markets']['Row']
@@ -92,10 +95,25 @@
   const pageSize = 12
 
   // ─── Reactive Route Queries ────────────────────────────────────────────────────
-  const search = useRouteQuery<string>('search', '')
-  const category = useRouteQuery<string>('category', 'all')
-  const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
-  const page = useRouteQuery<number>('page', 1, { transform: Number })
+  const route = useRoute()
+  const router = useRouter()
+
+  const search = ref<string>((route.query.search as string) || '')
+  const category = ref<string>((route.query.category as string) || 'all')
+  const sortValue = ref<string>((route.query.sort as string) || 'created_at-desc')
+  const page = ref<number>(Number(route.query.page) || 1)
+
+  watch([search, category, sortValue, page], ([newSearch, newCategory, newSort, newPage]) => {
+    router.replace({
+      query: {
+        ...route.query,
+        search: newSearch || undefined,
+        category: newCategory === 'all' ? undefined : newCategory,
+        sort: newSort === 'created_at-desc' ? undefined : newSort,
+        page: newPage === 1 ? undefined : String(newPage),
+      }
+    })
+  })
 
   // ─── Data Kategori ─────────────────────────────────────────────────────────────
   const { data: categoriesData } = await useAsyncData(
@@ -180,14 +198,14 @@
   )
 
   // ─── Debounce Search & Category ───────────────────────────────────────────────
-  watchDebounced(
-    [search, category],
-    async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>
+  watch([search, category], () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(async () => {
       page.value = 1
       await refresh()
-    },
-    { debounce: 400, deep: true },
-  )
+    }, 400)
+  }, { deep: true })
 
   // ─── Sort Options ──────────────────────────────────────────────────────────────
   const sortOptions = Enum.SortOptions.map((option) => {

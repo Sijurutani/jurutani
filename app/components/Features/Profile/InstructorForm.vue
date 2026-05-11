@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted } from 'vue'
+  import { z } from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
   import { toastStore } from '~/composables/useJuruTaniToast'
   import type { Database } from '~/types/database.types'
 
@@ -10,8 +11,16 @@
   const authStore = useAuthStore()
   const supabase = useSupabaseClient<Database>()
 
+  const schema = z.object({
+    provinces: z.string().min(1, 'Provinsi wajib dipilih'),
+    district: z.string().min(1, 'Kabupaten/Kota wajib dipilih'),
+    note: z.string().max(500, 'Catatan maksimal 500 karakter').optional().or(z.literal('')),
+  })
+
+  type Schema = z.output<typeof schema>
+
   // Form state
-  const formData = reactive({
+  const state = reactive<Schema>({
     provinces: '',
     district: '',
     note: '',
@@ -34,20 +43,20 @@
   })
 
   const districtOptions = computed(() => {
-    if (!formData.provinces) return []
+    if (!state.provinces) return []
     return districts.value
-      .filter((d) => d.province === formData.provinces)
+      .filter((d) => d.province === state.provinces)
       .map((d) => ({ label: d.name, value: d.name }))
   })
 
   // Computed
   const isFormValid = computed(() => {
-    return !!formData.provinces && !!formData.district
+    return !!state.provinces && !!state.district
   })
 
   // Load data
   const loadData = async () => {
-    if (!authStore.user?.sub) return
+    if (!authStore.user?.id) return
     isLoading.value = true
 
     try {
@@ -65,14 +74,14 @@
       const { data: instructorData } = await supabase
         .from('instructors')
         .select('*')
-        .eq('user_id', authStore.user.sub)
+        .eq('user_id', authStore.user.id)
         .is('deleted_at', null)
         .maybeSingle()
 
       if (instructorData) {
-        formData.provinces = instructorData.provinces || ''
-        formData.district = instructorData.district || ''
-        formData.note = instructorData.note || ''
+        state.provinces = instructorData.provinces || ''
+        state.district = instructorData.district || ''
+        state.note = instructorData.note || ''
       }
     } catch (error) {
       console.error('Failed to fetch instructor data', error)
@@ -82,17 +91,17 @@
   }
 
   // Submit handler
-  const handleSubmit = async () => {
-    if (!authStore.user?.sub || !isFormValid.value) return
+  const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
+    if (!authStore.user?.id) return
 
     isSubmitting.value = true
 
     try {
       const updates = {
-        user_id: authStore.user.sub,
-        provinces: formData.provinces || null,
-        district: formData.district || null,
-        note: formData.note || null,
+        user_id: authStore.user.id,
+        provinces: event.data.provinces || null,
+        district: event.data.district || null,
+        note: event.data.note || null,
         updated_at: new Date().toISOString(),
       }
 
@@ -100,7 +109,7 @@
       const { data: existingData } = await supabase
         .from('instructors')
         .select('id')
-        .eq('user_id', authStore.user.sub)
+        .eq('user_id', authStore.user.id)
         .is('deleted_at', null)
         .maybeSingle()
 
@@ -109,7 +118,7 @@
         const { error: updErr } = await supabase
           .from('instructors')
           .update(updates)
-          .eq('user_id', authStore.user.sub)
+          .eq('user_id', authStore.user.id)
         error = updErr
       } else {
         const { error: insErr } = await supabase
@@ -160,67 +169,43 @@
     </div>
 
     <!-- Form -->
-    <form v-else class="space-y-6" @submit.prevent="handleSubmit">
+    <UForm v-else :schema="schema" :state="state" class="space-y-6" @submit="handleSubmit">
       <!-- Provinces -->
-      <div>
-        <label
-          for="instructor-provinces"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Provinsi *
-        </label>
+      <UFormField label="Provinsi" name="provinces" required hint="Provinsi wilayah kerja Anda sebagai penyuluh">
         <USelect
           id="instructor-provinces"
-          v-model="formData.provinces"
+          v-model="state.provinces"
           :items="provinceOptions"
           placeholder="Pilih provinsi"
           class="w-full"
         />
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Provinsi wilayah kerja Anda sebagai penyuluh
-        </p>
-      </div>
+      </UFormField>
 
       <!-- District -->
-      <div>
-        <label
-          for="instructor-district"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Kabupaten/Kota *
-        </label>
+      <UFormField label="Kabupaten/Kota" name="district" required hint="Kabupaten atau kota wilayah kerja Anda">
         <USelect
           id="instructor-district"
-          v-model="formData.district"
+          v-model="state.district"
           :items="districtOptions"
-          :disabled="!formData.provinces"
+          :disabled="!state.provinces"
           placeholder="Pilih kabupaten/kota"
           class="w-full"
         />
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Kabupaten atau kota wilayah kerja Anda
-        </p>
-      </div>
+      </UFormField>
 
       <!-- Note -->
-      <div>
-        <label
-          for="instructor-note"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Catatan / Deskripsi
-        </label>
-        <textarea
+      <UFormField label="Catatan / Deskripsi" name="note">
+        <UTextarea
           id="instructor-note"
-          v-model="formData.note"
-          rows="5"
-          class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none transition-colors"
+          v-model="state.note"
+          :rows="5"
           placeholder="Ceritakan tentang pengalaman dan fokus penyuluhan Anda..."
+          class="w-full"
         />
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {{ formData.note?.length || 0 }}/500 karakter
+          {{ (state.note || '').length }}/500 karakter
         </p>
-      </div>
+      </UFormField>
 
       <!-- Info Box -->
       <div
@@ -244,23 +229,19 @@
         </div>
       </div>
 
-      <!-- Submit Button -->
-      <div
-        class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors"
-      >
+      <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors">
         <UButton
           type="submit"
           color="success"
           variant="solid"
           size="lg"
           :loading="isSubmitting"
-          :disabled="isSubmitting || !isFormValid"
           icon="i-lucide-save"
         >
           Simpan Perubahan
         </UButton>
       </div>
-    </form>
+    </UForm>
   </div>
 </template>
 

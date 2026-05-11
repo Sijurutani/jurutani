@@ -1,6 +1,9 @@
 <script setup lang="ts">
   // SEO Optimization
-  useSeoOptimized('terms')
+  useSeoMeta({
+    title: 'Syarat & Ketentuan Layanan',
+    description: 'Baca syarat & ketentuan layanan platform JuruTani. Ketahui dengan seksama berbagai perjanjian pengguna, aturan layanan, serta hak kewajiban Anda di sini.'
+  })
 
   definePageMeta({
     layout: 'blank',

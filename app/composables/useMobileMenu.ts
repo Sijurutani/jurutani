@@ -1,5 +1,4 @@
 import { ref, watch } from 'vue'
-import { useScrollLock } from '@vueuse/core'
 
 /**
  * Composable untuk manage mobile menu state
@@ -8,9 +7,6 @@ import { useScrollLock } from '@vueuse/core'
 export const useMobileMenu = () => {
   const isOpen = ref(false)
   const menuRef = ref<HTMLElement | null>(null)
-  const isLocked = useScrollLock(
-    typeof document !== 'undefined' ? document.body : null,
-  )
 
   const open = () => {
     isOpen.value = true
@@ -26,7 +22,13 @@ export const useMobileMenu = () => {
 
   // Auto lock/unlock body scroll
   watch(isOpen, (newValue) => {
-    isLocked.value = newValue
+    if (typeof document !== 'undefined') {
+      if (newValue) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
+    }
   })
 
   // Keyboard handler

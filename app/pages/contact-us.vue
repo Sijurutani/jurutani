@@ -2,7 +2,10 @@
   import { officeInfo } from '~/data/contact'
   import { useReveal } from '~/composables/useReveal'
 
-  useSeoOptimized('contact')
+  useSeoMeta({
+    title: 'Hubungi JuruTani — Layanan & Kemitraan Agribisnis',
+    description: 'Hubungi kontak JuruTani untuk layanan penyuluhan, penawaran kemitraan agribisnis, hingga bantuan kendala teknis. Tim kami siap merespon pertanyaan Anda.'
+  })
   useReveal()
 
   const socialLinks = [

@@ -1,7 +1,10 @@
 <script setup lang="ts">
   import { ref } from 'vue'
 
-  useSeoOptimized('tools')
+  useSeoMeta({
+    title: 'Tools & Kalkulator Pertanian Online Gratis',
+    description: 'Kalkulator agribisnis online gratis untuk petani & peternak. Hitung praktis kebutuhan pupuk, pakan ternak, jadwal tanam, serta analisis biaya usaha tani.'
+  })
 
   // Active tab state
   const activeTab = ref('benih')

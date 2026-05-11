@@ -1,149 +1,76 @@
 <script setup lang="ts">
-  import { ref, computed, watch, onMounted } from 'vue'
+  import { z } from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
   import { toastStore } from '~/composables/useJuruTaniToast'
 
   const authStore = useAuthStore()
   const supabase = useSupabaseClient()
 
   // SEO Meta
-  useSeoOptimized('setting')
+  useSeoMeta({
+    title: 'Pengaturan Akun',
+    description: 'Atur preferensi komoditas, notifikasi harga pangan, dan pengaturan akun penyuluhan JuruTani sesuai kebutuhan usaha tani Anda.'
+  })
 
-  // Get current user from auth store
   const currentUser = computed(() => authStore.user)
 
-  // State
-  const newEmail = ref('')
-  const confirmEmail = ref('')
-  const resetEmail = ref('')
+  // Zod schemas
+  const emailSchema = z.object({
+    newEmail: z.string().email('Format email tidak valid').min(1, 'Email wajib diisi'),
+    confirmEmail: z.string().email('Format email tidak valid').min(1, 'Email konfirmasi wajib diisi'),
+  }).refine(data => data.newEmail === data.confirmEmail, {
+    message: 'Email konfirmasi tidak cocok',
+    path: ['confirmEmail'],
+  }).refine(data => data.newEmail.toLowerCase() !== (currentUser.value?.email || '').toLowerCase(), {
+    message: 'Email baru harus berbeda dengan email saat ini',
+    path: ['newEmail'],
+  })
+
+  type EmailSchema = z.output<typeof emailSchema>
+
+  const resetSchema = z.object({
+    resetEmail: z.string().email('Format email tidak valid').min(1, 'Email wajib diisi'),
+  })
+
+  type ResetSchema = z.output<typeof resetSchema>
+
+  // Form states
+  const emailState = reactive<EmailSchema>({
+    newEmail: '',
+    confirmEmail: '',
+  })
+
+  const resetState = reactive<{ resetEmail: string }>({
+    resetEmail: '',
+  })
+
   const isLoadingChangeEmail = ref(false)
   const isLoadingResetPassword = ref(false)
-  const emailError = ref('')
-  const confirmEmailError = ref('')
-  const resetEmailError = ref('')
   const successMessage = ref('')
 
-  // Function to get current user is not needed anymore
-  const getCurrentUser = async () => {
-    return authStore.user
-  }
-
-  // Email validation
-  const validateEmail = (email: string) => {
-    if (!email) return 'Email wajib diisi'
-    const emailRegex =
-      /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
-    if (!emailRegex.test(email)) return 'Format email tidak valid'
-    return ''
-  }
-
-  // Computed properties
-  const isEmailFormValid = computed(() => {
-    return (
-      newEmail.value &&
-      confirmEmail.value &&
-      newEmail.value === confirmEmail.value &&
-      !emailError.value &&
-      !confirmEmailError.value &&
-      newEmail.value.toLowerCase() !== currentUser.value?.email?.toLowerCase()
-    )
-  })
-
-  // Watchers for real-time validation
-  watch(newEmail, (value) => {
-    emailError.value = validateEmail(value)
-    if (
-      value &&
-      currentUser.value?.email &&
-      value.toLowerCase() === currentUser.value.email.toLowerCase()
-    ) {
-      emailError.value = 'Email baru harus berbeda dengan email saat ini'
-    }
-    // Revalidate confirmation email
-    if (confirmEmail.value && value !== confirmEmail.value) {
-      confirmEmailError.value = 'Email konfirmasi tidak cocok'
-    } else if (confirmEmail.value && value === confirmEmail.value) {
-      confirmEmailError.value = ''
-    }
-  })
-
-  watch(confirmEmail, (value) => {
-    if (value && newEmail.value && value !== newEmail.value) {
-      confirmEmailError.value = 'Email konfirmasi tidak cocok'
-    } else if (value && newEmail.value && value === newEmail.value) {
-      confirmEmailError.value = ''
-    }
-  })
-
-  watch(resetEmail, (value) => {
-    resetEmailError.value = validateEmail(value)
-  })
-
   // Handle change email
-  const handleChangeEmail = async () => {
-    // Clear previous messages
+  const handleChangeEmail = async (event: FormSubmitEvent<EmailSchema>) => {
     successMessage.value = ''
-
-    // Validate inputs
-    const newEmailValidation = validateEmail(newEmail.value)
-    const confirmEmailValidation = validateEmail(confirmEmail.value)
-
-    if (newEmailValidation) {
-      emailError.value = newEmailValidation
-      return
-    }
-
-    if (confirmEmailValidation) {
-      confirmEmailError.value = confirmEmailValidation
-      return
-    }
-
-    if (newEmail.value !== confirmEmail.value) {
-      confirmEmailError.value = 'Email konfirmasi tidak cocok'
-      return
-    }
-
-    if (
-      newEmail.value.toLowerCase() === currentUser.value?.email?.toLowerCase()
-    ) {
-      emailError.value = 'Email baru harus berbeda dengan email saat ini'
-      return
-    }
-
     isLoadingChangeEmail.value = true
-    emailError.value = ''
-    confirmEmailError.value = ''
 
     try {
       const { error } = await supabase.auth.updateUser({
-        email: newEmail.value.toLowerCase().trim(),
+        email: event.data.newEmail.toLowerCase().trim(),
       })
 
       if (error) {
         let errorMessage = 'Gagal mengubah email'
-
-        if (error.message.includes('rate_limit')) {
-          errorMessage =
-            'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
-        } else if (error.message.includes('email_address_invalid')) {
-          errorMessage = 'Format email tidak valid'
-        } else if (error.message.includes('email_address_taken')) {
-          errorMessage = 'Email sudah digunakan oleh akun lain'
-        }
-
-        emailError.value = errorMessage
+        if (error.message.includes('rate_limit')) errorMessage = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
+        else if (error.message.includes('email_address_invalid')) errorMessage = 'Format email tidak valid'
+        else if (error.message.includes('email_address_taken')) errorMessage = 'Email sudah digunakan oleh akun lain'
         toastStore.error(errorMessage)
       } else {
-        successMessage.value =
-          'Link konfirmasi berhasil dikirim ke email baru Anda. Silakan cek kotak masuk dan klik link konfirmasi.'
-        toastStore.success(
-          'Email berhasil diubah! Cek email baru untuk konfirmasi.',
-        )
-        newEmail.value = ''
-        confirmEmail.value = ''
+        successMessage.value = 'Link konfirmasi berhasil dikirim ke email baru Anda. Silakan cek kotak masuk dan klik link konfirmasi.'
+        toastStore.success('Email berhasil diubah! Cek email baru untuk konfirmasi.')
+        emailState.newEmail = ''
+        emailState.confirmEmail = ''
       }
     } catch (error) {
-      console.error('Email update error:', error)
-      emailError.value = 'Terjadi kesalahan sistem. Silakan coba lagi.'
       toastStore.error('Terjadi kesalahan sistem. Silakan coba lagi.')
     } finally {
       isLoadingChangeEmail.value = false
@@ -151,65 +78,40 @@
   }
 
   // Handle reset password
-  const handleResetPassword = async () => {
-    // Clear previous messages
+  const handleResetPassword = async (event: FormSubmitEvent<ResetSchema>) => {
     successMessage.value = ''
-
-    const validation = validateEmail(resetEmail.value)
-    if (validation) {
-      resetEmailError.value = validation
-      return
-    }
-
     isLoadingResetPassword.value = true
-    resetEmailError.value = ''
 
     try {
-      const { success, error } = await authStore.resetPassword(
-        resetEmail.value.toLowerCase().trim(),
-      )
+      const { success, error } = await authStore.resetPassword(event.data.resetEmail.toLowerCase().trim())
 
       if (!success) {
         let errorMessage = 'Gagal mengirim link reset password'
-
-        if (error && error.includes('rate_limit')) {
-          errorMessage =
-            'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
-        } else if (error && error.includes('user_not_found')) {
-          errorMessage = 'Email tidak terdaftar di sistem'
-        }
-
-        resetEmailError.value = errorMessage
+        if (error && error.includes('rate_limit')) errorMessage = 'Terlalu banyak percobaan. Coba lagi dalam beberapa menit.'
+        else if (error && error.includes('user_not_found')) errorMessage = 'Email tidak terdaftar di sistem'
         toastStore.error(errorMessage)
       } else {
-        successMessage.value =
-          'Link reset password berhasil dikirim ke email Anda. Silakan cek kotak masuk.'
+        successMessage.value = 'Link reset password berhasil dikirim ke email Anda. Silakan cek kotak masuk.'
         toastStore.success('Link reset password berhasil dikirim!')
-        resetEmail.value = ''
+        resetState.resetEmail = ''
       }
     } catch (error: any) {
-      console.error('Reset password error:', error)
-      resetEmailError.value = 'Terjadi kesalahan sistem. Silakan coba lagi.'
       toastStore.error('Terjadi kesalahan sistem. Silakan coba lagi.')
     } finally {
       isLoadingResetPassword.value = false
     }
   }
 
-  // Initialize component
   onMounted(async () => {
     await authStore.fetchProfile()
-
-    // Auto-fill current user email for reset password
     if (currentUser.value?.email) {
-      resetEmail.value = currentUser.value.email
+      resetState.resetEmail = currentUser.value.email
     }
   })
 
-  // Listen for auth store changes instead of Supabase client manually
   watch(currentUser, (user) => {
-    if (user?.email && !resetEmail.value) {
-      resetEmail.value = user.email
+    if (user?.email && !resetState.resetEmail) {
+      resetState.resetEmail = user.email
     }
   })
 </script>
@@ -262,77 +164,38 @@
           </div>
 
           <!-- Change Email Form -->
-          <form class="space-y-4" @submit.prevent="handleChangeEmail">
-            <div>
-              <label
-                for="newEmail"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                Email Baru
-              </label>
+          <UForm :schema="emailSchema" :state="emailState" class="space-y-4" @submit="handleChangeEmail">
+            <UFormField label="Email Baru" name="newEmail" required>
               <UInput
                 id="newEmail"
-                v-model="newEmail"
+                v-model="emailState.newEmail"
                 type="email"
                 placeholder="masukkan@email.baru"
                 leading-icon="i-lucide-mail"
-                required
                 class="w-full"
-                :class="{ 'ring-red-500': emailError }"
               />
-              <p
-                v-if="emailError"
-                class="text-red-500 dark:text-red-400 text-sm mt-1"
-              >
-                {{ emailError }}
-              </p>
-            </div>
+            </UFormField>
 
-            <div>
-              <label
-                for="confirmEmail"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                Konfirmasi Email Baru
-              </label>
+            <UFormField label="Konfirmasi Email Baru" name="confirmEmail" required>
               <UInput
                 id="confirmEmail"
-                v-model="confirmEmail"
+                v-model="emailState.confirmEmail"
                 type="email"
                 placeholder="konfirmasi email baru"
                 leading-icon="i-lucide-mail"
-                required
                 class="w-full"
-                :class="{ 'ring-red-500': confirmEmailError }"
               />
-              <p
-                v-if="confirmEmailError"
-                class="text-red-500 dark:text-red-400 text-sm mt-1"
-              >
-                {{ confirmEmailError }}
-              </p>
-            </div>
+            </UFormField>
 
             <UButton
-              color="neutral"
-              variant="ghost"
+              color="success"
               type="submit"
-              :disabled="isLoadingChangeEmail || !isEmailFormValid"
-              class="w-full bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+              :loading="isLoadingChangeEmail"
+              class="w-full"
             >
-              <span
-                v-if="isLoadingChangeEmail"
-                class="flex items-center justify-center"
-              >
-                <UIcon
-                  name="i-lucide-refresh-cw"
-                  class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                />
-                Mengubah Email...
-              </span>
-              <span v-else>Ubah Email</span>
+              Ubah Email
             </UButton>
-          </form>
+          </UForm>
         </div>
 
         <!-- Password Settings -->
@@ -349,15 +212,10 @@
             </h3>
           </div>
 
-          <form class="space-y-4" @submit.prevent="handleResetPassword">
-            <div
-              class="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800 mb-4 transition-colors duration-200"
-            >
+          <UForm :schema="resetSchema" :state="resetState" class="space-y-4" @submit="handleResetPassword">
+            <div class="bg-green-50 dark:bg-green-950/30 rounded-lg p-4 border border-green-200 dark:border-green-800 mb-4 transition-colors duration-200">
               <div class="flex items-start">
-                <UIcon
-                  name="i-lucide-info"
-                  class="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2 shrink-0"
-                />
+                <UIcon name="i-lucide-info" class="w-5 h-5 text-green-500 dark:text-green-400 mt-0.5 mr-2 shrink-0" />
                 <div class="text-sm text-green-800 dark:text-green-200">
                   <p class="font-medium mb-1">Reset Password</p>
                   <p>Kami akan mengirim link reset password ke email Anda.</p>
@@ -365,51 +223,26 @@
               </div>
             </div>
 
-            <div>
-              <label
-                for="resetEmail"
-                class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-              >
-                Email Akun
-              </label>
+            <UFormField label="Email Akun" name="resetEmail" required>
               <UInput
                 id="resetEmail"
-                v-model="resetEmail"
+                v-model="resetState.resetEmail"
                 type="email"
                 placeholder="email@akun.anda"
                 leading-icon="i-lucide-mail"
-                required
                 class="w-full"
-                :class="{ 'ring-red-500': resetEmailError }"
               />
-              <p
-                v-if="resetEmailError"
-                class="text-red-500 dark:text-red-400 text-sm mt-1"
-              >
-                {{ resetEmailError }}
-              </p>
-            </div>
+            </UFormField>
 
             <UButton
-              color="neutral"
-              variant="ghost"
+              color="success"
               type="submit"
-              :disabled="isLoadingResetPassword || !resetEmail"
-              class="w-full bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+              :loading="isLoadingResetPassword"
+              class="w-full"
             >
-              <span
-                v-if="isLoadingResetPassword"
-                class="flex items-center justify-center"
-              >
-                <UIcon
-                  name="i-lucide-refresh-cw"
-                  class="animate-spin -ml-1 mr-3 h-4 w-4 text-white"
-                />
-                Mengirim Link...
-              </span>
-              <span v-else>Kirim Link Reset Password</span>
+              Kirim Link Reset Password
             </UButton>
-          </form>
+          </UForm>
         </div>
 
         <!-- Success Messages -->

@@ -10,7 +10,10 @@
   } from '~/data/about'
   import { useReveal } from '~/composables/useReveal'
 
-  useSeoOptimized('about')
+  useSeoMeta({
+    title: 'Tentang JuruTani — Platform Penyuluhan Digital Polbangtan',
+    description: 'JuruTani adalah platform penyuluhan digital resmi bentukan Polbangtan. Kami hadir mendukung petani Indonesia lewat edukasi dan inovasi agribisnis terpadu.'
+  })
   useReveal()
 </script>
 

@@ -6,7 +6,10 @@
   })
 
   // SEO Optimization with Publisher & Author
-  useSeoOptimized('home')
+  useSeoMeta({
+    title: 'Platform Penyuluhan Pertanian Digital Indonesia',
+    description: 'Platform penyuluhan digital petani Indonesia. Dapatkan edukasi gratis, konsultasi penyuluh ahli, dan info harga komoditas terkini dari Polbangtan.'
+  })
 </script>
 
 <template>

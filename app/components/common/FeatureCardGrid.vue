@@ -37,10 +37,7 @@
     return `grid grid-cols-1 ${colClass[props.columns]} ${gapClass[props.gap]}`
   })
 
-  const gridRef = ref<HTMLElement | null>(null)
-  const {
-    bindings: { 'v-reveal': vReveal },
-  } = useReveal()
+  useReveal()
 </script>
 
 <template>
@@ -48,7 +45,7 @@
     <IconInfoCard
       v-for="(card, index) in cards"
       :key="index"
-      v-reveal
+      class="app-reveal"
       :style="{ '--reveal-delay': `${index * 80}ms` }"
       :icon="card.icon"
       :title="card.title"

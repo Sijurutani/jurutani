@@ -1,11 +1,13 @@
 <script setup lang="ts">
-  import { useRouteQuery } from '@vueuse/router'
-  import { watchDebounced } from '@vueuse/core'
+
   import type { SortOption } from '~/types/content'
   import { toastStore } from '~/composables/useJuruTaniToast'
   import { Enum } from '~/utils/enum'
 
-  useSeoOptimized('history')
+  useSeoMeta({
+    title: 'Riwayat Aktivitas',
+    description: 'Lihat ringkasan riwayat interaksi, aktivitas kursus, konsultasi & transaksi Anda. Pantau terus seluruh perjalanan Anda bersama platform digital JuruTani.'
+  })
 
   type HistoryType = 'news' | 'markets'
   type HistoryFilter = 'all' | HistoryType
@@ -24,10 +26,25 @@
   const supabase = useSupabaseClient()
   const pageSize = 10
 
-  const filter = useRouteQuery<HistoryFilter>('filter', 'all')
-  const search = useRouteQuery<string | undefined>('search', undefined)
-  const sort = useRouteQuery<string>('sort', 'created_at-desc')
-  const page = useRouteQuery('page', 1, { transform: Number })
+  const route = useRoute()
+  const router = useRouter()
+
+  const filter = ref<HistoryFilter>((route.query.filter as HistoryFilter) || 'all')
+  const search = ref<string | undefined>((route.query.search as string) || undefined)
+  const sort = ref<string>((route.query.sort as string) || 'created_at-desc')
+  const page = ref<number>(Number(route.query.page) || 1)
+
+  watch([filter, search, sort, page], ([newFilter, newSearch, newSort, newPage]) => {
+    router.replace({
+      query: {
+        ...route.query,
+        filter: newFilter === 'all' ? undefined : String(newFilter),
+        search: newSearch || undefined,
+        sort: newSort === 'created_at-desc' ? undefined : String(newSort),
+        page: newPage === 1 ? undefined : String(newPage),
+      }
+    })
+  })
 
   const filterLabels: Record<HistoryFilter, string> = {
     all: 'Semua',
@@ -278,14 +295,14 @@
     },
   )
 
-  watchDebounced(
-    [search],
-    async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>
+  watch(search, () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(async () => {
       page.value = 1
       await refresh()
-    },
-    { debounce: 400 },
-  )
+    }, 400)
+  })
 
   watch([filter, sort], () => {
     page.value = 1

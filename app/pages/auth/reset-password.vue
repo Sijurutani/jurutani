@@ -2,7 +2,10 @@
   import type { Database } from '~/types/database.types'
 
   // SEO Optimization
-  useSeoOptimized('reset-password')
+  useSeoMeta({
+    title: 'Buat Kata Sandi Baru',
+    description: 'Buat kombinasi kata sandi baru yang kuat guna amankan kembali akun JuruTani Anda. Pastikan kerahasiaan data demi kelancaran memakai layanan penyuluhan.'
+  })
 
   definePageMeta({
     layout: 'auth',

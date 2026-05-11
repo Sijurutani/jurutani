@@ -1,10 +1,13 @@
 <script setup lang="ts">
-  import { watchDebounced } from '@vueuse/core'
+
   import { Enum } from '~/utils/enum'
   import type { Database } from '~/types/database.types'
   import { parseEmbeds } from '~/utils/embed'
 
-  useSeoOptimized('meetings')
+  useSeoMeta({
+    title: 'Jadwal Webinar & Pertemuan Penyuluhan Pertanian',
+    description: 'Ikuti ragam webinar & pelatihan penyuluhan pertanian rutin bersama pakar Polbangtan. Daftar sekarang secara gratis guna meningkatkan wawasan agribisnis.'
+  })
 
   type MeetingRow = Database['public']['Tables']['meeting_schedules']['Row']
 
@@ -12,9 +15,23 @@
   const pageSize = 9
 
   // 1. Reactive Route Queries
-  const search = useRouteQuery<string | undefined>('search', undefined)
-  const sortValue = useRouteQuery<string>('sort', 'created_at-desc')
-  const page = useRouteQuery<number>('page', 1)
+  const route = useRoute()
+  const router = useRouter()
+
+  const search = ref<string | undefined>((route.query.search as string) || undefined)
+  const sortValue = ref<string>((route.query.sort as string) || 'created_at-desc')
+  const page = ref<number>(Number(route.query.page) || 1)
+
+  watch([search, sortValue, page], ([newSearch, newSort, newPage]) => {
+    router.replace({
+      query: {
+        ...route.query,
+        search: newSearch || undefined,
+        sort: newSort === 'created_at-desc' ? undefined : newSort,
+        page: newPage === 1 ? undefined : String(newPage),
+      }
+    })
+  })
 
   // 2. Computed Query Builder
   const meetingsQuery = computed(() => {
@@ -64,14 +81,14 @@
   )
 
   // 4. Debounce Search
-  watchDebounced(
-    [search],
-    async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>
+  watch(search, () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(async () => {
       page.value = 1
       await refresh()
-    },
-    { debounce: 400, deep: true },
-  )
+    }, 400)
+  }, { deep: true })
 
   // 5. Helper Computed & Functions
   const sortOptions = Enum.SortOptions.map((option) => {

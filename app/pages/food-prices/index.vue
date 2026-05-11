@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { h, resolveComponent } from 'vue'
-  import { watchDebounced } from '@vueuse/core'
+
 
   import { Enum } from '~/utils/enum'
   import { formatCurrency } from '~/utils/currency'
@@ -63,7 +63,7 @@
     if (priceErr) return { data: [], error: priceErr }
 
     // Gabungkan harga terbaru dan perubahan ke setiap food
-    const foodsWithPrice: FoodRow[] = foods.map((food) => {
+    const foodsWithPrice = foods.map((food) => {
       const priceEntries = prices.filter((p) => p.food_id === food.id)
       const latest = priceEntries[0]
       const prev = priceEntries[1]
@@ -81,7 +81,7 @@
         latest_price_date: latest?.date ?? food.updated_at ?? null,
         price_change,
         price_change_percent,
-      }
+      } as unknown as FoodRow
     })
     return { data: foodsWithPrice, error: null }
   }
@@ -213,14 +213,14 @@
   )
 
   // 5. Debounce Search & Reset Page Handler
-  watchDebounced(
-    [searchQuery],
-    async () => {
+  let searchTimeout: ReturnType<typeof setTimeout>
+  watch(searchQuery, () => {
+    clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(async () => {
       currentPage.value = 1
       await refresh()
-    },
-    { debounce: 500 },
-  )
+    }, 500)
+  })
 
   // Reset page ke 1 setiap kali filter kategori atau sort berubah
   watch([selectedCategory, currentSort], () => {
@@ -462,7 +462,10 @@
 
 
   // SEO
-  useSeoOptimized('food-prices')
+  useSeoMeta({
+    title: 'Harga Pangan & Komoditas Hari Ini — Yogyakarta & DIY',
+    description: 'Pantau harga pangan & komoditas pertanian terkini di Yogyakarta & DIY. Dapatkan update harga beras, cabai, daging, dan ikan harian dari pasar lokal.'
+  })
 </script>
 
 <template>

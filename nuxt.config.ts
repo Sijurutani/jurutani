@@ -1,28 +1,21 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import siteMeta from './app/site'
-
-const {
-  title,
-  titleTemplate,
-  titleSeparator,
-  description,
-  url,
-  defaultLocale,
-  locale,
-  lang,
-  identity,
-  twitter,
-  trailingSlash,
-  robots: defaultRobots,
-  favicon,
-  appleTouchIcon,
-  organization,
-} = siteMeta
-
 export default defineNuxtConfig({
-  // ─── Runtime Config ──────────────────────────────────────────────────────────
-  // ⚠️ SECURITY: API keys di `public` terekspos ke client-side bundle.
-  // Pindahkan ke server-only jika key ini hanya dipakai di server/API routes.
+  site: {
+    url: 'https://jurutani.com',
+    name: 'JuruTani',
+    description: 'Platform penyuluhan pertanian, peternakan, perkebunan, dan perikanan digital Indonesia.',
+    defaultLocale: 'id',
+  },
+
+  modules: [
+    '@pinia/nuxt',
+    '@nuxt/image',
+    '@nuxtjs/seo',
+    '@nuxt/eslint',
+    '@nuxt/ui',
+    '@nuxtjs/supabase',
+  ],
+  
   runtimeConfig: {
     groqApiKey: process.env.GROQ_API_KEY,
     openrouterApiKey: process.env.OPENROUTER_API_KEY,
@@ -33,101 +26,6 @@ export default defineNuxtConfig({
     },
   },
 
-  // ─── App Head ────────────────────────────────────────────────────────────────
-  app: {
-    baseURL: '/',
-    head: {
-      // titleTemplate di-handle oleh nuxt-site-config / useSeoMeta per halaman.
-      // Ini adalah fallback untuk halaman yang belum punya title eksplisit.
-      titleTemplate: titleTemplate ?? `%s ${titleSeparator} ${title}`,
-
-      htmlAttrs: {
-        lang,
-      },
-
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: favicon ?? '/favicon.ico' },
-        {
-          rel: 'apple-touch-icon',
-          href: appleTouchIcon ?? '/apple-touch-icon.png',
-        },
-        { rel: 'manifest', href: '/site.webmanifest' },
-        // Preconnect & Prefetch
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        {
-          rel: 'preconnect',
-          href: 'https://fonts.gstatic.com',
-          crossorigin: '',
-        },
-        { rel: 'dns-prefetch', href: 'https://cdn.jsdelivr.net' },
-      ],
-
-      meta: [
-        { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: description },
-        { name: 'author', content: siteMeta.author },
-        { name: 'publisher', content: siteMeta.publisher },
-        { name: 'theme-color', content: '#16a34a' }, // green-600 — sesuaikan dengan brand color JuruTani
-
-        // PWA & Mobile Web App
-        { name: 'mobile-web-app-capable', content: 'yes' },
-        { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-        { name: 'apple-mobile-web-app-title', content: title },
-        { name: 'format-detection', content: 'telephone=no' },
-
-        // ── Geo Meta Tags (penting untuk local SEO Yogyakarta/Jawa Tengah) ──
-        { name: 'geo.region', content: 'ID-YO' },
-        { name: 'geo.placename', content: 'Yogyakarta' },
-        { name: 'geo.position', content: '-7.6253;110.2921' },
-        { name: 'ICBM', content: '-7.6253, 110.2921' },
-
-        // ── Language ──
-        { 'http-equiv': 'content-language', content: lang },
-      ],
-    },
-  },
-
-  // ─── Nitro ───────────────────────────────────────────────────────────────────
-  nitro: {
-    preset: 'node-server',
-    compressPublicAssets: {
-      gzip: true,
-      brotli: false,  // dinonaktifkan — .br files menyebabkan ENOENT 500 di production
-    },
-    externals: {
-      inline: [
-        'virtual/global-sources.mjs',
-        '@nuxtjs/mdc'
-      ]
-    }
-  },
-
-  build: {
-    transpile: ['@nuxtjs/mdc']
-  },
-
-  features: {
-    inlineStyles: true,
-  },
-
-  // ─── Modules ─────────────────────────────────────────────────────────────────
-  modules: [
-    '@nuxtjs/mdc',
-
-    '@vueuse/nuxt',
-    '@nuxt/image',
-    '@vee-validate/nuxt',
-    '@nuxtjs/sitemap',
-    '@nuxtjs/robots',
-    'nuxt-schema-org',
-    '@nuxt/eslint',
-    '@nuxt/ui',
-    '@nuxtjs/supabase',
-  ],
-
-  // ─── Supabase ────────────────────────────────────────────────────────────────
   supabase: {
     redirectOptions: {
       login: '/auth/login',
@@ -138,32 +36,18 @@ export default defineNuxtConfig({
     redirect: false,
   },
 
-  // ─── Color Mode ──────────────────────────────────────────────────────────────
   colorMode: {
     preference: 'light',
     fallback: 'light',
     classSuffix: '',
   },
 
-  // ─── Experimental ────────────────────────────────────────────────────────────
   experimental: {
-    appManifest: false, // Menonaktifkan appManifest mencegah error ENOENT builds/meta/UUID.json di VPS
+    appManifest: false, 
   },
 
-  // ─── CSS ─────────────────────────────────────────────────────────────────────
   css: ['@/assets/css/tailwind.css'],
 
-  postcss: {
-    plugins: {
-      '@tailwindcss/postcss': {},
-    },
-  },
-
-  icon: {
-    serverBundle: 'remote',
-  },
-
-  // ─── Nuxt Image ──────────────────────────────────────────────────────────────
   image: {
     format: ['avif', 'webp', 'png', 'jpg'],
     provider: 'ipx',
@@ -194,152 +78,21 @@ export default defineNuxtConfig({
         },
       },
     },
-    domains: [
-      'images.unsplash.com',
-      'fakestoreapi.com',
-      'res.cloudinary.com',
-      'avatars.githubusercontent.com',
-      'gravatar.com',
-      // Supabase storage
-      'gzklfxfrislzfuqlcgtr.supabase.co',
-    ],
-    alias: {
-      unsplash: 'https://images.unsplash.com',
-    },
-  },
-
-  // ─── VeeValidate ─────────────────────────────────────────────────────────────
-  veeValidate: {
-    autoImports: true,
-    componentNames: {
-      Form: 'VeeForm',
-      Field: 'VeeField',
-      FieldArray: 'VeeFieldArray',
-      ErrorMessage: 'VeeErrorMessage',
-    },
-  },
-
-  // ─── Vite ────────────────────────────────────────────────────────────────────
-  vite: {
-    optimizeDeps: {
-      include: [
-        '@nuxt/ui > prosemirror-state',
-        '@nuxt/ui > prosemirror-transform',
-        '@nuxt/ui > prosemirror-model',
-        '@nuxt/ui > prosemirror-view',
-        '@nuxt/ui > prosemirror-gapcursor',
-      ],
-    },
-    build: {
-      rollupOptions: {
-        onwarn(warning, warn) {
-          if (
-            warning.message.includes('imported from external module') &&
-            warning.message.includes('never used in')
-          ) {
-            return
-          }
-          warn(warning)
-        },
-      },
-    },
   },
 
   sourcemap: {
     client: false,
     server: false,
   },
-
-  // ─── Route Rules ─────────────────────────────────────────────────────────────
-  routeRules: {
-    // Halaman yang tidak boleh diindex (bukan halaman publik)
-    '/hidden': { robots: false },
-    '/auth/**': { robots: false },
-
-    // Static assets — cache immutable 1 tahun
-    '/_nuxt/**': {
-      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
-    },
-    '/images/**': {
-      headers: { 'cache-control': 'public, max-age=31536000, immutable' },
-    },
-    '/og/**': { headers: { 'cache-control': 'public, max-age=86400' } }, // OG images: cache 1 hari
-
-    // Security headers global
-    // ℹ️ CSP masih Report-Only — ubah ke 'Content-Security-Policy' setelah semua
-    // third-party scripts (analytics, hotjar, dll) sudah dikonfirmasi & diwhitelist.
-    '/**': {
-      headers: {
-        'Content-Security-Policy-Report-Only': [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-          "img-src 'self' data: https:",
-          "font-src 'self' data: https://fonts.gstatic.com",
-          "connect-src 'self' wss: https:",
-          "frame-src 'self' https:",
-          "media-src 'self' https:",
-          "worker-src 'self' blob:",
-        ].join('; '),
-        'Strict-Transport-Security':
-          'max-age=31536000; includeSubDomains; preload',
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'SAMEORIGIN',
-        'Cross-Origin-Opener-Policy': 'same-origin',
-        'Referrer-Policy': 'strict-origin-when-cross-origin',
-        'Permissions-Policy': 'camera=(), microphone=(), geolocation=(self)',
-      },
+  vite: {
+    optimizeDeps: {
+      include: [
+        'snarkdown',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+      ],
     },
   },
-
-  // ─── nuxt-site-config (via @nuxtjs/sitemap, robots, og-image, schema-org) ───
-  site: {
-    url,
-    name: title,
-    description,
-    defaultLocale,
-    locale,
-    identity,
-    twitter,
-    trailingSlash,
-    titleSeparator,
-    indexable: true,
-  },
-
-  // ─── Robots ──────────────────────────────────────────────────────────────────
-  robots: {
-    blockNonSeoBots: true,
-    // Disallow halaman private secara eksplisit
-    disallow: ['/auth/', '/profile/', '/setting/', '/history/', '/chat/'],
-  },
-
-  // ─── Sitemap ─────────────────────────────────────────────────────────────────
-  sitemap: {
-    xsl: false,
-    strictNuxtContentPaths: true,
-    // Exclude private pages dari sitemap
-    exclude: ['/auth/**', '/profile/**', '/setting/**', '/history/**'],
-  },
-
-  // ─── Schema.org (nuxt-schema-org) ────────────────────────────────────────────
-  schemaOrg: {
-    identity: {
-      type: 'Organization',
-      name: organization.name,
-      url,
-      logo: organization.logo,
-      sameAs: organization.sameAs,
-    },
-  },
-
-  // ─── ESLint ──────────────────────────────────────────────────────────────────
   eslint: {},
-
-  // ─── Compatibility ───────────────────────────────────────────────────────────
   compatibilityDate: '2026-01-14',
-
-  devtools: {
-    // Matikan devtools di production untuk performa & keamanan
-    enabled: process.env.NODE_ENV !== 'production',
-  },
 })

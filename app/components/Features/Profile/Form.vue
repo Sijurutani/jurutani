@@ -1,12 +1,12 @@
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { z } from 'zod'
+  import type { FormSubmitEvent } from '@nuxt/ui'
   import type { Database } from '~/types/database.types'
   import { toastStore } from '~/composables/useJuruTaniToast'
 
   type UserData = Database['public']['Tables']['profiles']['Row']
 
   const authStore = useAuthStore()
-  const supabase = useSupabaseClient<Database>()
 
   const props = defineProps<{
     userData: UserData
@@ -21,8 +21,34 @@
   const imageFile = ref<File | null>(null)
   const imagePreview = ref<string | null>(null)
 
-  // Form data with all fields
-  const formData = reactive({
+  // Zod Schema
+  const schema = z.object({
+    full_name: z.string().min(1, 'Nama lengkap wajib diisi'),
+    username: z
+      .string()
+      .regex(/^[a-zA-Z0-9_]*$/, 'Username hanya boleh berisi huruf, angka, dan underscore')
+      .optional()
+      .or(z.literal('')),
+    phone: z
+      .string()
+      .regex(/^[\d\s\-+()]*$/, 'Format nomor telepon tidak valid')
+      .optional()
+      .or(z.literal('')),
+    address: z.string().optional().or(z.literal('')),
+    bio: z.string().max(300, 'Bio maksimal 300 karakter').optional().or(z.literal('')),
+    website: z
+      .string()
+      .url('Format website tidak valid')
+      .optional()
+      .or(z.literal('')),
+    birth_date: z.string().optional().or(z.literal('')),
+    avatar_url: z.string().optional().or(z.literal('')),
+  })
+
+  type Schema = z.output<typeof schema>
+
+  // Form state
+  const state = reactive<Schema>({
     full_name: props.userData.full_name || '',
     username: props.userData.username || '',
     phone: props.userData.phone || '',
@@ -32,46 +58,6 @@
     birth_date: props.userData.birth_date || '',
     avatar_url: props.userData.avatar_url || '',
   })
-
-  // Validation rules
-  const validations = {
-    username: (value: string) => {
-      if (!value) return true // Optional field
-      return (
-        /^[a-zA-Z0-9_]+$/.test(value) ||
-        'Username hanya boleh berisi huruf, angka, dan underscore'
-      )
-    },
-    website: (value: string) => {
-      if (!value) return true // Optional field
-      try {
-        new URL(value.startsWith('http') ? value : `https://${value}`)
-        return true
-      } catch {
-        return 'Format website tidak valid'
-      }
-    },
-    phone: (value: string) => {
-      if (!value) return true // Optional field
-      return /^[\d\s\-+()]+$/.test(value) || 'Format nomor telepon tidak valid'
-    },
-  }
-
-  // Computed validation
-  const formErrors = computed(() => {
-    const errors: Record<string, string> = {}
-
-    Object.entries(validations).forEach(([field, validator]) => {
-      const result = validator(formData[field as keyof typeof formData])
-      if (typeof result === 'string') {
-        errors[field] = result
-      }
-    })
-
-    return errors
-  })
-
-  const isFormValid = computed(() => Object.keys(formErrors.value).length === 0)
 
   // Image handling
   const handleImageSelect = (event: Event) => {
@@ -83,9 +69,7 @@
     const maxSize = 2 * 1024 * 1024 // 2MB
 
     if (!validTypes.includes(file.type)) {
-      toastStore.error(
-        'Format file tidak didukung. Gunakan JPG, PNG, atau GIF.',
-      )
+      toastStore.error('Format file tidak didukung. Gunakan JPG, PNG, atau GIF.')
       return
     }
 
@@ -96,7 +80,6 @@
 
     imageFile.value = file
 
-    // Create preview
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target?.result as string
@@ -110,121 +93,68 @@
   }
 
   // Main submit handler
-  const handleSubmit = async () => {
-    if (!isFormValid.value) {
-      toastStore.error('Mohon perbaiki kesalahan pada form.')
-      return
-    }
-
+  const handleSubmit = async (event: FormSubmitEvent<Schema>) => {
     loading.value = true
 
     try {
-      if (!authStore.user?.sub) {
+      if (!authStore.user?.id) {
         toastStore.error('Anda harus login untuk memperbarui profil.')
         return
       }
 
-      if (authStore.user.sub !== props.userData.id) {
+      if (authStore.user.id !== props.userData.id) {
         toastStore.error('Tidak dapat memperbarui profil pengguna lain.')
         return
       }
 
-      let newAvatarUrl = formData.avatar_url
+      let newAvatarUrl = event.data.avatar_url || ''
 
-      // Handle avatar upload locally
       if (imageFile.value) {
-        const fileExt = imageFile.value.name.split('.').pop()
-        const fileName = `${authStore.user.sub}-${Date.now()}.${fileExt}`
-        const filePath = `avatars/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, imageFile.value, { upsert: true })
-
-        if (uploadError) {
-          throw new Error(
-            uploadError.message || 'Gagal mengupload gambar profil',
-          )
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('avatars').getPublicUrl(filePath)
-        newAvatarUrl = publicUrl
-        formData.avatar_url = newAvatarUrl
-
-        // Update cache version equivalent
-        authStore.refreshAvatarCache?.()
+        const result = await authStore.uploadAvatar(imageFile.value)
+        if (!result.success) throw new Error(result.error || 'Gagal mengupload gambar profil')
+        newAvatarUrl = result.data?.avatar_url || ''
+        state.avatar_url = newAvatarUrl
       }
 
-      // Prepare update data
       const updates = {
-        full_name: (formData.full_name || '').trim(),
-        username: (formData.username || '').trim() || null,
-        phone: (formData.phone || '').trim() || null,
-        address: (formData.address || '').trim() || null,
-        bio: (formData.bio || '').trim() || null,
-        website: (formData.website || '').trim() || null,
-        birth_date: formData.birth_date || null,
+        full_name: (event.data.full_name || '').trim(),
+        username: (event.data.username || '').trim() || null,
+        phone: (event.data.phone || '').trim() || null,
+        address: (event.data.address || '').trim() || null,
+        bio: (event.data.bio || '').trim() || null,
+        website: (event.data.website || '').trim() || null,
+        birth_date: event.data.birth_date || null,
         avatar_url: newAvatarUrl,
         updated_at: new Date().toISOString(),
       }
 
-      // Update profile directly to supabase
-      const { data: updateData, error: updateError } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', authStore.user.sub)
-        .select()
-        .single()
+      const { success, error: updateError } = await authStore.updateProfile(updates)
+      if (!success) throw new Error(updateError || 'Gagal memperbarui profil')
 
-      if (updateError) {
-        throw new Error(updateError.message || 'Gagal memperbarui profil')
-      }
-
-      // Update local store state if needed, assuming reactive
-      if (authStore.profile) {
-        Object.assign(authStore.profile, updates)
-      }
-
-      // Emit success
       emit('update')
       toastStore.success('Profil berhasil diperbarui.')
       resetImage()
     } catch (error) {
-      console.error('Exception updating profile:', error)
-      toastStore.error(
-        error instanceof Error
-          ? error.message
-          : 'Terjadi kesalahan saat memperbarui profil.',
-      )
+      toastStore.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat memperbarui profil.')
     } finally {
       loading.value = false
     }
   }
 
-  // Computed properties
-  const currentAvatar = computed(() => {
-    return imagePreview.value || formData.avatar_url || '/profile.webp'
-  })
+  const currentAvatar = computed(() => imagePreview.value || state.avatar_url || '/profile.webp')
 
   const handleImageError = (event: Event) => {
-    const target = event.target as HTMLImageElement
-    console.error('Image failed to load:', target.src)
-    target.src = '/profile.webp'
-  }
-
-  // Format website URL for display
-  const formatWebsiteUrl = (url: string) => {
-    if (!url) return ''
-    return url.startsWith('http') ? url : `https://${url}`
+    const target = event?.target as HTMLImageElement | null
+    if (target) target.src = '/profile.webp'
   }
 </script>
 
 <template>
-  <form
+  <UForm
+    :schema="schema"
+    :state="state"
     class="bg-white dark:bg-gray-900 rounded-lg shadow-md dark:shadow-lg border border-gray-100 dark:border-gray-800 p-6 max-w-2xl mx-auto transition-all duration-200"
-    @submit.prevent="handleSubmit"
+    @submit="handleSubmit"
   >
     <h2 class="text-xl font-semibold mb-6 text-gray-900 dark:text-white">
       Edit Profil
@@ -290,165 +220,107 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <!-- Full Name -->
       <div class="md:col-span-2">
-        <label
-          for="full_name"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Nama Lengkap *
-        </label>
-        <UInput
-          id="full_name"
-          v-model="formData.full_name"
-          type="text"
-          required
-          placeholder="Masukkan nama lengkap Anda"
-          class="w-full"
-        />
+        <UFormField label="Nama Lengkap" name="full_name" required>
+          <UInput
+            id="full_name"
+            v-model="state.full_name"
+            type="text"
+            placeholder="Masukkan nama lengkap Anda"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <!-- Username -->
       <div>
-        <label
-          for="username"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Username
-        </label>
-        <UInput
-          id="username"
-          v-model="formData.username"
-          type="text"
-          placeholder="username_anda"
-          class="w-full"
-          :class="{ 'ring-red-500': formErrors.username }"
-        />
-        <p
-          v-if="formErrors.username"
-          class="text-red-500 dark:text-red-400 text-xs mt-1"
-        >
-          {{ formErrors.username }}
-        </p>
+        <UFormField label="Username" name="username">
+          <UInput
+            id="username"
+            v-model="state.username"
+            type="text"
+            placeholder="username_anda"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <!-- Phone -->
       <div>
-        <label
-          for="phone"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Nomor Telepon
-        </label>
-        <UInput
-          id="phone"
-          v-model="formData.phone"
-          type="tel"
-          placeholder="08123456789"
-          class="w-full"
-          :class="{ 'ring-red-500': formErrors.phone }"
-        />
-        <p
-          v-if="formErrors.phone"
-          class="text-red-500 dark:text-red-400 text-xs mt-1"
-        >
-          {{ formErrors.phone }}
-        </p>
+        <UFormField label="Nomor Telepon" name="phone">
+          <UInput
+            id="phone"
+            v-model="state.phone"
+            type="tel"
+            placeholder="08123456789"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <!-- Birth Date -->
       <div>
-        <label
-          for="birth_date"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Tanggal Lahir
-        </label>
-        <UInput
-          id="birth_date"
-          v-model="formData.birth_date"
-          type="date"
-          class="w-full"
-        />
+        <UFormField label="Tanggal Lahir" name="birth_date">
+          <UInput id="birth_date" v-model="state.birth_date" type="date" class="w-full" />
+        </UFormField>
       </div>
 
       <!-- Website -->
       <div>
-        <label
-          for="website"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Website
-        </label>
-        <UInput
-          id="website"
-          v-model="formData.website"
-          type="url"
-          placeholder="https://website-anda.com"
-          class="w-full"
-          :class="{ 'ring-red-500': formErrors.website }"
-        />
-        <p
-          v-if="formErrors.website"
-          class="text-red-500 dark:text-red-400 text-xs mt-1"
-        >
-          {{ formErrors.website }}
-        </p>
+        <UFormField label="Website" name="website">
+          <UInput
+            id="website"
+            v-model="state.website"
+            type="url"
+            placeholder="https://website-anda.com"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <!-- Address -->
       <div class="md:col-span-2">
-        <label
-          for="address"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Alamat
-        </label>
-        <UInput
-          id="address"
-          v-model="formData.address"
-          type="text"
-          placeholder="Masukkan alamat lengkap Anda"
-          class="w-full"
-        />
+        <UFormField label="Alamat" name="address">
+          <UInput
+            id="address"
+            v-model="state.address"
+            type="text"
+            placeholder="Masukkan alamat lengkap Anda"
+            class="w-full"
+          />
+        </UFormField>
       </div>
 
       <!-- Bio -->
       <div class="md:col-span-2">
-        <label
-          for="bio"
-          class="block text-gray-700 dark:text-gray-300 text-sm font-medium mb-2"
-        >
-          Bio
-        </label>
-        <UTextarea
-          id="bio"
-          v-model="formData.bio"
-          :rows="4"
-          placeholder="Ceritakan sedikit tentang diri Anda..."
-          class="w-full"
-        />
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          {{ formData.bio.length }}/300 karakter
-        </p>
+        <UFormField label="Bio" name="bio">
+          <UTextarea
+            id="bio"
+            v-model="state.bio"
+            :rows="4"
+            placeholder="Ceritakan sedikit tentang diri Anda..."
+            class="w-full"
+          />
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {{ (state.bio || '').length }}/300 karakter
+          </p>
+        </UFormField>
       </div>
     </div>
 
     <!-- Buttons -->
-    <div
-      class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors"
-    >
+    <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700 transition-colors">
       <UButton
         type="submit"
         color="success"
         variant="solid"
         size="lg"
         :loading="loading"
-        :disabled="loading || !isFormValid"
         icon="i-lucide-save"
       >
         Simpan Perubahan
       </UButton>
     </div>
-  </form>
+  </UForm>
 </template>
 
 <style scoped>

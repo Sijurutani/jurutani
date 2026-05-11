@@ -29,7 +29,4 @@ export default withNuxt(
   {
     ignores: ['**/public/'],
   },
-  // {
-  //   ...
-  // }
 )

@@ -1,6 +1,9 @@
 <script setup lang="ts">
   // SEO Optimization
-  useSeoOptimized('login')
+  useSeoMeta({
+    title: 'Masuk ke JuruTani',
+    description: 'Akses akun JuruTani untuk menikmati semua fasilitas penyuluhan digital kami. Mari bertumbuh bersama komunitas petani & peternak di seluruh Indonesia.'
+  })
 
   definePageMeta({
     layout: 'auth',
@@ -9,7 +12,7 @@
 
   const toast = usejuruTaniToast()
   const route = useRoute()
-  const auth = useAuth()
+  const authStore = useAuthStore()
 
   const form = ref({
     email: '',
@@ -29,7 +32,7 @@
       return
     }
 
-    const { success, error, data } = await auth.signIn(
+    const { success, error, data } = await authStore.signIn(
       form.value.email,
       form.value.password,
     )
@@ -49,15 +52,14 @@
   }
 
   const handleSocialLogin = async () => {
-    const { success, error } =
-      await auth.signInWithSocialProvider('google')
+    const { success, error } = await authStore.signInWithSocialProvider('google')
     if (!success) {
       toast.error(error || 'Login dengan Google gagal.', 3000)
     }
   }
 
   // Expose loading for template
-  const isLoading = computed(() => auth.loading.value)
+  const isLoading = computed(() => authStore.loading)
 </script>
 
 <template>
